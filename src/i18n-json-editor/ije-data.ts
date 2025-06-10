@@ -25,6 +25,23 @@ export class IJEData {
     private _view: IJEView;
     private _page: IJEPage;
     private _sort: IJESort;
+    
+    // Métodos para obtener datos necesarios para las funciones de traducciones vacías
+    getAllTranslations(): IJEDataTranslation[] {
+        return this._translations;
+    }
+    
+    getLanguages(): string[] {
+        return this._languages;
+    }
+    
+    getPageSize(): number {
+        return this._page.pageSize;
+    }
+    
+    getCurrentPage(): number {
+        return this._page.pageNumber;
+    }
 
     constructor(private _manager: IJEManager) {
         this._loadFiles();
@@ -236,6 +253,136 @@ export class IJEData {
         }
 
         return translation;
+    }
+    
+    /**
+     * Find empty translations on the current page
+     * @param currentPage The current page number
+     * @returns Array of translation IDs with empty values
+     */
+    findEmptyTranslations(currentPage: number): { id: number, language: string }[] {
+        const emptyTranslations: { id: number, language: string }[] = [];
+        
+        // Get hidden languages to ignore
+        const hiddenLanguages = IJEConfiguration.HIDDEN_COLUMNS;
+        
+        // Get all filtered and sorted translations
+        let filteredTranslations = this._getDisplayedTranslations();
+        
+        // Calculate pagination indexes
+        const startIndex = (currentPage - 1) * this._page.pageSize;
+        const endIndex = Math.min(startIndex + this._page.pageSize, filteredTranslations.length);
+        
+        // Get only translations for the current page
+        const pageTranslations = filteredTranslations.slice(startIndex, endIndex);
+        
+        // Find empty translations on this page
+        pageTranslations.forEach(translation => {
+            this._languages.forEach(language => {
+                // Skip the key column and hidden languages
+                if (language !== 'key' && !hiddenLanguages.includes(language)) {
+                    // Check if the translation for this language is empty
+                    if (!translation.languages[language]) {
+                        emptyTranslations.push({
+                            id: translation.id,
+                            language: language
+                        });
+                    }
+                }
+            });
+        });
+        
+        return emptyTranslations;
+    }
+    
+    /**
+     * Find the next empty translation in the entire dataset
+     * @returns Object with page number and translation ID of the next empty translation
+     */
+    findNextEmptyTranslation(): { page: number, id: number, language: string } | null {
+        // Start from the current page and then check all other pages
+        const currentPage = this._page.pageNumber;
+        const pageSize = this._page.pageSize;
+        
+        // Get hidden languages to ignore
+        const hiddenLanguages = IJEConfiguration.HIDDEN_COLUMNS;
+        
+        // Get filtered translations (using the same filtering logic as _getDisplayedTranslations)
+        let filteredTranslations = this._translations;
+        if (this._filteredFolder !== '*') {
+            filteredTranslations = filteredTranslations.filter(t => t.folder === this._filteredFolder);
+        }
+        
+        // Apply search filter if there is one
+        if (this._searchPattern) {
+            const regex = new RegExp(`${this._searchPattern}`, 'gmi');
+            filteredTranslations = filteredTranslations.filter(t => {
+                let match = t.key === '' || regex.test(t.key);
+                if (!match) {
+                    // Check translations in each language
+                    for (const language of this._languages) {
+                        if (regex.test(t.languages[language])) {
+                            match = true;
+                            break;
+                        }
+                    }
+                }
+                return match;
+            });
+        }
+        
+        const totalPages = Math.ceil(filteredTranslations.length / pageSize);
+        
+        // Check all pages starting from the current one
+        for (let p = currentPage; p <= totalPages; p++) {
+            const startIndex = (p - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, filteredTranslations.length);
+            const pageTranslations = filteredTranslations.slice(startIndex, endIndex);
+            
+            for (const translation of pageTranslations) {
+                for (const language of this._languages) {
+                    // Skip the key column and hidden languages
+                    if (language !== 'key' && !hiddenLanguages.includes(language)) {
+                        // If translation is empty for this language
+                        if (!translation.languages[language]) {
+                            return {
+                                page: p,
+                                id: translation.id,
+                                language: language
+                            };
+                        }
+                    }
+                }
+            }
+        }
+        
+        // If we've reached the last page and found nothing, start from the beginning
+        if (currentPage > 1) {
+            for (let p = 1; p < currentPage; p++) {
+                const startIndex = (p - 1) * pageSize;
+                const endIndex = Math.min(startIndex + pageSize, filteredTranslations.length);
+                const pageTranslations = filteredTranslations.slice(startIndex, endIndex);
+                
+                for (const translation of pageTranslations) {
+                    for (const language of this._languages) {
+                        // Skip the key column and hidden languages
+                        if (language !== 'key' && !hiddenLanguages.includes(language)) {
+                            // If translation is empty for this language
+                            if (!translation.languages[language]) {
+                                return {
+                                    page: p,
+                                    id: translation.id,
+                                    language: language
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // No empty translations found
+        return null;
     }
 
     /**

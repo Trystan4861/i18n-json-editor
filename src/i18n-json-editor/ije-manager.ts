@@ -80,6 +80,12 @@ export class IJEManager {
                 case 'toggleColumn':
                     this.toggleColumnVisibility(message.language, message.visible);
                     return;
+                case 'checkEmptyTranslations':
+                    this.checkEmptyTranslations(message.currentPage);
+                    return;
+                case 'navigateToNextEmptyTranslation':
+                    this.navigateToNextEmptyTranslation();
+                    return;
             }
         });
     }
@@ -206,6 +212,29 @@ export class IJEManager {
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             vscode.window.showErrorMessage(i18n.t('ui.messages.fileCreationError', errorMessage));
+        }
+    }
+    
+    checkEmptyTranslations(currentPage: number) {
+        // Check for empty translations on the current page
+        const emptyTranslations = this._data.findEmptyTranslations(currentPage);
+        this._panel.webview.postMessage({ 
+            command: 'emptyTranslationsFound', 
+            emptyTranslations: emptyTranslations 
+        });
+    }
+    
+    navigateToNextEmptyTranslation() {
+        // Find and navigate to the next empty translation
+        const nextEmptyTranslation = this._data.findNextEmptyTranslation();
+        if (nextEmptyTranslation) {
+            // If an empty translation is found, navigate to its page and select it
+            this._data.navigate(nextEmptyTranslation.page);
+            this._data.select(nextEmptyTranslation.id);
+        } else {
+            // If no empty translation is found, show a message
+            const i18n = I18nService.getInstance();
+            vscode.window.showInformationMessage(i18n.t('ui.messages.noEmptyTranslations'));
         }
     }
 

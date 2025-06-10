@@ -162,7 +162,8 @@ export class IJEDataRenderService {
                 if (hasTranslateService) {
                     render += `<div class="input-group">`;
                 }
-                render += `<input class="form-control ${rtlClass}" type="text" placeholder="${I18nService.getInstance().t('ui.placeholders.translation')}" 
+                const isEmpty = !t.languages[language] || t.languages[language].trim() === '';
+                render += `<input class="form-control ${rtlClass} ${isEmpty ? 'empty-translation' : ''}" type="text" placeholder="${I18nService.getInstance().t('ui.placeholders.translation')}" 
                     onfocus="mark(${t.id})" 
                     onchange="updateInput(this,${t.id},'${language}');" 
                     ${isRTL ? 'dir="rtl"' : ''} `;

@@ -7,6 +7,21 @@ var vscode;
     switch (message.command) {
       case "content":
         document.getElementById("content-view").innerHTML = message.render;
+        // Actualizar el contador de traducciones pendientes después de renderizar
+        checkEmptyTranslations();
+        break;
+        
+      case "emptyTranslationsInfo":
+        // Actualizar la información de traducciones vacías
+        emptyTranslationsInfo = message.data;
+        const counter = document.getElementById('missing-translations-counter');
+        if (counter) {
+          counter.textContent = emptyTranslationsInfo.count;
+          
+          // Mostrar u ocultar el botón según si hay traducciones pendientes
+          const btn = document.getElementById('btn-warning-translations');
+          btn.style.display = emptyTranslationsInfo.count > 0 ? 'inline-block' : 'none';
+        }
         break;
 
       case "folders":
@@ -40,8 +55,72 @@ var vscode;
         break;
     }
   });
-  setTimeout(() => this.refresh(), 200);
+  setTimeout(() => {
+    this.refresh();
+    // Actualizar el contador de traducciones pendientes inicialmente
+    checkEmptyTranslations();
+  }, 200);
 })();
+
+// Variable global para almacenar información de traducciones vacías
+let emptyTranslationsInfo = {
+  count: 0,
+  totalPages: 0,
+  emptyByPage: {},
+  currentIndex: -1
+};
+
+// Función para comprobar todas las traducciones vacías del sistema
+function checkEmptyTranslations() {
+  // Obtener todos los inputs con la clase empty-translation en la página actual
+  const emptyInputs = document.querySelectorAll('.empty-translation');
+  const currentPageElement = document.querySelector('.page-item.active .page-link');
+  const currentPage = currentPageElement ? parseInt(currentPageElement.textContent) : 1;
+  
+  // Solicitar la información completa de traducciones vacías al servidor
+  vscode.postMessage({ command: "checkEmptyTranslations", currentPage });
+  
+  // Actualizar el contador con los datos visibles actualmente
+  const counter = document.getElementById('missing-translations-counter');
+  if (counter) {
+    // Usar el contador total si está disponible, de lo contrario usar el conteo visible actual
+    counter.textContent = emptyTranslationsInfo.count > 0 ? emptyTranslationsInfo.count : emptyInputs.length;
+    
+    // Mostrar u ocultar el botón según si hay traducciones pendientes
+    const btn = document.getElementById('btn-warning-translations');
+    if (emptyTranslationsInfo.count > 0 || emptyInputs.length > 0) {
+      btn.style.display = 'inline-block';
+    } else {
+      btn.style.display = 'none';
+    }
+  }
+}
+
+// Función para desplazarse a la siguiente traducción vacía
+function scrollToNextEmptyTranslation() {
+  // Primero intentamos navegar a las traducciones vacías visibles en la página actual
+  const emptyInputs = document.querySelectorAll('.empty-translation');
+  
+  if (emptyInputs.length > 0) {
+    // Hay traducciones vacías en la página actual, navegamos a la siguiente
+    emptyTranslationsInfo.currentIndex++;
+    if (emptyTranslationsInfo.currentIndex >= emptyInputs.length) {
+      emptyTranslationsInfo.currentIndex = 0;
+    }
+    
+    const nextEmptyInput = emptyInputs[emptyTranslationsInfo.currentIndex];
+    
+    // Hacer scroll al elemento y enfocarlo
+    nextEmptyInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => {
+      nextEmptyInput.focus();
+    }, 500);
+  } else if (emptyTranslationsInfo.count > 0) {
+    // No hay traducciones vacías en la página actual, pero sabemos que hay en otras páginas
+    // Enviamos un mensaje al backend para navegar a la siguiente página con traducciones vacías
+    vscode.postMessage({ command: "navigateToNextEmptyTranslation" });
+  }
+}
 
 
 add = () => vscode.postMessage({ command: "add" });
@@ -69,7 +148,19 @@ switchView = () => {
     view: isTableView ? "list" : "table",
   });
 };
-updateInput = (el, id, language = "") => vscode.postMessage({ command: "update", id: id, value: el.value, language: language });
+updateInput = (el, id, language = "") => {
+  // Actualizar clase empty-translation según si el campo está vacío o no
+  if (el.value.trim() === '') {
+    el.classList.add('empty-translation');
+  } else {
+    el.classList.remove('empty-translation');
+  }
+  
+  // Actualizar el contador de traducciones pendientes
+  checkEmptyTranslations();
+  
+  vscode.postMessage({ command: "update", id: id, value: el.value, language: language });
+};
 translateInput = (el, id, language = "") => vscode.postMessage({ command: "translate", id: id, language: language });
 updateFolder = (el, id) => vscode.postMessage({ command: "folder", id: id, value: el.value });
 toggleColumn = (language, visible) => vscode.postMessage({ command: "toggleColumn", language: language, visible: visible });

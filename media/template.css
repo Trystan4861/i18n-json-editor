@@ -85,6 +85,16 @@ th {
 .form-control.is-invalid:focus {
     box-shadow: 0 0 0 0.2rem var(--vscode-errorForeground) !important;
 }
+
+/* Estilos para campos de traducción vacíos */
+.form-control.empty-translation {
+    border: 1px solid var(--vscode-errorForeground) !important;
+    background-color: rgba(255, 0, 0, 0.05) !important;
+}
+
+.form-control.empty-translation:focus {
+    box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.25) !important;
+}
 .btn-vscode {
     background-color: var(--vscode-button-background);
     color: var(--vscode-button-foreground);
@@ -232,4 +242,21 @@ td.rtl-cell {
 .td-remove{
     width: 30px;
     align-content: center;
+}
+
+/* Estilos para el botón de advertencia de traducciones pendientes */
+.btn-warning {
+    background-color: var(--vscode-editorError-foreground, #f44747);
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-warning:hover {
+    background-color: #d32f2f;
+    opacity: 0.9;
+}
+
+.btn-warning:focus {
+    box-shadow: 0 0 0 0.2rem rgba(244, 71, 71, 0.25) !important;
 }
