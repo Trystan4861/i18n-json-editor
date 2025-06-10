@@ -1,4 +1,6 @@
 var vscode;
+var hasUnsavedChanges = false;
+
 (function () {
   vscode = acquireVsCodeApi();
 
@@ -109,15 +111,51 @@ function scrollToNextEmptyTranslation() {
 
 
 
-add = () => vscode.postMessage({ command: "add" });
+add = () => {
+  vscode.postMessage({ command: "add" });
+  hasUnsavedChanges = true;
+  updateSaveButtonStyle();
+};
 filterFolder = (el) => vscode.postMessage({ command: "filterFolder", value: el.value });
 mark = (id) => vscode.postMessage({ command: "mark", id: id });
 navigate = (page) => vscode.postMessage({ command: "navigate", page: page });
 pageSize = (el) => vscode.postMessage({ command: "pageSize", value: el.value });
 refresh = () => vscode.postMessage({ command: "refresh" });
-reload = () => vscode.postMessage({ command: "reload" });
-remove = (id) => vscode.postMessage({ command: "remove", id: id });
-save = () => vscode.postMessage({ command: "save" });
+reload = () => {
+  vscode.postMessage({ command: "reload" });
+  hasUnsavedChanges = false;
+  const saveButton = document.getElementById("save-button");
+  saveButton.classList.remove("btn-pending", "btn-success");
+  saveButton.classList.add("btn-vscode");
+};
+remove = (id) => {
+  vscode.postMessage({ command: "remove", id: id });
+  hasUnsavedChanges = true;
+  updateSaveButtonStyle();
+};
+save = () => {
+  vscode.postMessage({ command: "save" });
+  // Cambiar el botón a "success" al guardar
+  const saveButton = document.getElementById("save-button");
+  saveButton.classList.remove("btn-vscode", "btn-pending");
+  saveButton.classList.add("btn-success");
+  
+  // Después de 5 segundos, volver al estado normal
+  setTimeout(() => {
+    saveButton.classList.remove("btn-success");
+    saveButton.classList.add("btn-vscode");
+    hasUnsavedChanges = false;
+  }, 5000);
+};
+
+// Función para actualizar el estilo del botón de guardado según si hay cambios
+function updateSaveButtonStyle() {
+  const saveButton = document.getElementById("save-button");
+  if (hasUnsavedChanges) {
+    saveButton.classList.remove("btn-vscode", "btn-success");
+    saveButton.classList.add("btn-pending");
+  }
+}
 search = (el) => vscode.postMessage({ command: "search", value: el.value });
 select = (id) => vscode.postMessage({ command: "select", id: id });
 sort = (column, ascending) => vscode.postMessage({ command: "sort", column: column, ascending: ascending });
@@ -141,6 +179,10 @@ updateInput = (el, id, language = "") => {
   } else {
     el.classList.remove('empty-translation');
   }
+  
+  // Marcar que hay cambios no guardados
+  hasUnsavedChanges = true;
+  updateSaveButtonStyle();
   
   // Actualizar el contador de traducciones pendientes
   checkEmptyTranslations();

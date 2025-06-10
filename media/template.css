@@ -260,3 +260,20 @@ td.rtl-cell {
 .btn-warning:focus {
     box-shadow: 0 0 0 0.2rem rgba(244, 71, 71, 0.25) !important;
 }
+
+/* Nuevo estilo para el botón de cambios pendientes (amarillo) */
+.btn-pending {
+    background-color: #FFC107;
+    color: black;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-pending:hover {
+    background-color: #e0a800;
+    opacity: 0.9;
+}
+
+.btn-pending:focus {
+    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25) !important;
+}
