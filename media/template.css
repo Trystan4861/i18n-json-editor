@@ -149,3 +149,22 @@ th {
 .form-check {
     margin-bottom: 0.5rem;
 }
+
+/* Estilos para idiomas RTL */
+.rtl-text {
+    text-align: right;
+    direction: rtl;
+    font-family: var(--vscode-font-family);
+}
+
+/* Estilos para encabezados de columnas RTL */
+th.rtl-header {
+    text-align: right;
+    direction: rtl;
+}
+
+/* Estilos para celdas de tabla con contenido RTL */
+td.rtl-cell {
+    text-align: right;
+    direction: rtl;
+}

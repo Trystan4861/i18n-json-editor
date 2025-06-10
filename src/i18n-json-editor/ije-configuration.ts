@@ -6,6 +6,32 @@ import { IJEFolder } from './models/ije-folder';
 import { TranslationServiceEnum } from './services/ije-translation-service';
 
 export class IJEConfiguration {
+    // Lista de códigos de idioma RTL (Right-to-Left)
+    public static readonly RTL_LANGUAGES = [
+        'ar', // Árabe
+        'dv', // Divehi
+        'fa', // Persa (Farsi)
+        'he', // Hebreo
+        'ks', // Cachemir
+        'ku', // Kurdo
+        'ps', // Pashto
+        'sd', // Sindhi
+        'ug', // Uigur
+        'ur', // Urdu
+        'yi'  // Yiddish
+    ];
+    
+    /**
+     * Verifica si un idioma es RTL (Right-to-Left)
+     * @param language Código de idioma (ej. 'ar', 'he')
+     * @returns true si el idioma es RTL, false en caso contrario
+     */
+    static isRTL(language: string): boolean {
+        // Extraer código base del idioma (ej. 'ar-EG' -> 'ar')
+        const baseLanguage = language.split('-')[0].toLowerCase();
+        return this.RTL_LANGUAGES.includes(baseLanguage);
+    }
+
     static get FORCE_KEY_UPPERCASE(): boolean {
         const value = vscode.workspace.getConfiguration().get<boolean>('i18nJsonEditor.forceKeyUPPERCASE');
         return value !== undefined ? value : true;

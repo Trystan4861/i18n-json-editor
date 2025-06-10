@@ -49,7 +49,10 @@ export class IJEDataRenderService {
     }
 
     private static _getTableHeader(column: string, sort: IJESort) {
-        return `<th class="text-center" style="cursor: pointer;" onclick="sort('${column}',${sort.column === column ? !sort.ascending : true})">
+        const isRTL = IJEConfiguration.isRTL(column);
+        const rtlClass = isRTL ? 'rtl-header' : '';
+        
+        return `<th class="text-center ${rtlClass}" style="cursor: pointer;" onclick="sort('${column}',${sort.column === column ? !sort.ascending : true})" ${isRTL ? 'dir="rtl"' : ''}>
            ${column}             
            ${sort.column === column ? (sort.ascending ? '<i class="icon-up-open"></i>' : '<i class="icon-down-open"></i>') : ''}
             
@@ -152,11 +155,17 @@ export class IJEDataRenderService {
 
             // Solo mostrar las celdas de las columnas visibles
             filteredLanguages.forEach((language: string) => {
+                const isRTL = IJEConfiguration.isRTL(language);
+                const rtlClass = isRTL ? 'rtl-text' : '';
+                
                 render += '<td>';
                 if (hasTranslateService) {
                     render += `<div class="input-group">`;
                 }
-                render += `<input class="form-control" type="text" placeholder="${I18nService.getInstance().t('ui.placeholders.translation')}" onfocus="mark(${t.id})" onchange="updateInput(this,${t.id},'${language}');" `;
+                render += `<input class="form-control ${rtlClass}" type="text" placeholder="${I18nService.getInstance().t('ui.placeholders.translation')}" 
+                    onfocus="mark(${t.id})" 
+                    onchange="updateInput(this,${t.id},'${language}');" 
+                    ${isRTL ? 'dir="rtl"' : ''} `;
                 if (t.languages[language]) {
                     render += `value="${t.languages[language].replace(/\n/g, '\\n').replace(/"/g, '&quot;')}" `;
                 }
@@ -253,12 +262,18 @@ export class IJEDataRenderService {
             
             // Solo mostrar los campos de texto de los idiomas visibles
             filteredLanguages.forEach((language: string) => {
+                const isRTL = IJEConfiguration.isRTL(language);
+                const rtlClass = isRTL ? 'rtl-text' : '';
+                
                 render += `<label>${language}</label>`;
                 if (hasTranslateService) {
                     render += `<div class="row">
                                     <div class="col-10">`;
                 }
-                render += `<textarea class="form-control mb-2" rows="6" placeholder="${I18nService.getInstance().t('ui.placeholders.translation')}" onchange="updateInput(this,${selectTranslation.id},'${language}');">`;
+                render += `<textarea class="form-control mb-2 ${rtlClass}" rows="6" 
+                    placeholder="${I18nService.getInstance().t('ui.placeholders.translation')}" 
+                    onchange="updateInput(this,${selectTranslation.id},'${language}');" 
+                    ${isRTL ? 'dir="rtl"' : ''}>`;
                 if (selectTranslation.languages[language]) {
                     render += selectTranslation.languages[language];
                 }
