@@ -5,6 +5,7 @@ import * as _path from 'path';
 import { IJEConfiguration } from './ije-configuration';
 import { IJEData } from './ije-data';
 import { IJEDataTranslation } from './models/ije-data-translation';
+import { I18nService } from '../i18n/i18n-service';
 
 export class IJEManager {
     get isWorkspace() {
@@ -95,21 +96,32 @@ export class IJEManager {
         ];
 
         const scriptsPath = [vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'template.js'))];
+        
+        // Get i18n translations
+        const i18n = I18nService.getInstance();
+        
+        // Helper function to replace i18n template tags
+        const replaceI18nTags = (html: string): string => {
+            return html.replace(/\{\{i18n\.([^}]+)\}\}/g, (match, key) => {
+                return i18n.t(key) || match;
+            });
+        };
 
-        return fs
-            .readFileSync(template.fsPath)
-            .toString()
-            .replace(
-                '{{LINKS}}',
-                linksPath
-                    .map(l => `<link rel="stylesheet" href="${this._panel.webview.asWebviewUri ? this._panel.webview.asWebviewUri(l) : l.with({ scheme: 'vscode-resource' })}">`)
-                    .join('\n')
-            )
-            .replace(
-                '{{SCRIPTS}}',
-                scriptsPath
-                    .map(l => `<script src="${this._panel.webview.asWebviewUri ? this._panel.webview.asWebviewUri(l) : l.with({ scheme: 'vscode-resource' })}"></script>`)
-                    .join('\n')
-            );
+        return replaceI18nTags(
+            fs.readFileSync(template.fsPath)
+                .toString()
+                .replace(
+                    '{{LINKS}}',
+                    linksPath
+                        .map(l => `<link rel="stylesheet" href="${this._panel.webview.asWebviewUri ? this._panel.webview.asWebviewUri(l) : l.with({ scheme: 'vscode-resource' })}">`)
+                        .join('\n')
+                )
+                .replace(
+                    '{{SCRIPTS}}',
+                    scriptsPath
+                        .map(l => `<script src="${this._panel.webview.asWebviewUri ? this._panel.webview.asWebviewUri(l) : l.with({ scheme: 'vscode-resource' })}"></script>`)
+                        .join('\n')
+                )
+        );
     }
 }

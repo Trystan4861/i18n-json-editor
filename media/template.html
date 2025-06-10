@@ -15,17 +15,17 @@
             <select id="select-folder" class="form-control mr-2" style="display: none;" onchange="filterFolder(this)">
                 <option value='*'>*</option>
            </select>            
-            <input class="form-control" style="width:400px" oninput="search(this)" type="text" placeholder="Search..." aria-label="Search...">
+            <input class="form-control" style="width:400px" oninput="search(this)" type="text" placeholder="{{i18n.ui.labels.search}}" aria-label="{{i18n.ui.labels.search}}">
 
         </form>
         <form class="form-inline">
-            <button type="button" class="btn btn-vscode mr-2" onclick="save()"><i class="icon-floppy"></i> Save</button>
-            <button type="button" class="btn btn btn-vscode mr-2" onclick="add()"><i class="icon-plus-squared"></i> Add</button>
+            <button type="button" class="btn btn-vscode mr-2" onclick="save()"><i class="icon-floppy"></i> {{i18n.ui.buttons.save}}</button>
+            <button type="button" class="btn btn btn-vscode mr-2" onclick="add()"><i class="icon-plus-squared"></i> {{i18n.ui.buttons.add}}</button>
             <button type="button" class="btn btn-vscode" onclick="switchView()"><i id="icon-switch-view" class="icon-list-bullet"></i></button>
         </form>
     </nav>
     <div id="content-view" class="p-2">
-        <div class="text-center">Loading...</div>
+        <div class="text-center">{{i18n.ui.labels.loading}}</div>
     </div>
 </body>
 

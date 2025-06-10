@@ -1,0 +1,34 @@
+{
+  "extension": {
+    "statusBar": "Editor i18n",
+    "title": "Editor de JSON i18n"
+  },
+  "ui": {
+    "buttons": {
+      "save": "Guardar",
+      "add": "Agregar",
+      "translate": "Traducir",
+      "remove": "Eliminar"
+    },
+    "labels": {
+      "search": "Buscar...",
+      "loading": "Cargando...",
+      "key": "Clave",
+      "directory": "Directorio",
+      "translation": "Traducción...",
+      "of": "de",
+      "folder": "CARPETA",
+      "keyColumn": "CLAVE"
+    },
+    "pagination": {
+      "itemsPerPage": "Elementos por página"
+    },
+    "messages": {
+      "saved": "Archivos i18n guardados"
+    },
+    "placeholders": {
+      "key": "Clave...",
+      "translation": "Traducción..."
+    }
+  }
+}

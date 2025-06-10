@@ -1,0 +1,34 @@
+{
+  "extension": {
+    "statusBar": "i18n editor",
+    "title": "i18n-json-editor"
+  },
+  "ui": {
+    "buttons": {
+      "save": "Save",
+      "add": "Add",
+      "translate": "Translate",
+      "remove": "Remove"
+    },
+    "labels": {
+      "search": "Search...",
+      "loading": "Loading...",
+      "key": "Key",
+      "directory": "Directory",
+      "translation": "Translation...",
+      "of": "of",
+      "folder": "FOLDER",
+      "keyColumn": "KEY"
+    },
+    "pagination": {
+      "itemsPerPage": "Items per page"
+    },
+    "messages": {
+      "saved": "i18n files saved"
+    },
+    "placeholders": {
+      "key": "Key...",
+      "translation": "Translation..."
+    }
+  }
+}

@@ -2,6 +2,7 @@ import { IJEConfiguration } from '../ije-configuration';
 import { IJEDataTranslation } from '../models/ije-data-translation';
 import { IJEPage } from '../models/ije-page';
 import { IJESort } from '../models/ije-sort';
+import { I18nService } from '../../i18n/i18n-service';
 
 export class IJEDataRenderService {
     static renderPagination(translations: IJEDataTranslation[], page: IJEPage, withPageSizeSelector: boolean = true) {
@@ -15,7 +16,7 @@ export class IJEDataRenderService {
             var firstEl = (page.pageNumber - 1) * page.pageSize + 1;
             render += `${firstEl}-${firstEl + (translations.length - 1)} `;
         }
-        render += `of ${page.count}`;
+        render += `${I18nService.getInstance().t('ui.labels.of')} ${page.count}`;
         render += '</div>';
         render += '</div>';
         render += '<div class="col-8">';
