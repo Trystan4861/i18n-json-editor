@@ -5,14 +5,16 @@
   },
   "ui": {
     "buttons": {
-      "save": "Guardar",
-      "add": "Agregar",
       "translate": "Traducir",
       "remove": "Eliminar",
       "reload": "Recargar",
-      "newLanguage": "Nuevo Idioma",
       "columnSelector": "Idiomas",
       "apply": "Aplicar"
+    },
+    "errors": {
+      "invalidKey": "La clave no es válida.",
+      "keyNotEmpty": "La clave debe completarse.",
+      "duplicatePath": "La ruta de la clave ya está definida."
     },
     "prompts": {
       "enterLanguageCode": "Ingrese el código de idioma (máx. 5 caracteres)",

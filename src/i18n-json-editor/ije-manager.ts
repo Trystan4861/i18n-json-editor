@@ -219,7 +219,8 @@ export class IJEManager {
         const linksPath = [
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'bootstrap.min.css')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'template.css')),
-            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'fontello', 'css', 'fontello.css'))
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'fontello', 'css', 'fontello.css')),
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'font-awesome.min.css'))
         ];
 
         const scriptsPath = [

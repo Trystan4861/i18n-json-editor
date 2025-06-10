@@ -5,7 +5,7 @@ import * as _path from 'path';
 import { IJEConfiguration } from './ije-configuration';
 import { IJEDataRenderService } from './services/ije-data-render-service';
 import { IJEDataTranslation } from './models/ije-data-translation';
-import { IJEDataTranslationError } from './models/ije-data-translation';
+import { IJEDataTranslationError, getTranslatedError } from './models/ije-data-translation';
 import { IJETranslationService } from './services/ije-translation-service';
 import { IJEManager } from './ije-manager';
 import { IJEPage } from './models/ije-page';
@@ -174,7 +174,7 @@ export class IJEData {
                 fs.writeFileSync(f, json);
             });
         });
-        vscode.window.showInformationMessage('i18n files saved');
+        vscode.window.showInformationMessage(I18nService.getInstance().t('ui.messages.saved'));
     }
 
     search(value: string) {
@@ -413,16 +413,16 @@ export class IJEData {
         var t = this._validatePath(translation);
         if (translation.key === '') {
             translation.valid = false;
-            translation.error = IJEDataTranslationError.KEY_NOT_EMPTY;
+            translation.error = getTranslatedError(IJEDataTranslationError.KEY_NOT_EMPTY);
         } else if (keyChanged) {
             let separator = IJEConfiguration.KEY_SEPARATOR ? this.escapeRegExp(IJEConfiguration.KEY_SEPARATOR) : false;
             //does not start or end with the separator or two consecutive separators
             if (separator && new RegExp(`^${separator}|${separator}{2,}|${separator}$`).test(translation.key)) {
                 translation.valid = false;
-                translation.error = IJEDataTranslationError.INVALID_KEY;
+                translation.error = getTranslatedError(IJEDataTranslationError.INVALID_KEY);
             } else if (this._validatePath(translation).length > 0) {
                 translation.valid = false;
-                translation.error = IJEDataTranslationError.DUPLICATE_PATH;
+                translation.error = getTranslatedError(IJEDataTranslationError.DUPLICATE_PATH);
             } else {
                 translation.valid = true;
                 translation.error = '';

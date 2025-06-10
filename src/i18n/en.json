@@ -5,14 +5,16 @@
   },
   "ui": {
     "buttons": {
-      "save": "Save",
-      "add": "Add",
       "translate": "Translate",
       "remove": "Remove",
       "reload": "Reload",
-      "newLanguage": "New Language",
       "columnSelector": "Languages",
       "apply": "Apply"
+    },
+    "errors": {
+      "invalidKey": "The key is invalid.",
+      "keyNotEmpty": "The Key must be filled.",
+      "duplicatePath": "The key path is already defined."
     },
     "prompts": {
       "enterLanguageCode": "Enter language code (max 5 characters)",

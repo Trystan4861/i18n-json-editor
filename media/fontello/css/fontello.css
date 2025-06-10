@@ -60,5 +60,6 @@
 .icon-trash-empty:before { content: '\e803'; } /* '' */
 .icon-floppy:before { content: '\e804'; } /* '' */
 .icon-list-bullet:before { content: '\f0ca'; } /* '' */
+.icon-arrows-cw:before { content: '\e805'; } /* '' */
 .icon-table:before { content: '\f0ce'; } /* '' */
 .icon-plus-squared:before { content: '\f0fe'; } /* '' */

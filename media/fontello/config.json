@@ -53,6 +53,12 @@
       "css": "language",
       "code": 59392,
       "src": "entypo"
+    },
+    {
+      "uid": "bc71f4c6e53394d5ba46b063040014f1",
+      "css": "arrows-cw",
+      "code": 59397,
+      "src": "fontawesome"
     }
   ]
 }
