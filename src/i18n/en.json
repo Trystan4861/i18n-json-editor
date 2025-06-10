@@ -12,6 +12,10 @@
       "reload": "Reload",
       "newLanguage": "New Language"
     },
+    "prompts": {
+      "enterLanguageCode": "Enter language code (max 5 characters)",
+      "languageCodePlaceholder": "e.g. es_ES or de"
+    },
     "labels": {
       "search": "Search...",
       "loading": "Loading...",
@@ -26,7 +30,18 @@
       "itemsPerPage": "Items per page"
     },
     "messages": {
-      "saved": "i18n files saved"
+      "saved": "i18n files saved",
+      "reloaded": "i18n editor reloaded",
+      "languageCodeEmpty": "Language code cannot be empty",
+      "languageCodeTooLong": "Language code must be maximum 5 characters",
+      "languageCodeInvalid": "Language code must be maximum 5 characters!",
+      "noTargetFolder": "No target folder available to create language file",
+      "languageFileExists": "Language file {0} already exists",
+      "createdWithTemplate": "Created {0} using English template",
+      "templateReadError": "Could not read English template. Creating empty file.",
+      "templateNotFound": "English template not found. Creating empty file.",
+      "languageFileCreated": "New language file {0} created",
+      "fileCreationError": "Error creating language file: {0}"
     },
     "placeholders": {
       "key": "Key...",

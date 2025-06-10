@@ -84,20 +84,22 @@ export class IJEManager {
     reloadData() {
         this._data = new IJEData(this);
         this.refreshDataTable();
-        vscode.window.showInformationMessage('i18n editor reloaded');
+        const i18n = I18nService.getInstance();
+        vscode.window.showInformationMessage(i18n.t('ui.messages.reloaded'));
     }
     
     async _showNewLanguageInput() {
+        const i18n = I18nService.getInstance();
         // Show VS Code input box to get language code
         const langCode = await vscode.window.showInputBox({
-            prompt: 'Enter language code (max 5 characters)',
-            placeHolder: 'e.g. es_ES or de',
+            prompt: i18n.t('ui.prompts.enterLanguageCode'),
+            placeHolder: i18n.t('ui.prompts.languageCodePlaceholder'),
             validateInput: (value: string) => {
                 if (!value || value.trim() === '') {
-                    return 'Language code cannot be empty';
+                    return i18n.t('ui.messages.languageCodeEmpty');
                 }
                 if (value.length > 5) {
-                    return 'Language code must be maximum 5 characters';
+                    return i18n.t('ui.messages.languageCodeTooLong');
                 }
                 return null; // Input is valid
             }
@@ -110,8 +112,10 @@ export class IJEManager {
     }
 
     createNewLanguage(langCode: string) {
+        const i18n = I18nService.getInstance();
+        
         if (!langCode || langCode.length > 5) {
-            vscode.window.showErrorMessage('Language code must be maximum 5 characters!');
+            vscode.window.showErrorMessage(i18n.t('ui.messages.languageCodeInvalid'));
             return;
         }
         
@@ -125,7 +129,7 @@ export class IJEManager {
                 // Use the first workspace folder if opened from workspace
                 targetPath = IJEConfiguration.WORKSPACE_FOLDERS[0].path;
             } else {
-                vscode.window.showErrorMessage('No target folder available to create language file');
+                vscode.window.showErrorMessage(i18n.t('ui.messages.noTargetFolder'));
                 return;
             }
             
@@ -133,7 +137,7 @@ export class IJEManager {
             
             // Check if file already exists
             if (fs.existsSync(filePath)) {
-                vscode.window.showWarningMessage(`Language file ${langCode}.json already exists`);
+                vscode.window.showWarningMessage(i18n.t('ui.messages.languageFileExists', `${langCode}.json`));
                 return;
             }
             
@@ -146,26 +150,26 @@ export class IJEManager {
                     // Use English file as template
                     const englishContent = fs.readFileSync(englishFilePath, 'utf8');
                     jsonContent = JSON.parse(englishContent);
-                    vscode.window.showInformationMessage(`Created ${langCode}.json using English template`);
+                    vscode.window.showInformationMessage(i18n.t('ui.messages.createdWithTemplate', `${langCode}.json`));
                 } catch (err) {
                     // If there's an error reading/parsing the English file, use empty object
-                    vscode.window.showWarningMessage(`Could not read English template. Creating empty file.`);
+                    vscode.window.showWarningMessage(i18n.t('ui.messages.templateReadError'));
                 }
             } else {
-                vscode.window.showInformationMessage(`English template not found. Creating empty file.`);
+                vscode.window.showInformationMessage(i18n.t('ui.messages.templateNotFound'));
             }
             
             // Create new language file
             const fileContent = JSON.stringify(jsonContent, null, IJEConfiguration.JSON_SPACE);
             fs.writeFileSync(filePath, fileContent);
             
-            vscode.window.showInformationMessage(`New language file ${langCode}.json created`);
+            vscode.window.showInformationMessage(i18n.t('ui.messages.languageFileCreated', `${langCode}.json`));
             
             // Reload the editor to show the new language
             this.reloadData();
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            vscode.window.showErrorMessage(`Error creating language file: ${errorMessage}`);
+            vscode.window.showErrorMessage(i18n.t('ui.messages.fileCreationError', errorMessage));
         }
     }
 

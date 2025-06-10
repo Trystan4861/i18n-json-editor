@@ -12,6 +12,10 @@
       "reload": "Recargar",
       "newLanguage": "Nuevo Idioma"
     },
+    "prompts": {
+      "enterLanguageCode": "Ingrese el código de idioma (máx. 5 caracteres)",
+      "languageCodePlaceholder": "ej. es_ES o de"
+    },
     "labels": {
       "search": "Buscar...",
       "loading": "Cargando...",
@@ -26,7 +30,18 @@
       "itemsPerPage": "Elementos por página"
     },
     "messages": {
-      "saved": "Archivos i18n guardados"
+      "saved": "Archivos i18n guardados",
+      "reloaded": "Editor i18n recargado",
+      "languageCodeEmpty": "El código de idioma no puede estar vacío",
+      "languageCodeTooLong": "El código de idioma debe tener máximo 5 caracteres",
+      "languageCodeInvalid": "¡El código de idioma debe tener máximo 5 caracteres!",
+      "noTargetFolder": "No hay carpeta disponible para crear el archivo de idioma",
+      "languageFileExists": "El archivo de idioma {0} ya existe",
+      "createdWithTemplate": "Se creó {0} usando la plantilla en inglés",
+      "templateReadError": "No se pudo leer la plantilla en inglés. Creando archivo vacío.",
+      "templateNotFound": "Plantilla en inglés no encontrada. Creando archivo vacío.",
+      "languageFileCreated": "Nuevo archivo de idioma {0} creado",
+      "fileCreationError": "Error al crear el archivo de idioma: {0}"
     },
     "placeholders": {
       "key": "Clave...",

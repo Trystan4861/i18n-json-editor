@@ -48,7 +48,7 @@ export class I18nService {
         return this.currentLanguage;
     }
 
-    public t(key: string): string {
+    public t(key: string, ...args: any[]): string {
         try {
             const keyParts = key.split('.');
             let value = this.translations[this.currentLanguage];
@@ -58,6 +58,14 @@ export class I18nService {
                 if (value === undefined) {
                     return key; // Return the key if the translation is not found
                 }
+            }
+            
+            // Replace {0}, {1}, etc. with the corresponding arguments
+            if (args.length > 0 && typeof value === 'string') {
+                return value.replace(/{(\d+)}/g, (match, index) => {
+                    const argIndex = parseInt(index, 10);
+                    return argIndex < args.length ? args[argIndex] : match;
+                });
             }
             
             return value;
