@@ -6,6 +6,15 @@ import { IJEFolder } from './models/ije-folder';
 import { TranslationServiceEnum } from './services/ije-translation-service';
 
 export class IJEConfiguration {
+    // Ruta del archivo de configuración dentro de .vscode
+    private static getConfigPath(workspaceFolder: vscode.WorkspaceFolder): string {
+        // Asegurar que el directorio .vscode existe
+        const vscodePath = _path.join(workspaceFolder.uri.fsPath, '.vscode');
+        if (!fs.existsSync(vscodePath)) {
+            fs.mkdirSync(vscodePath, { recursive: true });
+        }
+        return _path.join(vscodePath, '.i18n-editor-config.json');
+    }
     // Lista de códigos de idioma RTL (Right-to-Left)
     public static readonly RTL_LANGUAGES = [
         'ar', // Árabe
@@ -74,7 +83,7 @@ export class IJEConfiguration {
             // Try to get from the local project settings file
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             if (workspaceFolder) {
-                const configPath = _path.join(workspaceFolder.uri.fsPath, '.i18n-editor-config.json');
+                const configPath = this.getConfigPath(workspaceFolder);
                 if (fs.existsSync(configPath)) {
                     const configContent = fs.readFileSync(configPath, 'utf8');
                     const config = JSON.parse(configContent);
@@ -98,7 +107,7 @@ export class IJEConfiguration {
         try {
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             if (workspaceFolder) {
-                const configPath = _path.join(workspaceFolder.uri.fsPath, '.i18n-editor-config.json');
+                const configPath = this.getConfigPath(workspaceFolder);
                 if (fs.existsSync(configPath)) {
                     const configContent = fs.readFileSync(configPath, 'utf8');
                     const config = JSON.parse(configContent);
@@ -118,7 +127,7 @@ export class IJEConfiguration {
         try {
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             if (workspaceFolder) {
-                const configPath = _path.join(workspaceFolder.uri.fsPath, '.i18n-editor-config.json');
+                const configPath = this.getConfigPath(workspaceFolder);
                 let config: any = {};
                 
                 // Load existing config if it exists
@@ -142,7 +151,7 @@ export class IJEConfiguration {
         try {
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             if (workspaceFolder) {
-                const configPath = _path.join(workspaceFolder.uri.fsPath, '.i18n-editor-config.json');
+                const configPath = this.getConfigPath(workspaceFolder);
                 let config: any = {};
                 
                 // Load existing config if it exists
