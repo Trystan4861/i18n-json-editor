@@ -1,17 +1,17 @@
 {
-    "name": "i18n-json-editor",
-    "displayName": "i18n json editor",
+    "name": "enhanced-i18n-json-editor",
+    "displayName": "Enhanced i18n json editor",
     "author": {
-        "name": "Thibault Vanderseypen",
-        "url": "https://vanderseypen.dev"
+        "name": "Trystan4861",
+        "url": "https://github.com/trystan4861"
     },
-    "publisher": "thibault-vanderseypen",
+    "publisher": "trystan4861",
     "repository": {
-        "url": "https://github.com/thibault-vanderseypen/vsce-i18n-json-editor.git"
+        "url": "https://github.com/trystan4861/i18n-json-editor.git"
     },
-    "description": "Easily edit your i18n json files",
+    "description": "Easily edit your i18n json files, inspired in the vscode i18n json editor by Thibault Vanderseypen",
     "icon": "media/logo.png",
-    "version": "2.1.0",
+    "version": "1.0.0",
     "engines": {
         "vscode": "^1.30.0"
     },
@@ -19,14 +19,14 @@
         "Other"
     ],
     "activationEvents": [
-        "*"
+        "workspaceContains:**"
     ],
     "main": "./out/extension.js",
     "contributes": {
         "commands": [
             {
                 "command": "i18n-json-editor",
-                "title": "i18n json editor"
+                "title": "Enhanced i18n json editor"
             }
         ],
         "menus": {
@@ -39,7 +39,7 @@
             ]
         },
         "configuration": {
-            "title": "i18n json editor",
+            "title": "Enhanced i18n json editor",
             "properties": {
                 "i18nJsonEditor.forceKeyUPPERCASE": {
                     "default": true,
