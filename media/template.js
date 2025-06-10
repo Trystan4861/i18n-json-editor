@@ -11,6 +11,25 @@ var vscode;
         checkEmptyTranslations();
         break;
         
+      case "emptyTranslationsFound":
+        // Actualizar la información de traducciones vacías
+        const emptyTranslations = message.emptyTranslations;
+        const hasEmptyTranslations = message.hasEmptyTranslations;
+        const totalEmptyCount = message.totalEmptyCount;
+        
+        // Actualizar contador con el TOTAL de traducciones vacías en todo el archivo
+        const emptyCounter = document.getElementById('missing-translations-counter');
+        if (emptyCounter) {
+          emptyCounter.textContent = totalEmptyCount;
+        }
+        
+        // Mostrar u ocultar el botón según si hay traducciones vacías en todo el conjunto de datos
+        const warningBtn = document.getElementById('btn-warning-translations');
+        if (warningBtn) {
+          warningBtn.style.display = hasEmptyTranslations ? 'inline-block' : 'none';
+        }
+        break;
+        
       case "emptyTranslationsInfo":
         // Actualizar la información de traducciones vacías
         emptyTranslationsInfo = message.data;
@@ -72,55 +91,22 @@ let emptyTranslationsInfo = {
 
 // Función para comprobar todas las traducciones vacías del sistema
 function checkEmptyTranslations() {
-  // Obtener todos los inputs con la clase empty-translation en la página actual
-  const emptyInputs = document.querySelectorAll('.empty-translation');
+  // Obtener la página actual
   const currentPageElement = document.querySelector('.page-item.active .page-link');
   const currentPage = currentPageElement ? parseInt(currentPageElement.textContent) : 1;
   
   // Solicitar la información completa de traducciones vacías al servidor
+  // El servidor responderá con emptyTranslationsFound que incluye hasEmptyTranslations
   vscode.postMessage({ command: "checkEmptyTranslations", currentPage });
-  
-  // Actualizar el contador con los datos visibles actualmente
-  const counter = document.getElementById('missing-translations-counter');
-  if (counter) {
-    // Usar el contador total si está disponible, de lo contrario usar el conteo visible actual
-    counter.textContent = emptyTranslationsInfo.count > 0 ? emptyTranslationsInfo.count : emptyInputs.length;
-    
-    // Mostrar u ocultar el botón según si hay traducciones pendientes
-    const btn = document.getElementById('btn-warning-translations');
-    if (emptyTranslationsInfo.count > 0 || emptyInputs.length > 0) {
-      btn.style.display = 'inline-block';
-    } else {
-      btn.style.display = 'none';
-    }
-  }
 }
 
 // Función para desplazarse a la siguiente traducción vacía
 function scrollToNextEmptyTranslation() {
-  // Primero intentamos navegar a las traducciones vacías visibles en la página actual
-  const emptyInputs = document.querySelectorAll('.empty-translation');
-  
-  if (emptyInputs.length > 0) {
-    // Hay traducciones vacías en la página actual, navegamos a la siguiente
-    emptyTranslationsInfo.currentIndex++;
-    if (emptyTranslationsInfo.currentIndex >= emptyInputs.length) {
-      emptyTranslationsInfo.currentIndex = 0;
-    }
-    
-    const nextEmptyInput = emptyInputs[emptyTranslationsInfo.currentIndex];
-    
-    // Hacer scroll al elemento y enfocarlo
-    nextEmptyInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setTimeout(() => {
-      nextEmptyInput.focus();
-    }, 500);
-  } else if (emptyTranslationsInfo.count > 0) {
-    // No hay traducciones vacías en la página actual, pero sabemos que hay en otras páginas
-    // Enviamos un mensaje al backend para navegar a la siguiente página con traducciones vacías
-    vscode.postMessage({ command: "navigateToNextEmptyTranslation" });
-  }
+  // Siempre buscamos en todo el archivo, no solo en la página actual
+  // Enviamos un mensaje al backend para navegar a la siguiente página con traducciones vacías
+  vscode.postMessage({ command: "navigateToNextEmptyTranslation" });
 }
+
 
 
 add = () => vscode.postMessage({ command: "add" });

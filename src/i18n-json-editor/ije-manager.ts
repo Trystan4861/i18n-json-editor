@@ -218,9 +218,15 @@ export class IJEManager {
     checkEmptyTranslations(currentPage: number) {
         // Check for empty translations on the current page
         const emptyTranslations = this._data.findEmptyTranslations(currentPage);
+        
+        // Count all empty translations in the entire dataset
+        const emptyTranslationsCount = this._data.countEmptyTranslations();
+        
         this._panel.webview.postMessage({ 
             command: 'emptyTranslationsFound', 
-            emptyTranslations: emptyTranslations 
+            emptyTranslations: emptyTranslations,
+            hasEmptyTranslations: emptyTranslationsCount.hasEmpty,
+            totalEmptyCount: emptyTranslationsCount.count
         });
     }
     
@@ -229,8 +235,14 @@ export class IJEManager {
         const nextEmptyTranslation = this._data.findNextEmptyTranslation();
         if (nextEmptyTranslation) {
             // If an empty translation is found, navigate to its page and select it
-            this._data.navigate(nextEmptyTranslation.page);
-            this._data.select(nextEmptyTranslation.id);
+            this._data.navigate(nextEmptyTranslation.page, true); // Skip refresh
+            this._data.select(nextEmptyTranslation.id, true); // Skip refresh
+            
+            // Luego actualizamos la interfaz una sola vez
+            this.refreshDataTable();
+            
+            // También debemos enviar un mensaje para actualizar la información de traducciones vacías
+            this.checkEmptyTranslations(nextEmptyTranslation.page);
         } else {
             // If no empty translation is found, show a message
             const i18n = I18nService.getInstance();

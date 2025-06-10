@@ -95,9 +95,11 @@ export class IJEData {
         }
     }
 
-    navigate(page: number) {
+    navigate(page: number, skipRefresh: boolean = false) {
         this._page.pageNumber = page;
-        this._manager.refreshDataTable();
+        if (!skipRefresh) {
+            this._manager.refreshDataTable();
+        }
     }
 
     pageSize(pageSize: number) {
@@ -199,12 +201,14 @@ export class IJEData {
         this._manager.refreshDataTable();
     }
 
-    select(id: number) {
+    select(id: number, skipRefresh: boolean = false) {
         const translation = this._get(id);
         if (translation) {
             this._view.selectionId = translation.id;
 
-            this._manager.refreshDataTable();
+            if (!skipRefresh) {
+                this._manager.refreshDataTable();
+            }
         }
     }
     sort(column: string, ascending: boolean, firstPage: boolean = false) {
@@ -253,6 +257,67 @@ export class IJEData {
         }
 
         return translation;
+    }
+    
+    /**
+     * Counts all empty translations in the entire dataset
+     * @returns Object with count of empty translations and whether any exist
+     */
+    countEmptyTranslations(): { count: number, hasEmpty: boolean } {
+        // Get hidden languages to ignore
+        const hiddenLanguages = IJEConfiguration.HIDDEN_COLUMNS;
+        
+        // Get all filtered translations
+        let filteredTranslations = this._translations;
+        if (this._filteredFolder !== '*') {
+            filteredTranslations = filteredTranslations.filter(t => t.folder === this._filteredFolder);
+        }
+        
+        // Apply search filter if there is one
+        if (this._searchPattern) {
+            const regex = new RegExp(`${this._searchPattern}`, 'gmi');
+            filteredTranslations = filteredTranslations.filter(t => {
+                let match = t.key === '' || regex.test(t.key);
+                if (!match) {
+                    // Check translations in each language
+                    for (const language of this._languages) {
+                        if (regex.test(t.languages[language])) {
+                            match = true;
+                            break;
+                        }
+                    }
+                }
+                return match;
+            });
+        }
+        
+        // Count all empty translations
+        let totalCount = 0;
+        
+        for (const translation of filteredTranslations) {
+            for (const language of this._languages) {
+                // Skip the key column and hidden languages
+                if (language !== 'key' && !hiddenLanguages.includes(language)) {
+                    // If translation is empty for this language
+                    if (!translation.languages[language]) {
+                        totalCount++;
+                    }
+                }
+            }
+        }
+        
+        return {
+            count: totalCount,
+            hasEmpty: totalCount > 0
+        };
+    }
+    
+    /**
+     * Checks if there are any empty translations in the entire dataset
+     * @returns True if there's at least one empty translation in any visible language
+     */
+    hasEmptyTranslations(): boolean {
+        return this.countEmptyTranslations().hasEmpty;
     }
     
     /**
