@@ -61,9 +61,9 @@ export class IJEDataRenderService {
         render += '<tr>';
         render += '<th></th>';
         if (showFolder) {
-            render += this._getTableHeader('FOLDER', sort);
+            render += this._getTableHeader(I18nService.getInstance().t('ui.labels.folder'), sort);
         }
-        render += this._getTableHeader('KEY', sort);
+        render += this._getTableHeader(I18nService.getInstance().t('ui.labels.keyColumn'), sort);
 
         languages.forEach((language: string) => {
             render += `${this._getTableHeader(language, sort)}`;
@@ -85,7 +85,7 @@ export class IJEDataRenderService {
 
             render += `
                 <td>
-                    <input id="input-key-${t.id}" class="form-control ${t.valid ? '' : 'is-invalid'}" type="text" placeholder="Key..." value="${t.key.replace(
+                    <input id="input-key-${t.id}" class="form-control ${t.valid ? '' : 'is-invalid'}" type="text" placeholder="${I18nService.getInstance().t('ui.placeholders.key')}" value="${t.key.replace(
                 /"/g,
                 '&quot;'
             )}" onfocus="mark(${t.id})" onchange="updateInput(this,${t.id});" />
@@ -98,7 +98,7 @@ export class IJEDataRenderService {
                 if (hasTranslateService) {
                     render += `<div class="input-group">`;
                 }
-                render += `<input class="form-control" type="text" placeholder="Translation..." onfocus="mark(${t.id})" onchange="updateInput(this,${t.id},'${language}');" `;
+                render += `<input class="form-control" type="text" placeholder="${I18nService.getInstance().t('ui.placeholders.translation')}" onfocus="mark(${t.id})" onchange="updateInput(this,${t.id},'${language}');" `;
                 if (t.languages[language]) {
                     render += `value="${t.languages[language].replace(/\n/g, '\\n').replace(/"/g, '&quot;')}" `;
                 }
@@ -149,7 +149,7 @@ export class IJEDataRenderService {
             if (showFolder) {
                 render += ` 
                   <div class="form-group">
-                    <label>Directory</label>
+                    <label>${I18nService.getInstance().t('ui.labels.directory')}</label>
                     <div class="row">
                       <div class="col-12">
                         <select id="select-folder-${selectTranslation.id}" class="form-control" onchange="updateFolder(this,${selectTranslation.id})">`;
@@ -167,12 +167,12 @@ export class IJEDataRenderService {
 
             render += `
                 <div class="form-group">
-                    <label>Key</label>
+                    <label>${I18nService.getInstance().t('ui.labels.key')}</label>
                     <div class="row">
                         <div class="col-10">
                             <input id="input-key-${selectTranslation.id}" class="form-control ${
                 selectTranslation.valid ? '' : 'is-invalid'
-            }" type="text" placeholder="Key..." value="${selectTranslation.key}" onchange="updateInput(this,${selectTranslation.id});" />
+            }" type="text" placeholder="${I18nService.getInstance().t('ui.placeholders.key')}" value="${selectTranslation.key}" onchange="updateInput(this,${selectTranslation.id});" />
                             <div id="input-key-${selectTranslation.id}-feedback" class="invalid-feedback error-vscode">${selectTranslation.error}</div>
                         </div>
                  
@@ -187,7 +187,7 @@ export class IJEDataRenderService {
                     render += `<div class="row">
                                     <div class="col-10">`;
                 }
-                render += `<textarea class="form-control mb-2" rows="6" placeholder="Translation..." onchange="updateInput(this,${selectTranslation.id},'${language}');">`;
+                render += `<textarea class="form-control mb-2" rows="6" placeholder="${I18nService.getInstance().t('ui.placeholders.translation')}" onchange="updateInput(this,${selectTranslation.id},'${language}');">`;
                 if (selectTranslation.languages[language]) {
                     render += selectTranslation.languages[language];
                 }

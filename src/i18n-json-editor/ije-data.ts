@@ -11,6 +11,7 @@ import { IJEManager } from './ije-manager';
 import { IJEPage } from './models/ije-page';
 import { IJESort } from './models/ije-sort';
 import { IJEView, IJEViewType } from './models/ije-view';
+import { I18nService } from '../i18n/i18n-service';
 
 export class IJEData {
     private _currentID = 1;
@@ -37,7 +38,7 @@ export class IJEData {
         };
 
         this._sort = {
-            column: 'KEY',
+            column: I18nService.getInstance().t('ui.labels.keyColumn'),
             ascending: true
         };
 
@@ -354,10 +355,10 @@ export class IJEData {
             })
             .sort((a, b) => {
                 let _a: string, _b: string;
-                if (this._view.type === IJEViewType.LIST || this._sort.column === 'KEY') {
+                if (this._view.type === IJEViewType.LIST || this._sort.column === I18nService.getInstance().t('ui.labels.keyColumn')) {
                     _a = a.key.toLowerCase();
                     _b = b.key.toLowerCase();
-                } else if (this._sort.column === 'FOLDER') {
+                } else if (this._sort.column === I18nService.getInstance().t('ui.labels.folder')) {
                     _a = a.folder + a.key.toLowerCase();
                     _b = b.folder + b.key.toLowerCase();
                 } else {

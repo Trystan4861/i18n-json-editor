@@ -8,7 +8,9 @@
       "save": "Save",
       "add": "Add",
       "translate": "Translate",
-      "remove": "Remove"
+      "remove": "Remove",
+      "reload": "Reload",
+      "newLanguage": "New Language"
     },
     "labels": {
       "search": "Search...",

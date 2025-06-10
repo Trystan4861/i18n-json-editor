@@ -50,11 +50,16 @@ mark = (id) => vscode.postMessage({ command: "mark", id: id });
 navigate = (page) => vscode.postMessage({ command: "navigate", page: page });
 pageSize = (el) => vscode.postMessage({ command: "pageSize", value: el.value });
 refresh = () => vscode.postMessage({ command: "refresh" });
+reload = () => vscode.postMessage({ command: "reload" });
 remove = (id) => vscode.postMessage({ command: "remove", id: id });
 save = () => vscode.postMessage({ command: "save" });
 search = (el) => vscode.postMessage({ command: "search", value: el.value });
 select = (id) => vscode.postMessage({ command: "select", id: id });
 sort = (column, ascending) => vscode.postMessage({ command: "sort", column: column, ascending: ascending });
+newLanguage = () => {
+  // Instead of using prompt(), send a command to show input box
+  vscode.postMessage({ command: "showNewLanguageInput" });
+};
 switchView = () => {
   const el = document.getElementById("icon-switch-view");
   const isTableView = !el.classList.contains("icon-table");
