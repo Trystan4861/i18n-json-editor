@@ -10,7 +10,9 @@
       "translate": "Translate",
       "remove": "Remove",
       "reload": "Reload",
-      "newLanguage": "New Language"
+      "newLanguage": "New Language",
+      "columnSelector": "Languages",
+      "apply": "Apply"
     },
     "prompts": {
       "enterLanguageCode": "Enter language code (max 5 characters)",

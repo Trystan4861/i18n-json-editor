@@ -77,8 +77,34 @@ export class IJEManager {
                 case 'folder':
                     this._data.changeFolder(message.id, message.value);
                     return;
+                case 'toggleColumn':
+                    this.toggleColumnVisibility(message.language, message.visible);
+                    return;
             }
         });
+    }
+    
+    toggleColumnVisibility(language: string, visible: boolean) {
+        // No se permite ocultar la columna 'key' ni 'en'
+        if (language === 'key' || language === 'en') {
+            return;
+        }
+        
+        let visibleColumns = IJEConfiguration.VISIBLE_COLUMNS;
+        
+        if (visible && !visibleColumns.includes(language)) {
+            // Añadir a columnas visibles
+            visibleColumns.push(language);
+        } else if (!visible && visibleColumns.includes(language)) {
+            // Eliminar de columnas visibles
+            visibleColumns = visibleColumns.filter(col => col !== language);
+        }
+        
+        // Guardar configuración
+        IJEConfiguration.saveVisibleColumns(visibleColumns);
+        
+        // Actualizar la tabla
+        this.refreshDataTable();
     }
     
     reloadData() {
@@ -196,7 +222,12 @@ export class IJEManager {
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'fontello', 'css', 'fontello.css'))
         ];
 
-        const scriptsPath = [vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'template.js'))];
+        const scriptsPath = [
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'jquery.min.js')),
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'bootstrap.min.js')),
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'popper.min.js')),
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'template.js'))
+        ];
         
         // Get i18n translations
         const i18n = I18nService.getInstance();

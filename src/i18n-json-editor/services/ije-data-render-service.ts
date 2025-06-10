@@ -56,8 +56,64 @@ export class IJEDataRenderService {
         </th>`;
     }
 
+    static renderColumnSelector(languages: string[]) {
+        const i18n = I18nService.getInstance();
+        const visibleColumns = IJEConfiguration.VISIBLE_COLUMNS;
+        
+        let render = '<div class="column-selector mb-3">';
+        
+        render += '<div id="columnSelectorContent" class="column-selector-panel" style="display:none;">';
+        render += '<div class="card card-body">';
+        render += '<div class="row">';
+        
+        // Siempre mostrar las columnas de "key" y "en" (deshabilitadas)
+        render += '<div class="col-md-3 mb-2">';
+        render += '<div class="form-check">';
+        render += `<input type="checkbox" class="form-check-input" id="column-key" checked disabled>`;
+        render += `<label class="form-check-label" for="column-key">${i18n.t('ui.labels.keyColumn')}</label>`;
+        render += '</div>';
+        render += '</div>';
+        
+        languages.forEach(language => {
+            const isChecked = language === 'en' || visibleColumns.includes(language);
+            const isDisabled = language === 'en'; // No se puede ocultar la columna 'en'
+            
+            render += '<div class="col-md-3 mb-2">';
+            render += '<div class="form-check">';
+            render += `<input type="checkbox" class="form-check-input" id="column-${language}" `;
+            render += isChecked ? 'checked ' : '';
+            render += isDisabled ? 'disabled ' : '';
+            render += `onchange="document.getElementById('apply-columns-btn').disabled = false">`;
+            render += `<label class="form-check-label" for="column-${language}">${language}</label>`;
+            render += '</div>';
+            render += '</div>';
+        });
+        
+        render += '</div>';
+        render += '<div class="text-right mt-2">';
+        render += `<button type="button" id="apply-columns-btn" class="btn btn-vscode" onclick="applyColumnChanges()" disabled>${i18n.t('ui.buttons.apply')}</button>`;
+        render += '</div>';
+        render += '</div>';
+        render += '</div>';
+        render += '</div>';
+        
+        return render;
+    }
+
     static renderTable(translations: IJEDataTranslation[], languages: string[], page: IJEPage, sort: IJESort, showFolder: boolean = true, hasTranslateService = false) {
-        let render = '<table class="table table-borderless">';
+        // Get visible columns
+        const visibleColumns = IJEConfiguration.VISIBLE_COLUMNS;
+        const allLanguages = [...languages]; // Copia para no modificar el original
+        
+        // Filtrar idiomas según visibilidad
+        const filteredLanguages = allLanguages.filter(lang => 
+            lang === 'en' || visibleColumns.includes(lang)
+        );
+        
+        // Crear selector de columnas
+        let render = this.renderColumnSelector(languages);
+        
+        render += '<table class="table table-borderless">';
         render += '<tr>';
         render += '<th></th>';
         if (showFolder) {
@@ -65,7 +121,8 @@ export class IJEDataRenderService {
         }
         render += this._getTableHeader(I18nService.getInstance().t('ui.labels.keyColumn'), sort);
 
-        languages.forEach((language: string) => {
+        // Solo mostrar los encabezados de las columnas visibles
+        filteredLanguages.forEach((language: string) => {
             render += `${this._getTableHeader(language, sort)}`;
         });
         render += '</tr>';
@@ -93,7 +150,8 @@ export class IJEDataRenderService {
                 </td>
             `;
 
-            languages.forEach((language: string) => {
+            // Solo mostrar las celdas de las columnas visibles
+            filteredLanguages.forEach((language: string) => {
                 render += '<td>';
                 if (hasTranslateService) {
                     render += `<div class="input-group">`;
@@ -130,7 +188,18 @@ export class IJEDataRenderService {
         showFolder: boolean = true,
         hasTranslateService = false
     ) {
-        let render = '<div class="container-fluid">';
+        // Get visible columns
+        const visibleColumns = IJEConfiguration.VISIBLE_COLUMNS;
+        const allLanguages = [...languages]; // Copia para no modificar el original
+        
+        // Filtrar idiomas según visibilidad
+        const filteredLanguages = allLanguages.filter(lang => 
+            lang === 'en' || visibleColumns.includes(lang)
+        );
+        
+        let render = this.renderColumnSelector(languages);
+        
+        render += '<div class="container-fluid">';
         render += '<div class="row">';
         render += '<div class="col-5">';
         render += '<div style="word-wrap: break-word;" class="list-group">';
@@ -181,7 +250,9 @@ export class IJEDataRenderService {
                         </div>
                     </div>
                 </div>`;
-            languages.forEach((language: string) => {
+            
+            // Solo mostrar los campos de texto de los idiomas visibles
+            filteredLanguages.forEach((language: string) => {
                 render += `<label>${language}</label>`;
                 if (hasTranslateService) {
                     render += `<div class="row">

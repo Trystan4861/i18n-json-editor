@@ -114,3 +114,38 @@ th {
     opacity: 1;
     border: 0;
 }
+
+/* Estilos para el selector de columnas */
+.column-selector {
+    margin-bottom: 1rem;
+}
+
+.column-selector-panel {
+    margin-top: 0.5rem;
+    padding: 10px;
+}
+
+.column-selector .card {
+    background-color: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-input-background);
+    padding: 10px;
+}
+
+.form-check-input {
+    margin-top: 0.25rem;
+}
+
+.form-check-input:checked {
+    background-color: var(--vscode-button-background);
+    border-color: var(--vscode-button-background);
+}
+
+.form-check-label {
+    color: var(--vscode-editor-foreground);
+    margin-left: 5px;
+    display: inline-block;
+}
+
+.form-check {
+    margin-bottom: 0.5rem;
+}

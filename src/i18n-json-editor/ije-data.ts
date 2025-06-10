@@ -266,6 +266,13 @@ export class IJEData {
                 this._loadFolder(d.path);
             });
         }
+        
+        // Si no hay configuración guardada de columnas visibles, 
+        // inicializar para que todas las columnas (excepto 'en' que ya está visible por defecto) sean visibles
+        if (IJEConfiguration.VISIBLE_COLUMNS.length === 0 && this._languages.length > 0) {
+            const columnsToShow = this._languages.filter(lang => lang !== 'en');
+            IJEConfiguration.saveVisibleColumns(columnsToShow);
+        }
     }
 
     private _loadFolder(folderPath: string) {

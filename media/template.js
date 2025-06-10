@@ -72,4 +72,33 @@ switchView = () => {
 updateInput = (el, id, language = "") => vscode.postMessage({ command: "update", id: id, value: el.value, language: language });
 translateInput = (el, id, language = "") => vscode.postMessage({ command: "translate", id: id, language: language });
 updateFolder = (el, id) => vscode.postMessage({ command: "folder", id: id, value: el.value });
+toggleColumn = (language, visible) => vscode.postMessage({ command: "toggleColumn", language: language, visible: visible });
+
+// Función para mostrar/ocultar el selector de columnas
+toggleColumnSelector = () => {
+  const panel = document.getElementById("columnSelectorContent");
+  if (panel) {
+    if (panel.style.display === "none") {
+      panel.style.display = "block";
+    } else {
+      panel.style.display = "none";
+    }
+  }
+};
+
+// Función para aplicar cambios en la selección de columnas
+applyColumnChanges = () => {
+  const languages = document.querySelectorAll('input[id^="column-"]:not([disabled])');
+  languages.forEach(checkbox => {
+    const language = checkbox.id.replace('column-', '');
+    if (language !== 'key') {
+      vscode.postMessage({ 
+        command: "toggleColumn", 
+        language: language, 
+        visible: checkbox.checked 
+      });
+    }
+  });
+  document.getElementById('apply-columns-btn').disabled = true;
+};
 

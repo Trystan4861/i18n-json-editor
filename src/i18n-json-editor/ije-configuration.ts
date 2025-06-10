@@ -30,6 +30,7 @@ export class IJEConfiguration {
         const value = vscode.workspace.getConfiguration().get<string[]>('i18nJsonEditor.supportedFolders');
         return value !== undefined ? value : ['i18n'];
     }
+    
     static get TRANSLATION_SERVICE(): TranslationServiceEnum {
         const value = vscode.workspace.getConfiguration().get<TranslationServiceEnum>('i18nJsonEditor.translationService');
         return value !== undefined ? value : null;
@@ -38,6 +39,55 @@ export class IJEConfiguration {
     static get TRANSLATION_SERVICE_API_KEY(): string {
         const value = vscode.workspace.getConfiguration().get<string>('i18nJsonEditor.translationServiceApiKey');
         return value !== undefined ? value : null;
+    }
+    
+    static get VISIBLE_COLUMNS(): string[] {
+        // Get visible columns from workspace state or settings
+        let visibleColumns: string[] = [];
+        try {
+            // Try to get from the local project settings file
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (workspaceFolder) {
+                const configPath = _path.join(workspaceFolder.uri.fsPath, '.i18n-editor-config.json');
+                if (fs.existsSync(configPath)) {
+                    const configContent = fs.readFileSync(configPath, 'utf8');
+                    const config = JSON.parse(configContent);
+                    if (Array.isArray(config.visibleColumns)) {
+                        return config.visibleColumns;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Error loading visible columns:', e);
+        }
+        
+        // Si no hay columnas visibles guardadas, mostrar todas por defecto
+        // Esto se hace en IJEData._loadFolder donde se cargan los idiomas
+        return visibleColumns;
+    }
+    
+    static saveVisibleColumns(columns: string[]): void {
+        try {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (workspaceFolder) {
+                const configPath = _path.join(workspaceFolder.uri.fsPath, '.i18n-editor-config.json');
+                let config: any = {};
+                
+                // Load existing config if it exists
+                if (fs.existsSync(configPath)) {
+                    const configContent = fs.readFileSync(configPath, 'utf8');
+                    config = JSON.parse(configContent);
+                }
+                
+                // Update visible columns
+                config.visibleColumns = columns;
+                
+                // Save config
+                fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+            }
+        } catch (e) {
+            console.error('Error saving visible columns:', e);
+        }
     }
 
     static get WORKSPACE_FOLDERS(): IJEFolder[] {
