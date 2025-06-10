@@ -102,3 +102,31 @@ applyColumnChanges = () => {
   document.getElementById('apply-columns-btn').disabled = true;
 };
 
+// Función para mostrar/ocultar el campo de búsqueda
+toggleSearch = () => {
+  const searchContainer = document.getElementById('search-container');
+  const isVisible = searchContainer.style.display !== 'none';
+  
+  searchContainer.style.display = isVisible ? 'none' : 'inline-block';
+  
+  // Si se muestra el campo, enfocar el input
+  if (!isVisible) {
+    document.getElementById('search-input').focus();
+  }
+};
+
+// Función para mostrar/ocultar el botón de limpiar
+toggleClearButton = (el) => {
+  const clearBtn = document.getElementById('clear-search-btn');
+  clearBtn.style.display = el.value.length > 0 ? 'inline-block' : 'none';
+};
+
+// Función para limpiar el campo de búsqueda
+clearSearch = () => {
+  const searchInput = document.getElementById('search-input');
+  searchInput.value = '';
+  search(searchInput); // Actualizar la búsqueda con el valor vacío
+  toggleClearButton(searchInput); // Ocultar el botón de limpiar
+  searchInput.focus(); // Mantener el foco en el campo
+};
+
