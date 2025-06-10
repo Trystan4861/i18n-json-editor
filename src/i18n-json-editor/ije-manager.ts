@@ -91,17 +91,27 @@ export class IJEManager {
         }
         
         let visibleColumns = IJEConfiguration.VISIBLE_COLUMNS;
+        let hiddenColumns = IJEConfiguration.HIDDEN_COLUMNS;
         
-        if (visible && !visibleColumns.includes(language)) {
-            // Añadir a columnas visibles
-            visibleColumns.push(language);
-        } else if (!visible && visibleColumns.includes(language)) {
-            // Eliminar de columnas visibles
+        if (visible) {
+            // Mostrar columna
+            if (!visibleColumns.includes(language)) {
+                visibleColumns.push(language);
+            }
+            // Eliminar de columnas ocultas si existe
+            hiddenColumns = hiddenColumns.filter(col => col !== language);
+        } else {
+            // Ocultar columna
             visibleColumns = visibleColumns.filter(col => col !== language);
+            // Añadir a columnas ocultas si no existe
+            if (!hiddenColumns.includes(language)) {
+                hiddenColumns.push(language);
+            }
         }
         
         // Guardar configuración
         IJEConfiguration.saveVisibleColumns(visibleColumns);
+        IJEConfiguration.saveHiddenColumns(hiddenColumns);
         
         // Actualizar la tabla
         this.refreshDataTable();

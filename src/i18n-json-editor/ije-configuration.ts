@@ -92,6 +92,52 @@ export class IJEConfiguration {
         return visibleColumns;
     }
     
+    static get HIDDEN_COLUMNS(): string[] {
+        // Obtener columnas ocultas de la configuración
+        let hiddenColumns: string[] = [];
+        try {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (workspaceFolder) {
+                const configPath = _path.join(workspaceFolder.uri.fsPath, '.i18n-editor-config.json');
+                if (fs.existsSync(configPath)) {
+                    const configContent = fs.readFileSync(configPath, 'utf8');
+                    const config = JSON.parse(configContent);
+                    if (Array.isArray(config.hiddenColumns)) {
+                        return config.hiddenColumns;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Error loading hidden columns:', e);
+        }
+        
+        return hiddenColumns;
+    }
+    
+    static saveHiddenColumns(columns: string[]): void {
+        try {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (workspaceFolder) {
+                const configPath = _path.join(workspaceFolder.uri.fsPath, '.i18n-editor-config.json');
+                let config: any = {};
+                
+                // Load existing config if it exists
+                if (fs.existsSync(configPath)) {
+                    const configContent = fs.readFileSync(configPath, 'utf8');
+                    config = JSON.parse(configContent);
+                }
+                
+                // Update hidden columns
+                config.hiddenColumns = columns;
+                
+                // Save config
+                fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+            }
+        } catch (e) {
+            console.error('Error saving hidden columns:', e);
+        }
+    }
+    
     static saveVisibleColumns(columns: string[]): void {
         try {
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];

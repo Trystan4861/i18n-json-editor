@@ -258,6 +258,10 @@ export class IJEData {
      *  Load methods
      */
     private _loadFiles() {
+        // Almacenar los idiomas antes de cargar los nuevos archivos
+        const previousLanguages = [...this._languages];
+        
+        // Cargar archivos de idioma
         if (!this._manager.isWorkspace) {
             this._loadFolder(this._manager.folderPath);
         } else {
@@ -267,11 +271,53 @@ export class IJEData {
             });
         }
         
-        // Si no hay configuración guardada de columnas visibles, 
-        // inicializar para que todas las columnas (excepto 'en' que ya está visible por defecto) sean visibles
-        if (IJEConfiguration.VISIBLE_COLUMNS.length === 0 && this._languages.length > 0) {
-            const columnsToShow = this._languages.filter(lang => lang !== 'en');
-            IJEConfiguration.saveVisibleColumns(columnsToShow);
+        // Detectar idiomas nuevos (no existían antes de cargar los archivos)
+        const newlyAddedLanguages = this._languages.filter(lang => 
+            !previousLanguages.includes(lang)
+        );
+        
+        // Obtener configuración actual
+        const currentVisibleColumns = IJEConfiguration.VISIBLE_COLUMNS;
+        const currentHiddenColumns = IJEConfiguration.HIDDEN_COLUMNS;
+        
+        // Si no hay configuración guardada de columnas visibles,
+        // inicializar para que todas las columnas sean visibles (excepto 'en' que ya es visible por defecto)
+        if (this._languages.length > 0) {
+            if (currentVisibleColumns.length === 0 && currentHiddenColumns.length === 0) {
+                // Primera inicialización - mostrar todos los idiomas
+                const columnsToShow = this._languages.filter(lang => lang !== 'en');
+                IJEConfiguration.saveVisibleColumns(columnsToShow);
+            } else {
+                // CASO 1: Idiomas que son completamente nuevos
+                // Comprobar si hay nuevos idiomas que no están en las columnas visibles ni ocultas
+                const completelyNewLanguages = this._languages.filter(lang => 
+                    lang !== 'en' && 
+                    !currentVisibleColumns.includes(lang) && 
+                    !currentHiddenColumns.includes(lang)
+                );
+                
+                // CASO 2: Idiomas que se volvieron a crear
+                // Idiomas que existen ahora, están en la lista de ocultos, pero se acaban de añadir nuevamente
+                const recreatedLanguages = newlyAddedLanguages.filter(lang => 
+                    lang !== 'en' && 
+                    currentHiddenColumns.includes(lang)
+                );
+                
+                // Eliminar idiomas recreados de la lista de ocultos
+                if (recreatedLanguages.length > 0) {
+                    const updatedHiddenColumns = currentHiddenColumns.filter(
+                        lang => !recreatedLanguages.includes(lang)
+                    );
+                    IJEConfiguration.saveHiddenColumns(updatedHiddenColumns);
+                }
+                
+                // Añadir a columnas visibles tanto los nuevos como los recreados
+                const languagesToAdd = [...completelyNewLanguages, ...recreatedLanguages];
+                if (languagesToAdd.length > 0) {
+                    const updatedColumns = [...currentVisibleColumns, ...languagesToAdd];
+                    IJEConfiguration.saveVisibleColumns(updatedColumns);
+                }
+            }
         }
     }
 
