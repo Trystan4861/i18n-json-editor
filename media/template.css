@@ -4,8 +4,25 @@ body {
     font-size: var(--vscode-font-size);
     font-weight: var(--vscode-font-weight);
     color: var(--vscode-editor-foreground);
+    padding: 5px;
 }
-
+.form-search
+{
+    margin-bottom: 1rem;
+}
+.ml--30
+{
+    margin-left: -30px;
+}
+.mr--18
+{
+    margin-right: -18px;
+}
+.div-remove{
+    -ms-flex: 0 0 5.333333%;
+    flex: 0 0 5.333333%;
+    max-width: 5.333333%;
+}
 ::placeholder {
     color: var(--vscode-input-placeholderForeground) !important;
 }
@@ -116,9 +133,6 @@ th {
 }
 
 /* Estilos para el selector de columnas */
-.column-selector {
-    margin-bottom: 1rem;
-}
 
 .column-selector-panel {
     margin-top: 0.5rem;
@@ -167,4 +181,28 @@ th.rtl-header {
 td.rtl-cell {
     text-align: right;
     direction: rtl;
+}
+
+/* Optimizando espacio para los campos de traducción */
+#content-view {
+    margin: 0;
+    padding: 0;
+}
+
+.table {
+    margin-bottom: 0.5rem;
+}
+
+.table td {
+    padding: 0.2rem 0.1rem;
+}
+
+/* Para asegurar que los input ocupen todo el espacio disponible */
+.table .form-control {
+    width: 100%;
+}
+
+.td-remove{
+    width: 30px;
+    align-content: center;
 }

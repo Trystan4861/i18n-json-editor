@@ -6,7 +6,7 @@ import { I18nService } from '../../i18n/i18n-service';
 
 export class IJEDataRenderService {
     static renderPagination(translations: IJEDataTranslation[], page: IJEPage, withPageSizeSelector: boolean = true) {
-        let render = '<div class="container-fluid">';
+        let render = '<div>';
         render += '<div class="row">';
         render += '<div class="col-4">';
         render += '<div class="mt-3">';
@@ -63,7 +63,7 @@ export class IJEDataRenderService {
         const i18n = I18nService.getInstance();
         const visibleColumns = IJEConfiguration.VISIBLE_COLUMNS;
         
-        let render = '<div class="column-selector mb-3">';
+        let render = '<div class="column-selector">';
         
         render += '<div id="columnSelectorContent" class="column-selector-panel" style="display:none;">';
         render += '<div class="card card-body">';
@@ -132,7 +132,7 @@ export class IJEDataRenderService {
 
         translations.forEach(t => {
             render += '<tr>';
-            render += `<td><button type="button" class="btn" onclick="remove(${t.id})"><i class="error-vscode icon-trash-empty"></i></button></td>`;
+            render += `<td class="td-remove"><button type="button" class="btn p-0 px-1" onclick="remove(${t.id})"><i class="error-vscode icon-trash-empty"></i></button></td>`;
 
             if (showFolder) {
                 render += `<td><select id="select-folder-${t.id}" class="form-control" onchange="updateFolder(this,${t.id})">`;
@@ -208,7 +208,7 @@ export class IJEDataRenderService {
         
         let render = this.renderColumnSelector(languages);
         
-        render += '<div class="container-fluid">';
+        render += '<div>';
         render += '<div class="row">';
         render += '<div class="col-5">';
         render += '<div style="word-wrap: break-word;" class="list-group">';
@@ -246,16 +246,15 @@ export class IJEDataRenderService {
             render += `
                 <div class="form-group">
                     <label>${I18nService.getInstance().t('ui.labels.key')}</label>
-                    <div class="row">
-                        <div class="col-10">
+                    <div class="row ml--30 mr--18">
+                        <div class="col-1 p-0 align-content-center div-remove">
+                            <button type="button" class="btn p-0 px-1" onclick="remove(${selectTranslation.id})"><i class=" error-vscode icon-trash-empty"></i></button>
+                        </div>
+                        <div class="col-11 p-0">
                             <input id="input-key-${selectTranslation.id}" class="form-control ${
                 selectTranslation.valid ? '' : 'is-invalid'
             }" type="text" placeholder="${I18nService.getInstance().t('ui.placeholders.key')}" value="${selectTranslation.key}" onchange="updateInput(this,${selectTranslation.id});" />
                             <div id="input-key-${selectTranslation.id}-feedback" class="invalid-feedback error-vscode">${selectTranslation.error}</div>
-                        </div>
-                 
-                        <div class="col-2">
-                            <button type="button" class="btn" onclick="remove(${selectTranslation.id})"><i class=" error-vscode icon-trash-empty"></i></button>
                         </div>
                     </div>
                 </div>`;
