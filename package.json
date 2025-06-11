@@ -58,7 +58,7 @@
                 {
                     "id": "trystan4861-eije",
                     "title": "Enhanced i18n.json Editor",
-                    "icon": "media/ei18n_logo-white.svg"
+                    "icon": "media/ei18n_logo-black.svg"
                 }
             ]
         },
@@ -67,7 +67,7 @@
                 {
                     "id": "trystan4861-eije-view",
                     "name": "Enhanced i18n.json Editor",
-                    "icon": "media/ei18n_logo-white.svg"
+                    "icon": "media/ei18n_logo-black.svg"
                 }
             ]
         },
