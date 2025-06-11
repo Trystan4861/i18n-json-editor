@@ -35,7 +35,8 @@
         "commands": [
             {
                 "command": "ei18n-json-editor",
-                "title": "Enhanced i18n json editor"
+                "title": "Enhanced i18n json editor",
+                "icon": "media/ei18n_logo.svg"
             }
         ],
         "menus": {
@@ -45,6 +46,11 @@
                     "group": "2_workspace",
                     "when": "explorerResourceIsFolder && resourceFilename in ext:supportedFolders"
                 }
+            ],
+            "commandPalette": [
+                {
+                    "command": "ei18n-json-editor"
+                }
             ]
         },
         "viewsContainers": {
@@ -52,10 +58,20 @@
                 {
                     "id": "trystan4861-eije",
                     "title": "Enhanced i18n.json Editor",
-                    "icon": "media/ei18n_logo.svg"
+                    "icon": "media/ei18n_logo-white.svg"
                 }
             ]
         },
+        "views": {
+            "trystan4861-eije": [
+                {
+                    "id": "trystan4861-eije-view",
+                    "name": "Enhanced i18n.json Editor",
+                    "icon": "media/ei18n_logo-white.svg"
+                }
+            ]
+        },
+
         "configuration": {
             "title": "Enhanced i18n json editor",
             "properties": {

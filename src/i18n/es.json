@@ -1,7 +1,9 @@
 {
   "extension": {
     "statusBar": "Editor i18n",
-    "title": "Editor de JSON i18n"
+    "title": "Editor de JSON i18n",
+    "openEditor": "Abrir Editor",
+    "openingEditor": "Abriendo Editor..."
   },
   "ui": {
     "buttons": {
