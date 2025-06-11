@@ -2,15 +2,15 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as _path from 'path';
 
-import { IJEConfiguration } from './ije-configuration';
-import { IJEDataRenderService } from './services/ije-data-render-service';
-import { IJEDataTranslation } from './models/ije-data-translation';
-import { IJEDataTranslationError, getTranslatedError } from './models/ije-data-translation';
-import { IJETranslationService } from './services/ije-translation-service';
-import { IJEManager } from './ije-manager';
-import { IJEPage } from './models/ije-page';
-import { IJESort } from './models/ije-sort';
-import { IJEView, IJEViewType } from './models/ije-view';
+import { IJEConfiguration } from './eije-configuration';
+import { IJEDataRenderService } from './services/eije-data-render-service';
+import { IJEDataTranslation } from './models/eije-data-translation';
+import { IJEDataTranslationError, getTranslatedError } from './models/eije-data-translation';
+import { IJETranslationService } from './services/eije-translation-service';
+import { IJEManager } from './eije-manager';
+import { IJEPage } from './models/eije-page';
+import { IJESort } from './models/eije-sort';
+import { IJEView, IJEViewType } from './models/eije-view';
 import { I18nService } from '../i18n/i18n-service';
 
 export class IJEData {
@@ -363,6 +363,11 @@ export class IJEData {
      * @returns Array of translation IDs with empty values
      */
     findEmptyTranslations(currentPage: number): { id: number, language: string }[] {
+        // Si se permiten traducciones vacías, devolver array vacío
+        if (IJEConfiguration.ALLOW_EMPTY_TRANSLATIONS) {
+            return [];
+        }
+        
         const emptyTranslations: { id: number, language: string }[] = [];
         
         // Get hidden languages to ignore

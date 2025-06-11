@@ -1,5 +1,5 @@
-import { IJEConfiguration } from '../ije-configuration';
-import { IJEDataTranslation } from '../models/ije-data-translation';
+import { IJEConfiguration } from '../eije-configuration';
+import { IJEDataTranslation } from '../models/eije-data-translation';
 import { IJEMicrosoftTranslator } from './translations/ije-microsoft-translator';
 import { IJETranlsation } from './translations/ije-translation';
 

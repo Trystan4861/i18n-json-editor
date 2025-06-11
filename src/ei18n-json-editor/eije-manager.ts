@@ -2,9 +2,9 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as _path from 'path';
 
-import { IJEConfiguration } from './ije-configuration';
-import { IJEData } from './ije-data';
-import { IJEDataTranslation } from './models/ije-data-translation';
+import { IJEConfiguration } from './eije-configuration';
+import { IJEData } from './eije-data';
+import { IJEDataTranslation } from './models/eije-data-translation';
 import { I18nService } from '../i18n/i18n-service';
 
 export class IJEManager {

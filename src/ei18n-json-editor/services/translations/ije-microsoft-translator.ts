@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { IJEConfiguration } from '../../ije-configuration';
+import { IJEConfiguration } from '../../eije-configuration';
 import { IJETranlsation } from './ije-translation';
 
 export class IJEMicrosoftTranslator implements IJETranlsation {

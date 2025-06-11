@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import * as _path from "path";
 
-import { IJEManager } from "./ije-manager";
-import { IJEConfiguration } from "./ije-configuration";
+import { IJEManager } from "./eije-manager";
+import { IJEConfiguration } from "./eije-configuration";
 
 export class IJEEditorProvider {
   private static readonly viewType = "i18n-json-editor.editor";

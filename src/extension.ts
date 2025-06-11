@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import * as _path from 'path';
 
-import { IJEEditorProvider } from './i18n-json-editor/providers/ije-editor-provider';
-import { IJEConfiguration } from './i18n-json-editor/ije-configuration';
+import { IJEEditorProvider } from './ei18n-json-editor/providers/eije-editor-provider';
+import { IJEConfiguration } from './ei18n-json-editor/eije-configuration';
 import { I18nService } from './i18n/i18n-service';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -19,7 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     if (IJEConfiguration.WORKSPACE_FOLDERS) {
         let myStatusBarItem: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-        myStatusBarItem.command = 'i18n-json-editor';
+        myStatusBarItem.command = 'ei18n-json-editor';
         myStatusBarItem.text = `$(symbol-string) ${i18n.t('extension.statusBar')}`;
         myStatusBarItem.show();
     }

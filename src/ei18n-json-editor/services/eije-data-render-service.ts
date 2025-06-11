@@ -1,7 +1,7 @@
-import { IJEConfiguration } from '../ije-configuration';
-import { IJEDataTranslation } from '../models/ije-data-translation';
-import { IJEPage } from '../models/ije-page';
-import { IJESort } from '../models/ije-sort';
+import { IJEConfiguration } from '../eije-configuration';
+import { IJEDataTranslation } from '../models/eije-data-translation';
+import { IJEPage } from '../models/eije-page';
+import { IJESort } from '../models/eije-sort';
 import { I18nService } from '../../i18n/i18n-service';
 
 export class IJEDataRenderService {

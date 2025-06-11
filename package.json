@@ -10,11 +10,20 @@
         "url": "https://github.com/trystan4861/i18n-json-editor.git"
     },
     "description": "Easily edit your i18n json files, inspired in the vscode i18n json editor by Thibault Vanderseypen",
-    "icon": "media/logo.png",
+    "icon": "media/ei18n_logo.png",
     "version": "1.0.0",
     "engines": {
         "vscode": "^1.30.0"
     },
+    "galleryBanner": {
+        "color": "#007acc",
+        "theme": "dark"
+    },
+    "keywords": [
+        "i18n",
+        "json",
+        "editor"
+    ],
     "categories": [
         "Other"
     ],
@@ -25,14 +34,14 @@
     "contributes": {
         "commands": [
             {
-                "command": "i18n-json-editor",
+                "command": "ei18n-json-editor",
                 "title": "Enhanced i18n json editor"
             }
         ],
         "menus": {
             "explorer/context": [
                 {
-                    "command": "i18n-json-editor",
+                    "command": "ei18n-json-editor",
                     "group": "2_workspace",
                     "when": "explorerResourceIsFolder && resourceFilename in ext:supportedFolders"
                 }

@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import * as _path from 'path';
 import * as fs from 'fs';
 
-import { IJEConfiguration } from '../ije-configuration';
-import { IJEManager } from '../ije-manager';
+import { IJEConfiguration } from '../eije-configuration';
+import { IJEManager } from '../eije-manager';
 import { I18nService } from '../../i18n/i18n-service';
 
 export class IJEEditorProvider {

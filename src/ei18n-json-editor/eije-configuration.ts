@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as _path from 'path';
 
-import { IJEFolder } from './models/ije-folder';
-import { TranslationServiceEnum } from './services/ije-translation-service';
+import { IJEFolder } from './models/eije-folder';
+import { TranslationServiceEnum } from './services/eije-translation-service';
 
 export class IJEConfiguration {
     // Ruta del archivo de configuración dentro de .vscode
@@ -94,6 +94,10 @@ export class IJEConfiguration {
         return this.getConfigValue<string>('translationServiceApiKey', 'i18nJsonEditor.translationServiceApiKey', null);
     }
     
+    static get ALLOW_EMPTY_TRANSLATIONS(): boolean {
+        return this.getConfigValue<boolean>('allowEmptyTranslations', 'i18nJsonEditor.allowEmptyTranslations', false);
+    }
+
     static get VISIBLE_COLUMNS(): string[] {
         // Get visible columns from workspace state or settings
         let visibleColumns: string[] = [];
@@ -163,6 +167,7 @@ export class IJEConfiguration {
                 config.supportedFolders = this.SUPPORTED_FOLDERS;
                 config.translationService = this.TRANSLATION_SERVICE;
                 config.translationServiceApiKey = this.TRANSLATION_SERVICE_API_KEY;
+                config.allowEmptyTranslations = this.ALLOW_EMPTY_TRANSLATIONS;
                 
                 // Mantener las columnas visibles y ocultas si existen
                 if (!config.visibleColumns) {
