@@ -27,6 +27,17 @@ export class EIJEManager {
             EIJEConfiguration.saveFullConfiguration();
         });
     }
+    
+    // Método para obtener la ruta de la carpeta actual
+    getFolderPath(): string | null {
+        return this.folderPath;
+    }
+    
+    // Método para actualizar la ruta de la carpeta y recargar los datos
+    updateFolderPath(folderPath: string | null): void {
+        this.folderPath = folderPath;
+        this.reloadData();
+    }
 
     _initEvents() {
         this._panel.webview.onDidReceiveMessage(message => {
