@@ -4,3 +4,4 @@ node_modules
 *.vsix
 
 .github/copilot/config.yml
+.github/copilot/project_activity_log.md
