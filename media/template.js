@@ -3,6 +3,14 @@ var hasUnsavedChanges = false;
 
 (function () {
   vscode = acquireVsCodeApi();
+  
+  // Deshabilitar el botón de guardado por defecto
+  window.addEventListener("DOMContentLoaded", () => {
+    const saveButton = document.getElementById("save-button");
+    if (saveButton) {
+      saveButton.disabled = true;
+    }
+  });
 
   window.addEventListener("message", (event) => {
     const message = event.data;
@@ -12,11 +20,10 @@ var hasUnsavedChanges = false;
         // Actualizar el contador de traducciones pendientes después de renderizar
         checkEmptyTranslations();
         break;
-        
       case "emptyTranslationsFound":
         // Actualizar la información de traducciones vacías
         const emptyTranslations = message.emptyTranslations;
-        const hasEmptyTranslations = message.hasEmptyTranslations;
+        const filesHaveEmptyTranslations = message.hasEmptyTranslations;
         const totalEmptyCount = message.totalEmptyCount;
         
         // Actualizar contador con el TOTAL de traducciones vacías en todo el archivo
@@ -26,9 +33,9 @@ var hasUnsavedChanges = false;
         }
         
         // Mostrar u ocultar el botón según si hay traducciones vacías en todo el conjunto de datos
-        const warningBtn = document.getElementById('btn-warning-translations');
-        if (warningBtn) {
-          warningBtn.style.display = hasEmptyTranslations ? 'inline-block' : 'none';
+        const dangerBtn = document.getElementById('btn-warning-translations');
+        if (dangerBtn) {
+          dangerBtn.style.display = filesHaveEmptyTranslations ? 'inline-block' : 'none';
         }
         break;
         
@@ -40,8 +47,10 @@ var hasUnsavedChanges = false;
           counter.textContent = emptyTranslationsInfo.count;
           
           // Mostrar u ocultar el botón según si hay traducciones pendientes
-          const btn = document.getElementById('btn-warning-translations');
-          btn.style.display = emptyTranslationsInfo.count > 0 ? 'inline-block' : 'none';
+          const warningBtn = document.getElementById('btn-warning-translations');
+          if (warningBtn) {
+            warningBtn.style.display = emptyTranslationsInfo.count > 0 ? 'inline-block' : 'none';
+          }
         }
         break;
 
@@ -74,12 +83,69 @@ var hasUnsavedChanges = false;
           }
         }
         break;
+        
+      case "saveResult":
+        // Manejar el resultado del guardado (éxito o error)
+        const saveButton = document.getElementById("save-button");
+        
+        // Verificar si hay traducciones vacías
+        const emptyTranslationsCounter = document.getElementById('missing-translations-counter');
+        const pendingEmptyTranslations = emptyTranslationsCounter && 
+                                     parseInt(emptyTranslationsCounter.textContent) > 0;
+        
+        // Si el backend indicó éxito pero hay traducciones vacías, notificar al backend
+        // para que cancele cualquier mensaje de éxito y muestre solo el mensaje de error
+        if (message.success && pendingEmptyTranslations) {
+          vscode.postMessage({ 
+            command: "notifyEmptyTranslations", 
+            count: parseInt(emptyTranslationsCounter.textContent),
+            // Indicar explícitamente que se debe cancelar el mensaje de éxito
+            cancelSuccessMessage: true
+          });
+        }
+        
+        if (message.success && !pendingEmptyTranslations) {
+          // Si fue exitoso y no hay traducciones vacías, mostrar success y volver al estado normal
+          saveButton.classList.remove("btn-vscode", "btn-warning", "btn-danger");
+          saveButton.classList.add("btn-success");
+          saveButton.disabled = false;
+          
+          // Después de 2.5 segundos, volver al estado normal
+          setTimeout(() => {
+            saveButton.classList.remove("btn-success");
+            saveButton.classList.add("btn-vscode");
+            hasUnsavedChanges = false;
+            saveButton.disabled = true; // Deshabilitar cuando vuelve a estilo primary
+          }, 2500);
+        } else {
+          // Si hubo error o hay traducciones vacías
+          // Mostrar estado de error
+          saveButton.classList.remove("btn-vscode", "btn-warning", "btn-success");
+          saveButton.classList.add("btn-danger");
+          saveButton.disabled = false;
+          
+          // Después de 2 segundos, volver al estado de advertencia
+          setTimeout(() => {
+            saveButton.classList.remove("btn-danger");
+            saveButton.classList.add("btn-warning");
+            saveButton.disabled = false; // Mantener habilitado con advertencia
+            // Mantenemos hasUnsavedChanges como true porque hay problemas
+            hasUnsavedChanges = true;
+          }, 2000);
+        }
+        break;
     }
   });
   setTimeout(() => {
     this.refresh();
     // Actualizar el contador de traducciones pendientes inicialmente
     checkEmptyTranslations();
+    
+    // Asegurarnos de que el botón de guardado esté deshabilitado inicialmente
+    const saveButton = document.getElementById("save-button");
+    if (saveButton) {
+      saveButton.disabled = true;
+    }
   }, 200);
 })();
 
@@ -125,8 +191,9 @@ reload = () => {
   vscode.postMessage({ command: "reload" });
   hasUnsavedChanges = false;
   const saveButton = document.getElementById("save-button");
-  saveButton.classList.remove("btn-pending", "btn-success");
+  saveButton.classList.remove("btn-warning", "btn-success", "btn-danger");
   saveButton.classList.add("btn-vscode");
+  saveButton.disabled = true; // Deshabilitar cuando se restablece al estilo primary
 };
 remove = (id) => {
   vscode.postMessage({ command: "remove", id: id });
@@ -134,26 +201,38 @@ remove = (id) => {
   updateSaveButtonStyle();
 };
 save = () => {
-  vscode.postMessage({ command: "save" });
-  // Cambiar el botón a "success" al guardar
-  const saveButton = document.getElementById("save-button");
-  saveButton.classList.remove("btn-vscode", "btn-pending");
-  saveButton.classList.add("btn-success");
+  // Verificar si hay traducciones vacías
+  const emptyTranslationsCounter = document.getElementById('missing-translations-counter');
+  const hasMissingTranslations = emptyTranslationsCounter && 
+                              parseInt(emptyTranslationsCounter.textContent) > 0;
   
-  // Después de 5 segundos, volver al estado normal
-  setTimeout(() => {
-    saveButton.classList.remove("btn-success");
-    saveButton.classList.add("btn-vscode");
-    hasUnsavedChanges = false;
-  }, 5000);
+  // Enviar el comando con información adicional sobre traducciones vacías
+  vscode.postMessage({ 
+    command: "save", 
+    hasEmptyTranslations: hasMissingTranslations,
+    emptyCount: hasMissingTranslations ? parseInt(emptyTranslationsCounter.textContent) : 0,
+    // Indicar si deben mostrarse mensajes de error relacionados con traducciones vacías
+    showEmptyTranslationsError: hasMissingTranslations,
+    // Indicar explícitamente que se debe cancelar el mensaje de éxito si hay traducciones vacías
+    cancelSuccessMessage: hasMissingTranslations
+  });
+  
+  // Cambiar el botón a un estado de "procesando"
+  const saveButton = document.getElementById("save-button");
+  saveButton.disabled = true;
+  saveButton.classList.remove("btn-vscode", "btn-warning", "btn-success", "btn-danger");
+  saveButton.classList.add("btn-secondary"); // Estilo de procesando
 };
 
 // Función para actualizar el estilo del botón de guardado según si hay cambios
 function updateSaveButtonStyle() {
   const saveButton = document.getElementById("save-button");
   if (hasUnsavedChanges) {
-    saveButton.classList.remove("btn-vscode", "btn-success");
-    saveButton.classList.add("btn-pending");
+    saveButton.classList.remove("btn-vscode", "btn-success", "btn-danger");
+    saveButton.classList.add("btn-warning");
+    saveButton.disabled = false; // Habilitar cuando hay cambios
+  } else {
+    saveButton.disabled = true; // Deshabilitar cuando no hay cambios
   }
 }
 search = (el) => vscode.postMessage({ command: "search", value: el.value });
@@ -173,8 +252,11 @@ switchView = () => {
   });
 };
 updateInput = (el, id, language = "") => {
+  const wasEmpty = el.classList.contains('empty-translation');
+  const isEmpty = el.value.trim() === '';
+  
   // Actualizar clase empty-translation según si el campo está vacío o no
-  if (el.value.trim() === '') {
+  if (isEmpty) {
     el.classList.add('empty-translation');
   } else {
     el.classList.remove('empty-translation');
@@ -184,10 +266,47 @@ updateInput = (el, id, language = "") => {
   hasUnsavedChanges = true;
   updateSaveButtonStyle();
   
-  // Actualizar el contador de traducciones pendientes
-  checkEmptyTranslations();
+  // Actualizar manualmente el contador si cambia el estado de vacío
+  if (wasEmpty && !isEmpty) {
+    // Si estaba vacío y ahora tiene contenido, decrementar el contador
+    const counter = document.getElementById('missing-translations-counter');
+    if (counter && counter.textContent) {
+      const currentCount = parseInt(counter.textContent);
+      if (!isNaN(currentCount) && currentCount > 0) {
+        counter.textContent = currentCount - 1;
+        
+        // Si el contador llega a cero, ocultar el botón de advertencia
+        if (currentCount - 1 === 0) {
+          const dangerBtn = document.getElementById('btn-warning-translations');
+          if (dangerBtn) {
+            dangerBtn.style.display = 'none';
+          }
+        }
+      }
+    }
+  } else if (!wasEmpty && isEmpty) {
+    // Si tenía contenido y ahora está vacío, incrementar el contador
+    const counter = document.getElementById('missing-translations-counter');
+    if (counter && counter.textContent) {
+      const currentCount = parseInt(counter.textContent);
+      if (!isNaN(currentCount)) {
+        counter.textContent = currentCount + 1;
+        
+        // Mostrar el botón de advertencia
+        const dangerBtn = document.getElementById('btn-warning-translations');
+        if (dangerBtn) {
+          dangerBtn.style.display = 'inline-block';
+        }
+      }
+    }
+  }
   
+  // Enviar el mensaje de actualización al backend
   vscode.postMessage({ command: "update", id: id, value: el.value, language: language });
+  
+  // También solicitar una actualización completa de traducciones vacías
+  // para mantener sincronizado el contador en ambos lados
+  checkEmptyTranslations();
 };
 translateInput = (el, id, language = "") => vscode.postMessage({ command: "translate", id: id, language: language });
 updateFolder = (el, id) => vscode.postMessage({ command: "folder", id: id, value: el.value });

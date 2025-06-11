@@ -102,6 +102,8 @@ th {
 
 .btn-vscode:hover {
     background-color: var(--vscode-button-hoverBackground);
+    transform: scale(1.1);
+    color: var(--vscode-button-foreground);
 }
 
 .btn-vscode-secondary {
@@ -111,6 +113,8 @@ th {
 
 .btn-vscode-secondary:hover {
     background-color: var(--vscode-button-secondaryHoverBackground);
+    transform: scale(1.1);
+    color: var(--vscode-button-secondaryForeground);
 }
 
 .btn-vscode:active,
@@ -244,36 +248,56 @@ td.rtl-cell {
     align-content: center;
 }
 
-/* Estilos para el botón de advertencia de traducciones pendientes */
-.btn-warning {
-    background-color: var(--vscode-editorError-foreground, #f44747);
+/* Estilos personalizados para los botones */
+.btn-success {
+    background-color: #28a745;
     color: white;
     border: none;
     transition: all 0.3s ease;
 }
 
-.btn-warning:hover {
-    background-color: #d32f2f;
-    opacity: 0.9;
+.btn-success:hover {
+    background-color: #218838;
+    transform: scale(1.1);
+    color: white;
 }
 
-.btn-warning:focus {
-    box-shadow: 0 0 0 0.2rem rgba(244, 71, 71, 0.25) !important;
+.btn-success:focus {
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important;
 }
 
-/* Nuevo estilo para el botón de cambios pendientes (amarillo) */
-.btn-pending {
+/* Override para botón warning (amarillo) */
+.btn-warning {
     background-color: #FFC107;
     color: black;
     border: none;
     transition: all 0.3s ease;
 }
 
-.btn-pending:hover {
+.btn-warning:hover {
     background-color: #e0a800;
-    opacity: 0.9;
+    transform: scale(1.1);
+    color: black;
 }
 
-.btn-pending:focus {
+.btn-warning:focus {
     box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25) !important;
+}
+
+/* Override para botón danger (rojo) */
+.btn-danger {
+    background-color: #DC3545;
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    transform: scale(1.1);
+    color: white;
+}
+
+.btn-danger:focus {
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
 }

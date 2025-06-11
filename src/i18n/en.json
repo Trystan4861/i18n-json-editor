@@ -36,6 +36,8 @@
     "messages": {
       "saved": "i18n files saved",
       "reloaded": "i18n editor reloaded",
+      "cannotSaveInvalidTranslations": "Cannot save: There are invalid translations. Please fix all errors before saving.",
+      "saveError": "Error while saving files",
       "languageCodeEmpty": "Language code cannot be empty",
       "languageCodeTooLong": "Language code must be maximum 5 characters",
       "languageCodeInvalid": "Language code must be maximum 5 characters!",

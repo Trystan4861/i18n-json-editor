@@ -70,6 +70,11 @@ export class IJEData {
      */
     add() {
         const translation = this._createFactoryIJEDataTranslation();
+        
+        // Marcar explícitamente como inválido y mostrar el mensaje de error
+        translation.valid = false;
+        translation.error = getTranslatedError(IJEDataTranslationError.KEY_NOT_EMPTY);
+        
         this._insert(translation);
         this._view.selectionId = translation.id;
         this._manager.refreshDataTable();
@@ -151,49 +156,81 @@ export class IJEData {
     }
 
     save() {
-        //clean jsons
-        let existingFolders = [];
-        if (this._manager.folderPath) {
-            existingFolders.push(this._manager.folderPath);
-        } else {
-            existingFolders = IJEConfiguration.WORKSPACE_FOLDERS.map(d => d.path);
+        // Verificar si hay traducciones con claves vacías o inválidas
+        const invalidTranslations = this._translations.filter(t => !t.valid);
+        if (invalidTranslations.length > 0) {
+            // Si hay traducciones inválidas, mostrar un mensaje de error y no guardar
+            const i18n = I18nService.getInstance();
+            vscode.window.showErrorMessage(i18n.t('ui.messages.cannotSaveInvalidTranslations'));
+            
+            // Seleccionar y mostrar la primera traducción inválida para facilitar la corrección
+            const firstInvalidTranslation = invalidTranslations[0];
+            this.select(firstInvalidTranslation.id);
+            this._manager.refreshDataTable();
+            
+            // Informar al frontend que el guardado falló
+            this._manager.sendSaveResult(false);
+            
+            return;
         }
-        existingFolders.forEach(d => {
-            this._languages.forEach(language => {
-                const json = JSON.stringify({}, null, IJEConfiguration.JSON_SPACE);
-                const f = vscode.Uri.file(_path.join(d, language + '.json')).fsPath;
-                fs.writeFileSync(f, json);
+
+        try {
+            // Limpiar JSONs existentes
+            let existingFolders = [];
+            if (this._manager.folderPath) {
+                existingFolders.push(this._manager.folderPath);
+            } else {
+                existingFolders = IJEConfiguration.WORKSPACE_FOLDERS.map(d => d.path);
+            }
+            existingFolders.forEach(d => {
+                this._languages.forEach(language => {
+                    const json = JSON.stringify({}, null, IJEConfiguration.JSON_SPACE);
+                    const f = vscode.Uri.file(_path.join(d, language + '.json')).fsPath;
+                    fs.writeFileSync(f, json);
+                });
             });
-        });
 
-        //
-        let folders: { [key: string]: IJEDataTranslation[] } = this._translations.reduce((r, a) => {
-            r[a.folder] = r[a.folder] || [];
-            r[a.folder].push(a);
-            return r;
-        }, {});
+            // Agrupar traducciones por carpeta
+            let folders: { [key: string]: IJEDataTranslation[] } = this._translations.reduce((r, a) => {
+                r[a.folder] = r[a.folder] || [];
+                r[a.folder].push(a);
+                return r;
+            }, {});
 
-        Object.entries(folders).forEach(entry => {
-            const [key, value] = entry;
-            this._languages.forEach(language => {
-                let o = {};
+            // Guardar traducciones válidas
+            Object.entries(folders).forEach(entry => {
+                const [key, value] = entry;
+                this._languages.forEach(language => {
+                    let o = {};
 
-                value
-                    .filter(translation => translation.valid)
-                    .sort((a, b) => (a.key > b.key ? 1 : -1))
-                    .forEach(translation => {
-                        if (translation.languages[language]) {
-                            this._transformKeysValues(translation.key, translation.languages[language], o);
-                        }
-                    });
+                    value
+                        .filter(translation => translation.valid)
+                        .sort((a, b) => (a.key > b.key ? 1 : -1))
+                        .forEach(translation => {
+                            if (translation.languages[language]) {
+                                this._transformKeysValues(translation.key, translation.languages[language], o);
+                            }
+                        });
 
-                var json = JSON.stringify(o, null, IJEConfiguration.JSON_SPACE);
-                json = json.replace(/\n/g, IJEConfiguration.LINE_ENDING);
-                const f = vscode.Uri.file(_path.join(key, language + '.json')).fsPath;
-                fs.writeFileSync(f, json);
+                    var json = JSON.stringify(o, null, IJEConfiguration.JSON_SPACE);
+                    json = json.replace(/\n/g, IJEConfiguration.LINE_ENDING);
+                    const f = vscode.Uri.file(_path.join(key, language + '.json')).fsPath;
+                    fs.writeFileSync(f, json);
+                });
             });
-        });
-        vscode.window.showInformationMessage(I18nService.getInstance().t('ui.messages.saved'));
+            
+            // Mostrar mensaje de éxito en VS Code
+            vscode.window.showInformationMessage(I18nService.getInstance().t('ui.messages.saved'));
+            
+            // Informar al frontend que el guardado fue exitoso
+            this._manager.sendSaveResult(true);
+        } catch (error) {
+            // En caso de cualquier error durante el guardado
+            vscode.window.showErrorMessage(I18nService.getInstance().t('ui.messages.saveError') + ': ' + String(error));
+            
+            // Informar al frontend que el guardado falló
+            this._manager.sendSaveResult(false);
+        }
     }
 
     search(value: string) {

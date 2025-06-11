@@ -14,10 +14,18 @@ export class IJEManager {
     private _data: IJEData;
 
     constructor(private _context: vscode.ExtensionContext, private _panel: vscode.WebviewPanel, public folderPath: string) {
+        // Guardar/inicializar el archivo de configuración
+        IJEConfiguration.saveFullConfiguration();
+        
         this._data = new IJEData(this);
         this._initEvents();
         this._initTemplate();
         _panel.webview.html = this.getTemplate();
+        
+        // Guardar la configuración cuando se cierra el panel
+        this._panel.onDidDispose(() => {
+            IJEConfiguration.saveFullConfiguration();
+        });
     }
 
     _initEvents() {
@@ -119,11 +127,17 @@ export class IJEManager {
         IJEConfiguration.saveVisibleColumns(visibleColumns);
         IJEConfiguration.saveHiddenColumns(hiddenColumns);
         
+        // Guardar la configuración completa para mantener el archivo actualizado
+        IJEConfiguration.saveFullConfiguration();
+        
         // Actualizar la tabla
         this.refreshDataTable();
     }
     
     reloadData() {
+        // Guardar la configuración completa
+        IJEConfiguration.saveFullConfiguration();
+        
         this._data = new IJEData(this);
         this.refreshDataTable();
         const i18n = I18nService.getInstance();
@@ -207,6 +221,9 @@ export class IJEManager {
             
             vscode.window.showInformationMessage(i18n.t('ui.messages.languageFileCreated', `${langCode}.json`));
             
+            // Guardar la configuración completa
+            IJEConfiguration.saveFullConfiguration();
+            
             // Reload the editor to show the new language
             this.reloadData();
         } catch (error) {
@@ -260,8 +277,27 @@ export class IJEManager {
         this._panel.webview.postMessage({ command: 'content', render: this._data.render() });
     }
 
+    /**
+     * Update the translation and refresh the empty translations count
+     * @param translation The translation to update
+     */
     updateTranslation(translation: IJEDataTranslation) {
         this._panel.webview.postMessage({ command: 'update', translation: translation });
+        
+        // Actualizar el contador de traducciones faltantes después de cada modificación
+        const currentPage = this._data.getCurrentPage();
+        this.checkEmptyTranslations(currentPage);
+    }
+    
+    /**
+     * Envía un mensaje al frontend con el resultado del guardado
+     * @param success Indica si el guardado fue exitoso
+     */
+    sendSaveResult(success: boolean) {
+        this._panel.webview.postMessage({ 
+            command: 'saveResult', 
+            success: success 
+        });
     }
 
     getTemplate(): string {

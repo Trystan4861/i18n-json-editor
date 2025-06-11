@@ -41,39 +41,57 @@ export class IJEConfiguration {
         return this.RTL_LANGUAGES.includes(baseLanguage);
     }
 
+    // Obtener una configuración específica del archivo local o global
+    private static getConfigValue<T>(configName: string, globalSettingName: string, defaultValue: T): T {
+        try {
+            // Primero intentar leer del archivo de configuración local
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (workspaceFolder) {
+                const configPath = this.getConfigPath(workspaceFolder);
+                if (fs.existsSync(configPath)) {
+                    const configContent = fs.readFileSync(configPath, 'utf8');
+                    const config = JSON.parse(configContent);
+                    if (config[configName] !== undefined) {
+                        return config[configName] as T;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error(`Error loading ${configName} from config file:`, e);
+        }
+        
+        // Si no se encuentra en el archivo local, usar la configuración global
+        const value = vscode.workspace.getConfiguration().get<T>(globalSettingName);
+        return value !== undefined ? value : defaultValue;
+    }
+
     static get FORCE_KEY_UPPERCASE(): boolean {
-        const value = vscode.workspace.getConfiguration().get<boolean>('i18nJsonEditor.forceKeyUPPERCASE');
-        return value !== undefined ? value : true;
+        return this.getConfigValue<boolean>('forceKeyUPPERCASE', 'i18nJsonEditor.forceKeyUPPERCASE', true);
     }
 
     static get JSON_SPACE(): string | number {
-        const value = vscode.workspace.getConfiguration().get<string | number>('i18nJsonEditor.jsonSpace');
-        return value !== undefined ? value : 2;
+        return this.getConfigValue<string | number>('jsonSpace', 'i18nJsonEditor.jsonSpace', 2);
     }
 
     static get KEY_SEPARATOR(): string | false {
-        const value = vscode.workspace.getConfiguration().get<string | boolean>('i18nJsonEditor.keySeparator');
+        const value = this.getConfigValue<string | boolean>('keySeparator', 'i18nJsonEditor.keySeparator', '.');
         return value !== undefined && value !== true ? value : '.';
     }
 
     static get LINE_ENDING(): string {
-        const value = vscode.workspace.getConfiguration().get<string>('i18nJsonEditor.lineEnding');
-        return value !== undefined ? value : '\n';
+        return this.getConfigValue<string>('lineEnding', 'i18nJsonEditor.lineEnding', '\n');
     }
 
     static get SUPPORTED_FOLDERS(): string[] {
-        const value = vscode.workspace.getConfiguration().get<string[]>('i18nJsonEditor.supportedFolders');
-        return value !== undefined ? value : ['i18n'];
+        return this.getConfigValue<string[]>('supportedFolders', 'i18nJsonEditor.supportedFolders', ['i18n']);
     }
     
     static get TRANSLATION_SERVICE(): TranslationServiceEnum {
-        const value = vscode.workspace.getConfiguration().get<TranslationServiceEnum>('i18nJsonEditor.translationService');
-        return value !== undefined ? value : null;
+        return this.getConfigValue<TranslationServiceEnum>('translationService', 'i18nJsonEditor.translationService', null);
     }
 
     static get TRANSLATION_SERVICE_API_KEY(): string {
-        const value = vscode.workspace.getConfiguration().get<string>('i18nJsonEditor.translationServiceApiKey');
-        return value !== undefined ? value : null;
+        return this.getConfigValue<string>('translationServiceApiKey', 'i18nJsonEditor.translationServiceApiKey', null);
     }
     
     static get VISIBLE_COLUMNS(): string[] {
@@ -121,6 +139,46 @@ export class IJEConfiguration {
         }
         
         return hiddenColumns;
+    }
+    
+    // Guarda toda la configuración en el archivo local
+    static saveFullConfiguration(): void {
+        try {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (workspaceFolder) {
+                const configPath = this.getConfigPath(workspaceFolder);
+                let config: any = {};
+                
+                // Load existing config if it exists
+                if (fs.existsSync(configPath)) {
+                    const configContent = fs.readFileSync(configPath, 'utf8');
+                    config = JSON.parse(configContent);
+                }
+                
+                // Update all configuration values
+                config.forceKeyUPPERCASE = this.FORCE_KEY_UPPERCASE;
+                config.jsonSpace = this.JSON_SPACE;
+                config.keySeparator = this.KEY_SEPARATOR;
+                config.lineEnding = this.LINE_ENDING;
+                config.supportedFolders = this.SUPPORTED_FOLDERS;
+                config.translationService = this.TRANSLATION_SERVICE;
+                config.translationServiceApiKey = this.TRANSLATION_SERVICE_API_KEY;
+                
+                // Mantener las columnas visibles y ocultas si existen
+                if (!config.visibleColumns) {
+                    config.visibleColumns = this.VISIBLE_COLUMNS;
+                }
+                
+                if (!config.hiddenColumns) {
+                    config.hiddenColumns = this.HIDDEN_COLUMNS;
+                }
+                
+                // Save config
+                fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+            }
+        } catch (e) {
+            console.error('Error saving configuration:', e);
+        }
     }
     
     static saveHiddenColumns(columns: string[]): void {

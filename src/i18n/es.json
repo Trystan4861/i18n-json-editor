@@ -36,6 +36,8 @@
     "messages": {
       "saved": "Archivos i18n guardados",
       "reloaded": "Editor i18n recargado",
+      "cannotSaveInvalidTranslations": "No se puede guardar: Hay traducciones inválidas. Por favor, corrija todos los errores antes de guardar.",
+      "saveError": "Error al guardar los archivos",
       "languageCodeEmpty": "El código de idioma no puede estar vacío",
       "languageCodeTooLong": "El código de idioma debe tener máximo 5 caracteres",
       "languageCodeInvalid": "¡El código de idioma debe tener máximo 5 caracteres!",
