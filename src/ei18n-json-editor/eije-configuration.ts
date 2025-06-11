@@ -2,10 +2,10 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as _path from 'path';
 
-import { IJEFolder } from './models/eije-folder';
+import { EIJEFolder } from './models/eije-folder';
 import { TranslationServiceEnum } from './services/eije-translation-service';
 
-export class IJEConfiguration {
+export class EIJEConfiguration {
     // Ruta del archivo de configuración dentro de .vscode
     private static getConfigPath(workspaceFolder: vscode.WorkspaceFolder): string {
         // Asegurar que el directorio .vscode existe
@@ -13,7 +13,7 @@ export class IJEConfiguration {
         if (!fs.existsSync(vscodePath)) {
             fs.mkdirSync(vscodePath, { recursive: true });
         }
-        return _path.join(vscodePath, '.i18n-editor-config.json');
+        return _path.join(vscodePath, '.ei18n-editor-config.json');
     }
     // Lista de códigos de idioma RTL (Right-to-Left)
     public static readonly RTL_LANGUAGES = [
@@ -234,11 +234,11 @@ export class IJEConfiguration {
         }
     }
 
-    static get WORKSPACE_FOLDERS(): IJEFolder[] {
-        const folders = vscode.workspace.getConfiguration().get<IJEFolder[]>('i18nJsonEditor.workspaceFolders');
+    static get WORKSPACE_FOLDERS(): EIJEFolder[] {
+        const folders = vscode.workspace.getConfiguration().get<EIJEFolder[]>('i18nJsonEditor.workspaceFolders');
         let workspaceFolder: vscode.WorkspaceFolder | undefined = vscode.workspace.workspaceFolders[0];
 
-        const _folders: IJEFolder[] = [];
+        const _folders: EIJEFolder[] = [];
         folders.forEach(d => {
             var path = vscode.Uri.file(_path.join(workspaceFolder.uri.fsPath, d.path)).fsPath;
             if (fs.existsSync(path)) {

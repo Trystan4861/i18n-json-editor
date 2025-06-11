@@ -1,8 +1,8 @@
 import axios from 'axios';
-import { IJEConfiguration } from '../../eije-configuration';
-import { IJETranlsation } from './ije-translation';
+import { EIJEConfiguration } from '../../eije-configuration';
+import { EIJETranlsation } from './eije-translation';
 
-export class IJEMicrosoftTranslator implements IJETranlsation {
+export class EIJEMicrosoftTranslator implements EIJETranlsation {
     async translate(text: string, language: string, languages: string[]): Promise<{ [language: string]: string }> {
         const endpoint = 'https://api.cognitive.microsofttranslator.com';
 
@@ -11,7 +11,7 @@ export class IJEMicrosoftTranslator implements IJETranlsation {
             url: '/translate',
             method: 'post',
             headers: {
-                'Ocp-Apim-Subscription-Key': IJEConfiguration.TRANSLATION_SERVICE_API_KEY,
+                'Ocp-Apim-Subscription-Key': EIJEConfiguration.TRANSLATION_SERVICE_API_KEY,
                 'Content-type': 'application/json'
             },
             params: {

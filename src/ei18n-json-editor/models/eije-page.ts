@@ -1,4 +1,4 @@
-export interface IJEPage {
+export interface EIJEPage {
     pageNumber: number;
     pageSize: number;
     count?: number;

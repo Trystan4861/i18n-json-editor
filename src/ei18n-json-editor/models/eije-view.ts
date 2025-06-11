@@ -1,8 +1,8 @@
-export interface IJEView {
-    type: IJEViewType;
+export interface EIJEView {
+    type: EIJEViewType;
     selectionId?: number;
 }
-export enum IJEViewType {
+export enum EIJEViewType {
     TABLE = 'table',
     LIST = 'list'
 }

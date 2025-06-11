@@ -1,4 +1,4 @@
-export interface IJESort {
+export interface EIJESort {
     column: string;
     ascending: boolean;
 }

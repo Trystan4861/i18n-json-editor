@@ -1,18 +1,18 @@
-import { IJEConfiguration } from '../eije-configuration';
-import { IJEDataTranslation } from '../models/eije-data-translation';
-import { IJEMicrosoftTranslator } from './translations/ije-microsoft-translator';
-import { IJETranlsation } from './translations/ije-translation';
+import { EIJEConfiguration } from '../eije-configuration';
+import { EIJEDataTranslation } from '../models/eije-data-translation';
+import { EIJEMicrosoftTranslator } from './translations/eije-microsoft-translator';
+import { EIJETranlsation } from './translations/eije-translation';
 
-export abstract class IJETranslationService {
-    public static async translate(translation: IJEDataTranslation, language: string, languages: string[]) {
-        const tranlsationService = IJEConfiguration.TRANSLATION_SERVICE;
+export abstract class EIJETranslationService {
+    public static async translate(translation: EIJEDataTranslation, language: string, languages: string[]) {
+        const tranlsationService = EIJEConfiguration.TRANSLATION_SERVICE;
 
-        if (!tranlsationService || !IJEConfiguration.TRANSLATION_SERVICE_API_KEY) {
+        if (!tranlsationService || !EIJEConfiguration.TRANSLATION_SERVICE_API_KEY) {
             return;
         }
-        let service: IJETranlsation;
-        if (IJEConfiguration.TRANSLATION_SERVICE === TranslationServiceEnum.MicrosoftTranslator) {
-            service = new IJEMicrosoftTranslator();
+        let service: EIJETranlsation;
+        if (EIJEConfiguration.TRANSLATION_SERVICE === TranslationServiceEnum.MicrosoftTranslator) {
+            service = new EIJEMicrosoftTranslator();
         }
         if (!service) {
             return;

@@ -47,6 +47,15 @@
                 }
             ]
         },
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "trystan4861-eije",
+                    "title": "Enhanced i18n.json Editor",
+                    "icon": "media/ei18n_logo.svg"
+                }
+            ]
+        },
         "configuration": {
             "title": "Enhanced i18n json editor",
             "properties": {

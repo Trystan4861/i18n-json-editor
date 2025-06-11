@@ -100,12 +100,14 @@ th {
     color: var(--vscode-button-foreground);
 }
 
-.btn-vscode:hover {
+.btn-vscode:not(:disabled):hover {
     background-color: var(--vscode-button-hoverBackground);
     transform: scale(1.1);
     color: var(--vscode-button-foreground);
 }
-
+.btn-vscode:disabled:hover {
+    color: var(--vscode-button-foreground);
+}
 .btn-vscode-secondary {
     background-color: var(--vscode-button-secondaryBackground);
     color: var(--vscode-button-secondaryForeground);

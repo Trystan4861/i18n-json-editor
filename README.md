@@ -1,20 +1,20 @@
-# i18n-json-editor
+# ei18n-json-editor
 
 ![logo](https://vanderseypen.dev/assets/images/i18n/logo-large.png)
 
-i18n-json-editor is a Visual Studio Code extension to easily edit your json translations files.
+ei18n-json-editor is a Visual Studio Code extension to easily edit your json translations files.
 <br>
 
 ## Usage
 
-i18n-json-editor can be used in two ways :
+ei18n-json-editor can be used in two ways :
 
--   Right click on a folder named **i18n** and select : **i18n JSON Editor** <br>
+-   Right click on a folder named **i18n** and select : **ei18n JSON Editor** <br>
     _Folder name can be changed with <ins>i18nJsonEditor.supportedFolders</ins>_<br><br> ![extension demo](media/demo.gif)
 
 <br><br>
 
--   Within a workspace you can edit several folders at the same time. Click on **i18n editor** presents in the Status Bar <br>
+-   Within a workspace you can edit several folders at the same time. Click on **ei18n editor** presents in the Status Bar <br>
     _<ins>i18nJsonEditor.workspaceFolders</ins> must be set_<br><br> ![status bar extension](https://vanderseypen.dev/assets/images/i18n/workspace.png)
 
 <br><br>

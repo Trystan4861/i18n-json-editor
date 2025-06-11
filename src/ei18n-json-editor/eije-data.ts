@@ -2,32 +2,32 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as _path from 'path';
 
-import { IJEConfiguration } from './eije-configuration';
-import { IJEDataRenderService } from './services/eije-data-render-service';
-import { IJEDataTranslation } from './models/eije-data-translation';
-import { IJEDataTranslationError, getTranslatedError } from './models/eije-data-translation';
-import { IJETranslationService } from './services/eije-translation-service';
-import { IJEManager } from './eije-manager';
-import { IJEPage } from './models/eije-page';
-import { IJESort } from './models/eije-sort';
-import { IJEView, IJEViewType } from './models/eije-view';
+import { EIJEConfiguration } from './eije-configuration';
+import { EIJEDataRenderService } from './services/eije-data-render-service';
+import { EIJEDataTranslation } from './models/eije-data-translation';
+import { EIJEDataTranslationError, getTranslatedError } from './models/eije-data-translation';
+import { EIJETranslationService } from './services/eije-translation-service';
+import { EIJEManager } from './eije-manager';
+import { EIJEPage } from './models/eije-page';
+import { EIJESort } from './models/eije-sort';
+import { EIJEView, EIJEViewType } from './models/eije-view';
 import { I18nService } from '../i18n/i18n-service';
 
-export class IJEData {
+export class EIJEData {
     private _currentID = 1;
 
     private _languages: string[] = [];
-    private _translations: IJEDataTranslation[] = [];
+    private _translations: EIJEDataTranslation[] = [];
 
     private _searchPattern: string = '';
     private _filteredFolder: string = '*';
 
-    private _view: IJEView;
-    private _page: IJEPage;
-    private _sort: IJESort;
+    private _view: EIJEView;
+    private _page: EIJEPage;
+    private _sort: EIJESort;
     
     // Métodos para obtener datos necesarios para las funciones de traducciones vacías
-    getAllTranslations(): IJEDataTranslation[] {
+    getAllTranslations(): EIJEDataTranslation[] {
         return this._translations;
     }
     
@@ -43,14 +43,14 @@ export class IJEData {
         return this._page.pageNumber;
     }
 
-    constructor(private _manager: IJEManager) {
+    constructor(private _manager: EIJEManager) {
         this._loadFiles();
         this._defaultValues();
     }
 
     private _defaultValues() {
         this._view = {
-            type: IJEViewType.TABLE,
+            type: EIJEViewType.TABLE,
             selectionId: 1
         };
 
@@ -73,7 +73,7 @@ export class IJEData {
         
         // Marcar explícitamente como inválido y mostrar el mensaje de error
         translation.valid = false;
-        translation.error = getTranslatedError(IJEDataTranslationError.KEY_NOT_EMPTY);
+        translation.error = getTranslatedError(EIJEDataTranslationError.KEY_NOT_EMPTY);
         
         this._insert(translation);
         this._view.selectionId = translation.id;
@@ -119,25 +119,25 @@ export class IJEData {
         let translations = this._getDisplayedTranslations();
 
         switch (this._view.type) {
-            case IJEViewType.LIST:
-                render += IJEDataRenderService.renderList(
+            case EIJEViewType.LIST:
+                render += EIJEDataRenderService.renderList(
                     translations,
                     this._get(this._view.selectionId),
                     this._languages,
                     this._page,
                     this._sort,
                     this._manager.isWorkspace,
-                    !!IJEConfiguration.TRANSLATION_SERVICE && !!IJEConfiguration.TRANSLATION_SERVICE_API_KEY
+                    !!EIJEConfiguration.TRANSLATION_SERVICE && !!EIJEConfiguration.TRANSLATION_SERVICE_API_KEY
                 );
                 break;
-            case IJEViewType.TABLE:
-                render += IJEDataRenderService.renderTable(
+            case EIJEViewType.TABLE:
+                render += EIJEDataRenderService.renderTable(
                     translations,
                     this._languages,
                     this._page,
                     this._sort,
                     this._manager.isWorkspace,
-                    !!IJEConfiguration.TRANSLATION_SERVICE && !!IJEConfiguration.TRANSLATION_SERVICE_API_KEY
+                    !!EIJEConfiguration.TRANSLATION_SERVICE && !!EIJEConfiguration.TRANSLATION_SERVICE_API_KEY
                 );
                 break;
         }
@@ -180,18 +180,18 @@ export class IJEData {
             if (this._manager.folderPath) {
                 existingFolders.push(this._manager.folderPath);
             } else {
-                existingFolders = IJEConfiguration.WORKSPACE_FOLDERS.map(d => d.path);
+                existingFolders = EIJEConfiguration.WORKSPACE_FOLDERS.map(d => d.path);
             }
             existingFolders.forEach(d => {
                 this._languages.forEach(language => {
-                    const json = JSON.stringify({}, null, IJEConfiguration.JSON_SPACE);
+                    const json = JSON.stringify({}, null, EIJEConfiguration.JSON_SPACE);
                     const f = vscode.Uri.file(_path.join(d, language + '.json')).fsPath;
                     fs.writeFileSync(f, json);
                 });
             });
 
             // Agrupar traducciones por carpeta
-            let folders: { [key: string]: IJEDataTranslation[] } = this._translations.reduce((r, a) => {
+            let folders: { [key: string]: EIJEDataTranslation[] } = this._translations.reduce((r, a) => {
                 r[a.folder] = r[a.folder] || [];
                 r[a.folder].push(a);
                 return r;
@@ -212,8 +212,8 @@ export class IJEData {
                             }
                         });
 
-                    var json = JSON.stringify(o, null, IJEConfiguration.JSON_SPACE);
-                    json = json.replace(/\n/g, IJEConfiguration.LINE_ENDING);
+                    var json = JSON.stringify(o, null, EIJEConfiguration.JSON_SPACE);
+                    json = json.replace(/\n/g, EIJEConfiguration.LINE_ENDING);
                     const f = vscode.Uri.file(_path.join(key, language + '.json')).fsPath;
                     fs.writeFileSync(f, json);
                 });
@@ -259,7 +259,7 @@ export class IJEData {
         }
     }
 
-    switchView(view: IJEViewType) {
+    switchView(view: EIJEViewType) {
         this._view.type = view;
         this._manager.refreshDataTable();
     }
@@ -267,12 +267,12 @@ export class IJEData {
     async translate(id: number, language: string = '') {
         const translation = this._get(id);
         if (translation && language) {
-            await IJETranslationService.translate(translation, language, this._languages);
+            await EIJETranslationService.translate(translation, language, this._languages);
             this._manager.refreshDataTable();
         }
     }
 
-    update(id: number, value: string, language: string = ''): IJEDataTranslation {
+    update(id: number, value: string, language: string = ''): EIJEDataTranslation {
         const translation = this._get(id);
         if (translation) {
             this._view.selectionId = id;
@@ -280,7 +280,7 @@ export class IJEData {
                 translation.languages[language] = value.replace(/\\n/g, '\n');
                 this._validate(translation);
             } else {
-                const newKey = IJEConfiguration.FORCE_KEY_UPPERCASE ? value.toUpperCase() : value;
+                const newKey = EIJEConfiguration.FORCE_KEY_UPPERCASE ? value.toUpperCase() : value;
                 const oldKey = translation.key;
 
                 translation.key = newKey;
@@ -302,7 +302,7 @@ export class IJEData {
      */
     countEmptyTranslations(): { count: number, hasEmpty: boolean } {
         // Get hidden languages to ignore
-        const hiddenLanguages = IJEConfiguration.HIDDEN_COLUMNS;
+        const hiddenLanguages = EIJEConfiguration.HIDDEN_COLUMNS;
         
         // Get all filtered translations
         let filteredTranslations = this._translations;
@@ -364,14 +364,14 @@ export class IJEData {
      */
     findEmptyTranslations(currentPage: number): { id: number, language: string }[] {
         // Si se permiten traducciones vacías, devolver array vacío
-        if (IJEConfiguration.ALLOW_EMPTY_TRANSLATIONS) {
+        if (EIJEConfiguration.ALLOW_EMPTY_TRANSLATIONS) {
             return [];
         }
         
         const emptyTranslations: { id: number, language: string }[] = [];
         
         // Get hidden languages to ignore
-        const hiddenLanguages = IJEConfiguration.HIDDEN_COLUMNS;
+        const hiddenLanguages = EIJEConfiguration.HIDDEN_COLUMNS;
         
         // Get all filtered and sorted translations
         let filteredTranslations = this._getDisplayedTranslations();
@@ -412,7 +412,7 @@ export class IJEData {
         const pageSize = this._page.pageSize;
         
         // Get hidden languages to ignore
-        const hiddenLanguages = IJEConfiguration.HIDDEN_COLUMNS;
+        const hiddenLanguages = EIJEConfiguration.HIDDEN_COLUMNS;
         
         // Get filtered translations (using the same filtering logic as _getDisplayedTranslations)
         let filteredTranslations = this._translations;
@@ -496,7 +496,7 @@ export class IJEData {
      * Create the hierachy based on the key
      */
     private _transformKeysValues(key: string, value: string, o = {}) {
-        let separator = IJEConfiguration.KEY_SEPARATOR ? key.indexOf(IJEConfiguration.KEY_SEPARATOR) : -1;
+        let separator = EIJEConfiguration.KEY_SEPARATOR ? key.indexOf(EIJEConfiguration.KEY_SEPARATOR) : -1;
         if (separator > 0) {
             const _key = key.substring(0, separator);
             if (!o[_key]) {
@@ -519,7 +519,7 @@ export class IJEData {
         if (!this._manager.isWorkspace) {
             this._loadFolder(this._manager.folderPath);
         } else {
-            const directories = IJEConfiguration.WORKSPACE_FOLDERS;
+            const directories = EIJEConfiguration.WORKSPACE_FOLDERS;
             directories.forEach(d => {
                 this._loadFolder(d.path);
             });
@@ -531,8 +531,8 @@ export class IJEData {
         );
         
         // Obtener configuración actual
-        const currentVisibleColumns = IJEConfiguration.VISIBLE_COLUMNS;
-        const currentHiddenColumns = IJEConfiguration.HIDDEN_COLUMNS;
+        const currentVisibleColumns = EIJEConfiguration.VISIBLE_COLUMNS;
+        const currentHiddenColumns = EIJEConfiguration.HIDDEN_COLUMNS;
         
         // Si no hay configuración guardada de columnas visibles,
         // inicializar para que todas las columnas sean visibles (excepto 'en' que ya es visible por defecto)
@@ -540,7 +540,7 @@ export class IJEData {
             if (currentVisibleColumns.length === 0 && currentHiddenColumns.length === 0) {
                 // Primera inicialización - mostrar todos los idiomas
                 const columnsToShow = this._languages.filter(lang => lang !== 'en');
-                IJEConfiguration.saveVisibleColumns(columnsToShow);
+                EIJEConfiguration.saveVisibleColumns(columnsToShow);
             } else {
                 // CASO 1: Idiomas que son completamente nuevos
                 // Comprobar si hay nuevos idiomas que no están en las columnas visibles ni ocultas
@@ -562,14 +562,14 @@ export class IJEData {
                     const updatedHiddenColumns = currentHiddenColumns.filter(
                         lang => !recreatedLanguages.includes(lang)
                     );
-                    IJEConfiguration.saveHiddenColumns(updatedHiddenColumns);
+                    EIJEConfiguration.saveHiddenColumns(updatedHiddenColumns);
                 }
                 
                 // Añadir a columnas visibles tanto los nuevos como los recreados
                 const languagesToAdd = [...completelyNewLanguages, ...recreatedLanguages];
                 if (languagesToAdd.length > 0) {
                     const updatedColumns = [...currentVisibleColumns, ...languagesToAdd];
-                    IJEConfiguration.saveVisibleColumns(updatedColumns);
+                    EIJEConfiguration.saveVisibleColumns(updatedColumns);
                 }
             }
         }
@@ -628,7 +628,7 @@ export class IJEData {
         let kv: any = {};
         for (let key in obj) {
             if (typeof obj[key] !== 'string') {
-                kv = { ...kv, ...this._getKeysValues(obj[key], _key + key + (IJEConfiguration.KEY_SEPARATOR || '')) };
+                kv = { ...kv, ...this._getKeysValues(obj[key], _key + key + (EIJEConfiguration.KEY_SEPARATOR || '')) };
             } else {
                 kv[_key + key] = obj[key];
             }
@@ -639,7 +639,7 @@ export class IJEData {
     /**
      * Get all translation displayed on the view based on the active filters and paging options
      */
-    private _getDisplayedTranslations(): IJEDataTranslation[] {
+    private _getDisplayedTranslations(): EIJEDataTranslation[] {
         var o = this._translations;
         if (this._filteredFolder !== '*') {
             o = o.filter(t => t.folder === this._filteredFolder);
@@ -662,7 +662,7 @@ export class IJEData {
             })
             .sort((a, b) => {
                 let _a: string, _b: string;
-                if (this._view.type === IJEViewType.LIST || this._sort.column === I18nService.getInstance().t('ui.labels.keyColumn')) {
+                if (this._view.type === EIJEViewType.LIST || this._sort.column === I18nService.getInstance().t('ui.labels.keyColumn')) {
                     _a = a.key.toLowerCase();
                     _b = b.key.toLowerCase();
                 } else if (this._sort.column === I18nService.getInstance().t('ui.labels.folder')) {
@@ -672,11 +672,11 @@ export class IJEData {
                     _a = a.languages[this._sort.column] ? a.languages[this._sort.column].toLowerCase() : '';
                     _b = b.languages[this._sort.column] ? b.languages[this._sort.column].toLowerCase() : '';
                 }
-                return ((this._view.type === IJEViewType.LIST ? true : this._sort.ascending) ? _a > _b : _a < _b) ? 1 : -1;
+                return ((this._view.type === EIJEViewType.LIST ? true : this._sort.ascending) ? _a > _b : _a < _b) ? 1 : -1;
             });
 
         this._page.count = o.length;
-        this._page.pageSize = this._view.type === IJEViewType.LIST ? 15 : this._page.pageSize;
+        this._page.pageSize = this._view.type === EIJEViewType.LIST ? 15 : this._page.pageSize;
         this._page.totalPages = Math.ceil(this._page.count / this._page.pageSize);
 
         if (this._page.pageNumber < 1) {
@@ -693,7 +693,7 @@ export class IJEData {
     /**
      * Validations
      */
-    private _validateImpacted(translation: IJEDataTranslation, key: string = undefined) {
+    private _validateImpacted(translation: EIJEDataTranslation, key: string = undefined) {
         if (key === '') {
             return;
         }
@@ -709,20 +709,20 @@ export class IJEData {
         });
     }
 
-    private _validate(translation: IJEDataTranslation, keyChanged: boolean = false) {
+    private _validate(translation: EIJEDataTranslation, keyChanged: boolean = false) {
         var t = this._validatePath(translation);
         if (translation.key === '') {
             translation.valid = false;
-            translation.error = getTranslatedError(IJEDataTranslationError.KEY_NOT_EMPTY);
+            translation.error = getTranslatedError(EIJEDataTranslationError.KEY_NOT_EMPTY);
         } else if (keyChanged) {
-            let separator = IJEConfiguration.KEY_SEPARATOR ? this.escapeRegExp(IJEConfiguration.KEY_SEPARATOR) : false;
+            let separator = EIJEConfiguration.KEY_SEPARATOR ? this.escapeRegExp(EIJEConfiguration.KEY_SEPARATOR) : false;
             //does not start or end with the separator or two consecutive separators
             if (separator && new RegExp(`^${separator}|${separator}{2,}|${separator}$`).test(translation.key)) {
                 translation.valid = false;
-                translation.error = getTranslatedError(IJEDataTranslationError.INVALID_KEY);
+                translation.error = getTranslatedError(EIJEDataTranslationError.INVALID_KEY);
             } else if (this._validatePath(translation).length > 0) {
                 translation.valid = false;
-                translation.error = getTranslatedError(IJEDataTranslationError.DUPLICATE_PATH);
+                translation.error = getTranslatedError(EIJEDataTranslationError.DUPLICATE_PATH);
             } else {
                 translation.valid = true;
                 translation.error = '';
@@ -730,7 +730,7 @@ export class IJEData {
         }
     }
 
-    private _validatePath(translation: IJEDataTranslation, valid: boolean = true, key: string = undefined) {
+    private _validatePath(translation: EIJEDataTranslation, valid: boolean = true, key: string = undefined) {
         const splitKey = this._split(key !== undefined ? key : translation.key);
 
         return this._translations.filter(t => {
@@ -750,10 +750,10 @@ export class IJEData {
     /**
      * Factories
      */
-    private _createFactoryIJEDataTranslation(): IJEDataTranslation {
+    private _createFactoryIJEDataTranslation(): EIJEDataTranslation {
         return {
             id: this._currentID++,
-            folder: !this._manager.isWorkspace ? this._manager.folderPath : this._filteredFolder !== '*' ? this._filteredFolder : IJEConfiguration.WORKSPACE_FOLDERS[0].path,
+            folder: !this._manager.isWorkspace ? this._manager.folderPath : this._filteredFolder !== '*' ? this._filteredFolder : EIJEConfiguration.WORKSPACE_FOLDERS[0].path,
             valid: true,
             error: '',
             key: '',
@@ -768,7 +768,7 @@ export class IJEData {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
     }
 
-    private _get(id: number): IJEDataTranslation {
+    private _get(id: number): EIJEDataTranslation {
         return this._translations.find(t => t.id === id);
     }
 
@@ -776,13 +776,13 @@ export class IJEData {
         return this._translations.findIndex(t => t.id === id);
     }
 
-    private _insert(translation: IJEDataTranslation) {
+    private _insert(translation: EIJEDataTranslation) {
         this._translations.push(translation);
     }
 
     private _split(key: string) {
-        if (IJEConfiguration.KEY_SEPARATOR) {
-            return key.split(IJEConfiguration.KEY_SEPARATOR);
+        if (EIJEConfiguration.KEY_SEPARATOR) {
+            return key.split(EIJEConfiguration.KEY_SEPARATOR);
         }
         return [key];
     }

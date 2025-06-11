@@ -1,11 +1,11 @@
-import { IJEConfiguration } from '../eije-configuration';
-import { IJEDataTranslation } from '../models/eije-data-translation';
-import { IJEPage } from '../models/eije-page';
-import { IJESort } from '../models/eije-sort';
+import { EIJEConfiguration } from '../eije-configuration';
+import { EIJEDataTranslation } from '../models/eije-data-translation';
+import { EIJEPage } from '../models/eije-page';
+import { EIJESort } from '../models/eije-sort';
 import { I18nService } from '../../i18n/i18n-service';
 
-export class IJEDataRenderService {
-    static renderPagination(translations: IJEDataTranslation[], page: IJEPage, withPageSizeSelector: boolean = true) {
+export class EIJEDataRenderService {
+    static renderPagination(translations: EIJEDataTranslation[], page: EIJEPage, withPageSizeSelector: boolean = true) {
         let render = '<div>';
         render += '<div class="row">';
         render += '<div class="col-4">';
@@ -48,8 +48,8 @@ export class IJEDataRenderService {
         return render;
     }
 
-    private static _getTableHeader(column: string, sort: IJESort) {
-        const isRTL = IJEConfiguration.isRTL(column);
+    private static _getTableHeader(column: string, sort: EIJESort) {
+        const isRTL = EIJEConfiguration.isRTL(column);
         const rtlClass = isRTL ? 'rtl-header' : '';
         
         return `<th class="text-center ${rtlClass}" style="cursor: pointer;" onclick="sort('${column}',${sort.column === column ? !sort.ascending : true})" ${isRTL ? 'dir="rtl"' : ''}>
@@ -61,7 +61,7 @@ export class IJEDataRenderService {
 
     static renderColumnSelector(languages: string[]) {
         const i18n = I18nService.getInstance();
-        const visibleColumns = IJEConfiguration.VISIBLE_COLUMNS;
+        const visibleColumns = EIJEConfiguration.VISIBLE_COLUMNS;
         
         let render = '<div class="column-selector">';
         
@@ -103,9 +103,9 @@ export class IJEDataRenderService {
         return render;
     }
 
-    static renderTable(translations: IJEDataTranslation[], languages: string[], page: IJEPage, sort: IJESort, showFolder: boolean = true, hasTranslateService = false) {
+    static renderTable(translations: EIJEDataTranslation[], languages: string[], page: EIJEPage, sort: EIJESort, showFolder: boolean = true, hasTranslateService = false) {
         // Get visible columns
-        const visibleColumns = IJEConfiguration.VISIBLE_COLUMNS;
+        const visibleColumns = EIJEConfiguration.VISIBLE_COLUMNS;
         const allLanguages = [...languages]; // Copia para no modificar el original
         
         // Filtrar idiomas según visibilidad
@@ -136,7 +136,7 @@ export class IJEDataRenderService {
 
             if (showFolder) {
                 render += `<td><select id="select-folder-${t.id}" class="form-control" onchange="updateFolder(this,${t.id})">`;
-                const folders = IJEConfiguration.WORKSPACE_FOLDERS;
+                const folders = EIJEConfiguration.WORKSPACE_FOLDERS;
                 folders.forEach(d => {
                     render += `<option value='${d.path.replace(/"/g, '&quot;')}' ${d.path === t.folder ? 'selected' : ''}>${d.name}</option>`;
                 });
@@ -155,7 +155,7 @@ export class IJEDataRenderService {
 
             // Solo mostrar las celdas de las columnas visibles
             filteredLanguages.forEach((language: string) => {
-                const isRTL = IJEConfiguration.isRTL(language);
+                const isRTL = EIJEConfiguration.isRTL(language);
                 const rtlClass = isRTL ? 'rtl-text' : '';
                 
                 render += '<td>';
@@ -190,16 +190,16 @@ export class IJEDataRenderService {
     }
 
     static renderList(
-        translations: IJEDataTranslation[],
-        selectTranslation: IJEDataTranslation,
+        translations: EIJEDataTranslation[],
+        selectTranslation: EIJEDataTranslation,
         languages: string[],
-        page: IJEPage,
-        sort: IJESort,
+        page: EIJEPage,
+        sort: EIJESort,
         showFolder: boolean = true,
         hasTranslateService = false
     ) {
         // Get visible columns
-        const visibleColumns = IJEConfiguration.VISIBLE_COLUMNS;
+        const visibleColumns = EIJEConfiguration.VISIBLE_COLUMNS;
         const allLanguages = [...languages]; // Copia para no modificar el original
         
         // Filtrar idiomas según visibilidad
@@ -233,7 +233,7 @@ export class IJEDataRenderService {
                       <div class="col-12">
                         <select id="select-folder-${selectTranslation.id}" class="form-control" onchange="updateFolder(this,${selectTranslation.id})">`;
 
-                const folders = IJEConfiguration.WORKSPACE_FOLDERS;
+                const folders = EIJEConfiguration.WORKSPACE_FOLDERS;
                 folders.forEach(d => {
                     render += `<option value='${d.path}' ${d.path === selectTranslation.folder ? 'selected' : ''}>${d.name}</option>`;
                 });
@@ -262,7 +262,7 @@ export class IJEDataRenderService {
             
             // Solo mostrar los campos de texto de los idiomas visibles
             filteredLanguages.forEach((language: string) => {
-                const isRTL = IJEConfiguration.isRTL(language);
+                const isRTL = EIJEConfiguration.isRTL(language);
                 const rtlClass = isRTL ? 'rtl-text' : '';
                 
                 render += `<label>${language}</label>`;

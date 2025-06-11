@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import * as _path from 'path';
 
-import { IJEEditorProvider } from './ei18n-json-editor/providers/eije-editor-provider';
-import { IJEConfiguration } from './ei18n-json-editor/eije-configuration';
+import { EIJEEditorProvider } from './ei18n-json-editor/providers/eije-editor-provider';
+import { EIJEConfiguration } from './ei18n-json-editor/eije-configuration';
 import { I18nService } from './i18n/i18n-service';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -17,12 +17,12 @@ export function activate(context: vscode.ExtensionContext) {
         i18n.setLanguage('en');
     }
 
-    if (IJEConfiguration.WORKSPACE_FOLDERS) {
+    if (EIJEConfiguration.WORKSPACE_FOLDERS) {
         let myStatusBarItem: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
         myStatusBarItem.command = 'ei18n-json-editor';
         myStatusBarItem.text = `$(symbol-string) ${i18n.t('extension.statusBar')}`;
         myStatusBarItem.show();
     }
 
-    context.subscriptions.push(IJEEditorProvider.register(context));
+    context.subscriptions.push(EIJEEditorProvider.register(context));
 }

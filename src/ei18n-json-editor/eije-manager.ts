@@ -2,29 +2,29 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as _path from 'path';
 
-import { IJEConfiguration } from './eije-configuration';
-import { IJEData } from './eije-data';
-import { IJEDataTranslation } from './models/eije-data-translation';
+import { EIJEConfiguration } from './eije-configuration';
+import { EIJEData } from './eije-data';
+import { EIJEDataTranslation } from './models/eije-data-translation';
 import { I18nService } from '../i18n/i18n-service';
 
-export class IJEManager {
+export class EIJEManager {
     get isWorkspace() {
         return this.folderPath === null;
     }
-    private _data: IJEData;
+    private _data: EIJEData;
 
     constructor(private _context: vscode.ExtensionContext, private _panel: vscode.WebviewPanel, public folderPath: string) {
         // Guardar/inicializar el archivo de configuración
-        IJEConfiguration.saveFullConfiguration();
+        EIJEConfiguration.saveFullConfiguration();
         
-        this._data = new IJEData(this);
+        this._data = new EIJEData(this);
         this._initEvents();
         this._initTemplate();
         _panel.webview.html = this.getTemplate();
         
         // Guardar la configuración cuando se cierra el panel
         this._panel.onDidDispose(() => {
-            IJEConfiguration.saveFullConfiguration();
+            EIJEConfiguration.saveFullConfiguration();
         });
     }
 
@@ -104,8 +104,8 @@ export class IJEManager {
             return;
         }
         
-        let visibleColumns = IJEConfiguration.VISIBLE_COLUMNS;
-        let hiddenColumns = IJEConfiguration.HIDDEN_COLUMNS;
+        let visibleColumns = EIJEConfiguration.VISIBLE_COLUMNS;
+        let hiddenColumns = EIJEConfiguration.HIDDEN_COLUMNS;
         
         if (visible) {
             // Mostrar columna
@@ -124,11 +124,11 @@ export class IJEManager {
         }
         
         // Guardar configuración
-        IJEConfiguration.saveVisibleColumns(visibleColumns);
-        IJEConfiguration.saveHiddenColumns(hiddenColumns);
+        EIJEConfiguration.saveVisibleColumns(visibleColumns);
+        EIJEConfiguration.saveHiddenColumns(hiddenColumns);
         
         // Guardar la configuración completa para mantener el archivo actualizado
-        IJEConfiguration.saveFullConfiguration();
+        EIJEConfiguration.saveFullConfiguration();
         
         // Actualizar la tabla
         this.refreshDataTable();
@@ -136,9 +136,9 @@ export class IJEManager {
     
     reloadData() {
         // Guardar la configuración completa
-        IJEConfiguration.saveFullConfiguration();
+        EIJEConfiguration.saveFullConfiguration();
         
-        this._data = new IJEData(this);
+        this._data = new EIJEData(this);
         this.refreshDataTable();
         const i18n = I18nService.getInstance();
         vscode.window.showInformationMessage(i18n.t('ui.messages.reloaded'));
@@ -181,9 +181,9 @@ export class IJEManager {
             if (this.folderPath) {
                 // Use the current folder if opened from a specific folder
                 targetPath = this.folderPath;
-            } else if (IJEConfiguration.WORKSPACE_FOLDERS && IJEConfiguration.WORKSPACE_FOLDERS.length > 0) {
+            } else if (EIJEConfiguration.WORKSPACE_FOLDERS && EIJEConfiguration.WORKSPACE_FOLDERS.length > 0) {
                 // Use the first workspace folder if opened from workspace
-                targetPath = IJEConfiguration.WORKSPACE_FOLDERS[0].path;
+                targetPath = EIJEConfiguration.WORKSPACE_FOLDERS[0].path;
             } else {
                 vscode.window.showErrorMessage(i18n.t('ui.messages.noTargetFolder'));
                 return;
@@ -216,13 +216,13 @@ export class IJEManager {
             }
             
             // Create new language file
-            const fileContent = JSON.stringify(jsonContent, null, IJEConfiguration.JSON_SPACE);
+            const fileContent = JSON.stringify(jsonContent, null, EIJEConfiguration.JSON_SPACE);
             fs.writeFileSync(filePath, fileContent);
             
             vscode.window.showInformationMessage(i18n.t('ui.messages.languageFileCreated', `${langCode}.json`));
             
             // Guardar la configuración completa
-            IJEConfiguration.saveFullConfiguration();
+            EIJEConfiguration.saveFullConfiguration();
             
             // Reload the editor to show the new language
             this.reloadData();
@@ -269,7 +269,7 @@ export class IJEManager {
 
     _initTemplate() {
         if (this.isWorkspace) {
-            this._panel.webview.postMessage({ command: 'folders', folders: IJEConfiguration.WORKSPACE_FOLDERS });
+            this._panel.webview.postMessage({ command: 'folders', folders: EIJEConfiguration.WORKSPACE_FOLDERS });
         }
     }
 
@@ -281,7 +281,7 @@ export class IJEManager {
      * Update the translation and refresh the empty translations count
      * @param translation The translation to update
      */
-    updateTranslation(translation: IJEDataTranslation) {
+    updateTranslation(translation: EIJEDataTranslation) {
         this._panel.webview.postMessage({ command: 'update', translation: translation });
         
         // Actualizar el contador de traducciones faltantes después de cada modificación
