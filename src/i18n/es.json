@@ -58,7 +58,9 @@
       "templateReadError": "No se pudo leer la plantilla en inglés. Creando archivo vacío.",
       "templateNotFound": "Plantilla en inglés no encontrada. Creando archivo vacío.",
       "languageFileCreated": "Nuevo archivo de idioma {0} creado",
-      "fileCreationError": "Error al crear el archivo de idioma: {0}"
+      "fileCreationError": "Error al crear el archivo de idioma: {0}",
+      "unsupportedFolder": "La carpeta '{0}' no está soportada. Por favor configure las carpetas soportadas en la configuración.",
+      "noEmptyTranslations": "No se encontraron traducciones vacías."
     },
     "placeholders": {
       "key": "Clave...",

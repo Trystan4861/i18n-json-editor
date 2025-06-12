@@ -44,7 +44,7 @@
                 {
                     "command": "ei18n-json-editor",
                     "group": "2_workspace",
-                    "when": "explorerResourceIsFolder && resourceFilename in ext:supportedFolders"
+                    "when": "explorerResourceIsFolder && ext:showContextMenu"
                 }
             ],
             "commandPalette": [
@@ -124,6 +124,11 @@
                 "i18nJsonEditor.workspaceFolders": {
                     "type": "array",
                     "description": "An array of objects to specify which folders are used to manage your translations"
+                },
+                "i18nJsonEditor.allowEmptyTranslations": {
+                    "default": false,
+                    "type": "boolean",
+                    "description": "Allow empty translations to be saved in JSON files"
                 }
             }
         }

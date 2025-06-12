@@ -189,7 +189,10 @@ export class EIJEData {
         }
 
         try {
-            // Limpiar JSONs existentes
+            // Obtener idiomas ocultos para excluirlos del guardado
+            const hiddenLanguages = EIJEConfiguration.HIDDEN_COLUMNS;
+            
+            // Limpiar JSONs existentes (solo de idiomas visibles)
             let existingFolders = [];
             if (this._manager.folderPath) {
                 existingFolders.push(this._manager.folderPath);
@@ -198,6 +201,11 @@ export class EIJEData {
             }
             existingFolders.forEach(d => {
                 this._languages.forEach(language => {
+                    // Saltar idiomas ocultos - no deben limpiarse ni guardarse
+                    if (hiddenLanguages.includes(language)) {
+                        return;
+                    }
+                    
                     const json = JSON.stringify({}, null, EIJEConfiguration.JSON_SPACE);
                     const f = vscode.Uri.file(_path.join(d, language + '.json')).fsPath;
                     fs.writeFileSync(f, json);
@@ -215,14 +223,25 @@ export class EIJEData {
             Object.entries(folders).forEach(entry => {
                 const [key, value] = entry;
                 this._languages.forEach(language => {
+                    // Saltar idiomas ocultos - no deben guardarse
+                    if (hiddenLanguages.includes(language)) {
+                        return;
+                    }
+                    
                     let o = {};
 
                     value
                         .filter(translation => translation.valid)
                         .sort((a, b) => (a.key > b.key ? 1 : -1))
                         .forEach(translation => {
-                            if (translation.languages[language]) {
-                                this._transformKeysValues(translation.key, translation.languages[language], o);
+                            // Si se permiten traducciones vacías, incluir todas las traducciones
+                            // Si no se permiten, solo incluir las que tienen contenido
+                            const hasContent = translation.languages[language] && translation.languages[language].trim() !== '';
+                            const shouldInclude = hasContent || EIJEConfiguration.ALLOW_EMPTY_TRANSLATIONS;
+                            
+                            if (shouldInclude) {
+                                const value = translation.languages[language] || '';
+                                this._transformKeysValues(translation.key, value, o);
                             }
                         });
 

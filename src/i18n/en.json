@@ -58,7 +58,9 @@
       "templateReadError": "Could not read English template. Creating empty file.",
       "templateNotFound": "English template not found. Creating empty file.",
       "languageFileCreated": "New language file {0} created",
-      "fileCreationError": "Error creating language file: {0}"
+      "fileCreationError": "Error creating language file: {0}",
+      "unsupportedFolder": "The folder '{0}' is not supported. Please configure supported folders in settings.",
+      "noEmptyTranslations": "No empty translations found."
     },
     "placeholders": {
       "key": "Key...",

@@ -64,22 +64,21 @@ var hasUnsavedChanges = false;
           }
         }
         
-        // Actualizar el botón de guardar para que refleje el estado actual
-        const saveButtonUpdate = document.getElementById("save-button");
-        if (saveButtonUpdate && hasAnyEmptyTranslations) {
-          if (!allowEmptyFlag) {
-            // Si hay traducciones vacías y no se permiten, usar rojo
-            saveButtonUpdate.classList.remove("btn-vscode", "btn-success", "btn-warning");
-            saveButtonUpdate.classList.add("btn-danger");
-          } else {
-            // Si hay traducciones vacías pero están permitidas, usar amarillo
-            saveButtonUpdate.classList.remove("btn-vscode", "btn-success", "btn-danger");
-            saveButtonUpdate.classList.add("btn-warning");
+        // Solo actualizar el botón de guardar si hay cambios pendientes
+        // Si no hay cambios pendientes, no interferir con el flujo de colores del guardado
+        if (hasUnsavedChanges) {
+          const saveButtonUpdate = document.getElementById("save-button");
+          if (saveButtonUpdate) {
+            if (hasAnyEmptyTranslations && !allowEmptyFlag) {
+              // Si hay traducciones vacías y NO se permiten, usar rojo (error)
+              saveButtonUpdate.classList.remove("btn-vscode", "btn-success", "btn-warning");
+              saveButtonUpdate.classList.add("btn-danger");
+            } else {
+              // Si no hay traducciones vacías O se permiten las vacías, usar amarillo (cambios pendientes)
+              saveButtonUpdate.classList.remove("btn-vscode", "btn-success", "btn-danger");
+              saveButtonUpdate.classList.add("btn-warning");
+            }
           }
-        } else if (saveButtonUpdate) {
-          // Si no hay traducciones vacías, botón normal
-          saveButtonUpdate.classList.remove("btn-warning", "btn-danger", "btn-success");
-          saveButtonUpdate.classList.add("btn-vscode");
         }
         break;
         
@@ -293,20 +292,29 @@ function save() {
 function updateSaveButtonStyle() {
   const saveButtonStyle = document.getElementById("save-button");
   if (hasUnsavedChanges) {
-    // Verificar si hay traducciones vacías
+    // Verificar si hay traducciones vacías y si están permitidas
     const emptyTranslationsCounter = document.getElementById('missing-translations-counter');
     const hasMissingTranslations = emptyTranslationsCounter && 
                                 parseInt(emptyTranslationsCounter.textContent) > 0;
     
+    // Obtener configuración de traducciones vacías permitidas desde el botón de advertencia
+    const dangerBtn = document.getElementById('btn-warning-translations');
+    const allowEmptyTranslations = dangerBtn && dangerBtn.classList.contains('btn-warning');
+    
     saveButtonStyle.classList.remove("btn-vscode", "btn-success", "btn-danger");
     
-    if (hasMissingTranslations) {
-      saveButtonStyle.classList.add("btn-warning");
+    if (hasMissingTranslations && !allowEmptyTranslations) {
+      // Si hay traducciones vacías y NO se permiten, usar rojo (error)
+      saveButtonStyle.classList.add("btn-danger");
     } else {
+      // Si no hay traducciones vacías O se permiten las vacías, usar amarillo (cambios pendientes)
       saveButtonStyle.classList.add("btn-warning");
     }
     saveButtonStyle.disabled = false; // Habilitar inmediatamente cuando hay cambios
   } else {
+    // Cuando no hay cambios, volver al estado normal (azul) y deshabilitar
+    saveButtonStyle.classList.remove("btn-warning", "btn-success", "btn-danger");
+    saveButtonStyle.classList.add("btn-vscode");
     saveButtonStyle.disabled = true; // Deshabilitar cuando no hay cambios
   }
 }
