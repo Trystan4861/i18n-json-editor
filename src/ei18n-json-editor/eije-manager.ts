@@ -14,9 +14,40 @@ export class EIJEManager {
     }
     private _data: EIJEData;
 
+    // Mantener un registro de la configuración anterior
+    private _previousAllowEmptyTranslations: boolean;
+    
     constructor(private _context: vscode.ExtensionContext, private _panel: vscode.WebviewPanel, public folderPath: string) {
         // Guardar/inicializar el archivo de configuración
         EIJEConfiguration.saveFullConfiguration();
+        
+        // Almacenar el valor actual de allowEmptyTranslations
+        this._previousAllowEmptyTranslations = EIJEConfiguration.ALLOW_EMPTY_TRANSLATIONS;
+        
+        // Configurar un listener para cambios en la configuración
+        this._context.subscriptions.push(
+            vscode.workspace.onDidChangeConfiguration(e => {
+                if (e.affectsConfiguration('i18nJsonEditor.allowEmptyTranslations')) {
+                    // Si cambió la configuración de allowEmptyTranslations
+                    const newAllowEmptyValue = EIJEConfiguration.ALLOW_EMPTY_TRANSLATIONS;
+                    
+                    // Solo actualizar si realmente cambió el valor
+                    if (this._previousAllowEmptyTranslations !== newAllowEmptyValue) {
+                        this._previousAllowEmptyTranslations = newAllowEmptyValue;
+                        
+                        // Revalidar todas las traducciones con la nueva configuración
+                        this._data._revalidateAllTranslations();
+                        
+                        // Actualizar UI con el nuevo estado
+                        const currentPage = this._data.getCurrentPage();
+                        this.checkEmptyTranslations(currentPage);
+                        
+                        // Refrescar la tabla de datos para mostrar posibles nuevos errores
+                        this.refreshDataTable();
+                    }
+                }
+            })
+        );
         
         this._data = new EIJEData(this);
         this._initEvents();
@@ -251,10 +282,15 @@ export class EIJEManager {
         // Count all empty translations in the entire dataset
         const emptyTranslationsCount = this._data.countEmptyTranslations();
         
+        // Solo considerar las traducciones vacías como error si no están permitidas
+        const hasError = !EIJEConfiguration.ALLOW_EMPTY_TRANSLATIONS && emptyTranslationsCount.hasEmpty;
+        
         this._panel.webview.postMessage({ 
             command: 'emptyTranslationsFound', 
             emptyTranslations: emptyTranslations,
-            hasEmptyTranslations: emptyTranslationsCount.hasEmpty,
+            hasEmptyTranslations: hasError,
+            allowEmptyTranslations: EIJEConfiguration.ALLOW_EMPTY_TRANSLATIONS,
+            hasAnyEmptyTranslations: emptyTranslationsCount.hasEmpty,
             totalEmptyCount: emptyTranslationsCount.count
         });
     }
@@ -306,10 +342,20 @@ export class EIJEManager {
      * @param success Indica si el guardado fue exitoso
      */
     sendSaveResult(success: boolean) {
+        // Contar traducciones vacías para actualizar el estado de la UI
+        const emptyTranslationsCount = this._data.countEmptyTranslations();
+        const hasEmptyTranslations = emptyTranslationsCount.hasEmpty;
+        
         this._panel.webview.postMessage({ 
             command: 'saveResult', 
-            success: success 
+            success: success,
+            allowEmptyTranslations: EIJEConfiguration.ALLOW_EMPTY_TRANSLATIONS,
+            hasEmptyTranslations: hasEmptyTranslations
         });
+        
+        // Actualizar el estado de la UI después de guardar
+        const currentPage = this._data.getCurrentPage();
+        this.checkEmptyTranslations(currentPage);
     }
 
     getTemplate(): string {

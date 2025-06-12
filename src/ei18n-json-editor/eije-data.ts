@@ -156,7 +156,20 @@ export class EIJEData {
         }
     }
 
+    /**
+     * Revalida todas las traducciones con la configuración actual
+     * Este método es público para poder ser llamado cuando cambia la configuración
+     */
+    _revalidateAllTranslations() {
+        this._translations.forEach(translation => {
+            this._validate(translation, false);
+        });
+    }
+    
     save() {
+        // Revalidar todas las traducciones para asegurar que cumplen con la configuración actual
+        this._revalidateAllTranslations();
+        
         // Verificar si hay traducciones con claves vacías o inválidas
         const invalidTranslations = this._translations.filter(t => !t.valid);
         if (invalidTranslations.length > 0) {
@@ -727,6 +740,20 @@ export class EIJEData {
             } else {
                 translation.valid = true;
                 translation.error = '';
+            }
+        }
+        
+        // Si no se permiten traducciones vacías, validar que no haya ninguna
+        if (translation.valid && !EIJEConfiguration.ALLOW_EMPTY_TRANSLATIONS) {
+            // Comprobar si hay algún idioma con traducción vacía
+            for (const language of this._languages) {
+                if (language !== 'key' && 
+                    !EIJEConfiguration.HIDDEN_COLUMNS.includes(language) && 
+                    (!translation.languages[language] || translation.languages[language].trim() === '')) {
+                    translation.valid = false;
+                    translation.error = getTranslatedError(EIJEDataTranslationError.EMPTY_TRANSLATION);
+                    break;
+                }
             }
         }
     }

@@ -1,3 +1,10 @@
+/**
+ * Template JavaScript para la extensión i18n JSON Editor
+ * Maneja la comunicación entre la interfaz web y VSCode, 
+ * gestiona el estado de traducciones vacías y controla la interfaz de usuario
+ * @author trystan4861
+ */
+
 var vscode;
 var hasUnsavedChanges = false;
 
@@ -26,7 +33,9 @@ var hasUnsavedChanges = false;
       case "emptyTranslationsFound":
         // Actualizar la información de traducciones vacías
         const emptyTranslations = message.emptyTranslations;
-        const filesHaveEmptyTranslations = message.hasEmptyTranslations;
+        const filesHaveEmptyTranslations = message.hasEmptyTranslations; // true si hay traducciones vacías Y no se permiten
+        const allowEmptyFlag = message.allowEmptyTranslations; // true si se permiten traducciones vacías
+        const hasAnyEmptyTranslations = message.hasAnyEmptyTranslations; // true si hay alguna traducción vacía
         const totalEmptyCount = message.totalEmptyCount;
         
         // Actualizar contador con el TOTAL de traducciones vacías en todo el archivo
@@ -36,9 +45,41 @@ var hasUnsavedChanges = false;
         }
         
         // Mostrar u ocultar el botón según si hay traducciones vacías en todo el conjunto de datos
+        // Y si esas traducciones vacías son un error o no
         const dangerBtn = document.getElementById('btn-warning-translations');
         if (dangerBtn) {
-          dangerBtn.style.display = filesHaveEmptyTranslations ? 'inline-block' : 'none';
+          if (filesHaveEmptyTranslations) {
+            // Si hay traducciones vacías y no se permiten, mostrar botón rojo (peligro)
+            dangerBtn.style.display = 'inline-block';
+            dangerBtn.classList.remove('btn-warning');
+            dangerBtn.classList.add('btn-danger');
+          } else if (hasAnyEmptyTranslations && allowEmptyFlag) {
+            // Si hay traducciones vacías pero están permitidas, mostrar botón amarillo (advertencia)
+            dangerBtn.style.display = 'inline-block';
+            dangerBtn.classList.remove('btn-danger');
+            dangerBtn.classList.add('btn-warning');
+          } else {
+            // Si no hay traducciones vacías, ocultar botón
+            dangerBtn.style.display = 'none';
+          }
+        }
+        
+        // Actualizar el botón de guardar para que refleje el estado actual
+        const saveButtonUpdate = document.getElementById("save-button");
+        if (saveButtonUpdate && hasAnyEmptyTranslations) {
+          if (!allowEmptyFlag) {
+            // Si hay traducciones vacías y no se permiten, usar rojo
+            saveButtonUpdate.classList.remove("btn-vscode", "btn-success", "btn-warning");
+            saveButtonUpdate.classList.add("btn-danger");
+          } else {
+            // Si hay traducciones vacías pero están permitidas, usar amarillo
+            saveButtonUpdate.classList.remove("btn-vscode", "btn-success", "btn-danger");
+            saveButtonUpdate.classList.add("btn-warning");
+          }
+        } else if (saveButtonUpdate) {
+          // Si no hay traducciones vacías, botón normal
+          saveButtonUpdate.classList.remove("btn-warning", "btn-danger", "btn-success");
+          saveButtonUpdate.classList.add("btn-vscode");
         }
         break;
         
@@ -89,49 +130,52 @@ var hasUnsavedChanges = false;
         
       case "saveResult":
         // Manejar el resultado del guardado (éxito o error)
-        const saveButton = document.getElementById("save-button");
+        const saveButtonResult = document.getElementById("save-button");
         
         // Verificar si hay traducciones vacías
         const emptyTranslationsCounter = document.getElementById('missing-translations-counter');
         const pendingEmptyTranslations = emptyTranslationsCounter && 
                                      parseInt(emptyTranslationsCounter.textContent) > 0;
         
-        // Si el backend indicó éxito pero hay traducciones vacías, notificar al backend
-        // para que cancele cualquier mensaje de éxito y muestre solo el mensaje de error
-        if (message.success && pendingEmptyTranslations) {
-          vscode.postMessage({ 
-            command: "notifyEmptyTranslations", 
-            count: parseInt(emptyTranslationsCounter.textContent),
-            // Indicar explícitamente que se debe cancelar el mensaje de éxito
-            cancelSuccessMessage: true
-          });
-        }
+        // Verificar si se permiten traducciones vacías (viene del backend)
+        let allowEmptyTrans = message.allowEmptyTranslations;
         
-        if (message.success && !pendingEmptyTranslations) {
-          // Si fue exitoso y no hay traducciones vacías, mostrar success y volver al estado normal
-          saveButton.classList.remove("btn-vscode", "btn-warning", "btn-danger");
-          saveButton.classList.add("btn-success");
-          saveButton.disabled = false;
-          
-          // Después de 2.5 segundos, volver al estado normal
-          setTimeout(() => {
-            saveButton.classList.remove("btn-success");
-            saveButton.classList.add("btn-vscode");
-            hasUnsavedChanges = false;
-            saveButton.disabled = true; // Deshabilitar cuando vuelve a estilo primary
-          }, 2500);
+        // Si el guardado tuvo éxito
+        if (message.success) {
+            // Si hay traducciones vacías y NO se permiten, notificar al backend
+            if (pendingEmptyTranslations && !allowEmptyTrans) {
+                vscode.postMessage({ 
+                    command: "notifyEmptyTranslations", 
+                    count: parseInt(emptyTranslationsCounter.textContent),
+                    // Indicar explícitamente que se debe cancelar el mensaje de éxito
+                    cancelSuccessMessage: true
+                });
+            } else {
+                // Si fue exitoso (y no hay traducciones vacías O se permiten), mostrar success
+                saveButtonResult.classList.remove("btn-vscode", "btn-warning", "btn-danger");
+                saveButtonResult.classList.add("btn-success");
+                saveButtonResult.disabled = false;
+                
+                // Después de 2.5 segundos, volver al estado normal
+                setTimeout(() => {
+                    saveButtonResult.classList.remove("btn-success");
+                    saveButtonResult.classList.add("btn-vscode");
+                    hasUnsavedChanges = false;
+                    saveButtonResult.disabled = true; // Deshabilitar cuando vuelve a estilo primary
+                }, 2500);
+            }
         } else {
           // Si hubo error o hay traducciones vacías
           // Mostrar estado de error
-          saveButton.classList.remove("btn-vscode", "btn-warning", "btn-success");
-          saveButton.classList.add("btn-danger");
-          saveButton.disabled = false;
+          saveButtonResult.classList.remove("btn-vscode", "btn-warning", "btn-success");
+          saveButtonResult.classList.add("btn-danger");
+          saveButtonResult.disabled = false;
           
           // Después de 2 segundos, volver al estado de advertencia
           setTimeout(() => {
-            saveButton.classList.remove("btn-danger");
-            saveButton.classList.add("btn-warning");
-            saveButton.disabled = false; // Mantener habilitado con advertencia
+            saveButtonResult.classList.remove("btn-danger");
+            saveButtonResult.classList.add("btn-warning");
+            saveButtonResult.disabled = false; // Mantener habilitado con advertencia
             // Mantenemos hasUnsavedChanges como true porque hay problemas
             hasUnsavedChanges = true;
           }, 2000);
@@ -140,14 +184,14 @@ var hasUnsavedChanges = false;
     }
   });
   setTimeout(() => {
-    this.refresh();
+    refresh();
     // Actualizar el contador de traducciones pendientes inicialmente
     checkEmptyTranslations();
     
     // Asegurarnos de que el botón de guardado esté deshabilitado inicialmente
-    const saveButton = document.getElementById("save-button");
-    if (saveButton) {
-      saveButton.disabled = true;
+    const saveButtonInit = document.getElementById("save-button");
+    if (saveButtonInit) {
+      saveButtonInit.disabled = true;
     }
   }, 200);
 })();
@@ -180,30 +224,48 @@ function scrollToNextEmptyTranslation() {
 
 
 
-add = () => {
+function add() {
   vscode.postMessage({ command: "add" });
   hasUnsavedChanges = true;
   updateSaveButtonStyle();
-};
-filterFolder = (el) => vscode.postMessage({ command: "filterFolder", value: el.value });
-mark = (id) => vscode.postMessage({ command: "mark", id: id });
-navigate = (page) => vscode.postMessage({ command: "navigate", page: page });
-pageSize = (el) => vscode.postMessage({ command: "pageSize", value: el.value });
-refresh = () => vscode.postMessage({ command: "refresh" });
-reload = () => {
+}
+
+function filterFolder(el) {
+  vscode.postMessage({ command: "filterFolder", value: el.value });
+}
+
+function mark(id) {
+  vscode.postMessage({ command: "mark", id: id });
+}
+
+function navigate(page) {
+  vscode.postMessage({ command: "navigate", page: page });
+}
+
+function pageSize(el) {
+  vscode.postMessage({ command: "pageSize", value: el.value });
+}
+
+function refresh() {
+  vscode.postMessage({ command: "refresh" });
+}
+
+function reload() {
   vscode.postMessage({ command: "reload" });
   hasUnsavedChanges = false;
-  const saveButton = document.getElementById("save-button");
-  saveButton.classList.remove("btn-warning", "btn-success", "btn-danger");
-  saveButton.classList.add("btn-vscode");
-  saveButton.disabled = true; // Deshabilitar cuando se restablece al estilo primary
-};
-remove = (id) => {
+  const saveButtonReload = document.getElementById("save-button");
+  saveButtonReload.classList.remove("btn-warning", "btn-success", "btn-danger");
+  saveButtonReload.classList.add("btn-vscode");
+  saveButtonReload.disabled = true; // Deshabilitar cuando se restablece al estilo primary
+}
+
+function remove(id) {
   vscode.postMessage({ command: "remove", id: id });
   hasUnsavedChanges = true;
   updateSaveButtonStyle();
-};
-save = () => {
+}
+
+function save() {
   // Verificar si hay traducciones vacías
   const emptyTranslationsCounter = document.getElementById('missing-translations-counter');
   const hasMissingTranslations = emptyTranslationsCounter && 
@@ -221,31 +283,51 @@ save = () => {
   });
   
   // Cambiar el botón a un estado de "procesando"
-  const saveButton = document.getElementById("save-button");
-  saveButton.disabled = true;
-  saveButton.classList.remove("btn-vscode", "btn-warning", "btn-success", "btn-danger");
-  saveButton.classList.add("btn-secondary"); // Estilo de procesando
-};
+  const saveButtonSave = document.getElementById("save-button");
+  saveButtonSave.disabled = true;
+  saveButtonSave.classList.remove("btn-vscode", "btn-warning", "btn-success", "btn-danger");
+  saveButtonSave.classList.add("btn-secondary"); // Estilo de procesando
+}
 
 // Función para actualizar el estilo del botón de guardado según si hay cambios
 function updateSaveButtonStyle() {
-  const saveButton = document.getElementById("save-button");
+  const saveButtonStyle = document.getElementById("save-button");
   if (hasUnsavedChanges) {
-    saveButton.classList.remove("btn-vscode", "btn-success", "btn-danger");
-    saveButton.classList.add("btn-warning");
-    saveButton.disabled = false; // Habilitar cuando hay cambios
+    // Verificar si hay traducciones vacías
+    const emptyTranslationsCounter = document.getElementById('missing-translations-counter');
+    const hasMissingTranslations = emptyTranslationsCounter && 
+                                parseInt(emptyTranslationsCounter.textContent) > 0;
+    
+    saveButtonStyle.classList.remove("btn-vscode", "btn-success", "btn-danger");
+    
+    if (hasMissingTranslations) {
+      saveButtonStyle.classList.add("btn-warning");
+    } else {
+      saveButtonStyle.classList.add("btn-warning");
+    }
+    saveButtonStyle.disabled = false; // Habilitar inmediatamente cuando hay cambios
   } else {
-    saveButton.disabled = true; // Deshabilitar cuando no hay cambios
+    saveButtonStyle.disabled = true; // Deshabilitar cuando no hay cambios
   }
 }
-search = (el) => vscode.postMessage({ command: "search", value: el.value });
-select = (id) => vscode.postMessage({ command: "select", id: id });
-sort = (column, ascending) => vscode.postMessage({ command: "sort", column: column, ascending: ascending });
-newLanguage = () => {
+function search(el) {
+  vscode.postMessage({ command: "search", value: el.value });
+}
+
+function select(id) {
+  vscode.postMessage({ command: "select", id: id });
+}
+
+function sort(column, ascending) {
+  vscode.postMessage({ command: "sort", column: column, ascending: ascending });
+}
+
+function newLanguage() {
   // Instead of using prompt(), send a command to show input box
   vscode.postMessage({ command: "showNewLanguageInput" });
-};
-switchView = () => {
+}
+
+function switchView() {
   const el = document.getElementById("icon-switch-view");
   const isTableView = el.classList.contains("fa-table-rows");
   vscode.postMessage({
@@ -253,8 +335,9 @@ switchView = () => {
     view: isTableView ? "list" : "table",
   });
   isTableView ? el.classList.replace("fa-table-rows", "fa-table-cells") : el.classList.replace("fa-table-cells", "fa-table-rows");
-};
-updateInput = (el, id, language = "") => {
+}
+
+function updateInput(el, id, language = "") {
   const wasEmpty = el.classList.contains('empty-translation');
   const isEmpty = el.value.trim() === '';
   
@@ -310,13 +393,22 @@ updateInput = (el, id, language = "") => {
   // También solicitar una actualización completa de traducciones vacías
   // para mantener sincronizado el contador en ambos lados
   checkEmptyTranslations();
-};
-translateInput = (el, id, language = "") => vscode.postMessage({ command: "translate", id: id, language: language });
-updateFolder = (el, id) => vscode.postMessage({ command: "folder", id: id, value: el.value });
-toggleColumn = (language, visible) => vscode.postMessage({ command: "toggleColumn", language: language, visible: visible });
+}
+
+function translateInput(el, id, language = "") {
+  vscode.postMessage({ command: "translate", id: id, language: language });
+}
+
+function updateFolder(el, id) {
+  vscode.postMessage({ command: "folder", id: id, value: el.value });
+}
+
+function toggleColumn(language, visible) {
+  vscode.postMessage({ command: "toggleColumn", language: language, visible: visible });
+}
 
 // Función para mostrar/ocultar el selector de columnas
-toggleColumnSelector = () => {
+function toggleColumnSelector() {
   const panel = document.getElementById("columnSelectorContent");
   if (panel) {
     if (panel.style.display === "none") {
@@ -325,10 +417,10 @@ toggleColumnSelector = () => {
       panel.style.display = "none";
     }
   }
-};
+}
 
 // Función para aplicar cambios en la selección de columnas
-applyColumnChanges = () => {
+function applyColumnChanges() {
   const languages = document.querySelectorAll('input[id^="column-"]:not([disabled])');
   languages.forEach(checkbox => {
     const language = checkbox.id.replace('column-', '');
@@ -341,10 +433,10 @@ applyColumnChanges = () => {
     }
   });
   document.getElementById('apply-columns-btn').disabled = true;
-};
+}
 
 // Función para mostrar/ocultar el campo de búsqueda
-toggleSearch = () => {
+function toggleSearch() {
   const searchContainer = document.getElementById('search-container');
   const isVisible = searchContainer.style.display !== 'none';
   
@@ -354,20 +446,20 @@ toggleSearch = () => {
   if (!isVisible) {
     document.getElementById('search-input').focus();
   }
-};
+}
 
 // Función para mostrar/ocultar el botón de limpiar
-toggleClearButton = (el) => {
+function toggleClearButton(el) {
   const clearBtn = document.getElementById('clear-search-btn');
   clearBtn.style.display = el.value.length > 0 ? 'inline-block' : 'none';
-};
+}
 
 // Función para limpiar el campo de búsqueda
-clearSearch = () => {
+function clearSearch() {
   const searchInput = document.getElementById('search-input');
   searchInput.value = '';
   search(searchInput); // Actualizar la búsqueda con el valor vacío
   toggleClearButton(searchInput); // Ocultar el botón de limpiar
   searchInput.focus(); // Mantener el foco en el campo
-};
+}
 

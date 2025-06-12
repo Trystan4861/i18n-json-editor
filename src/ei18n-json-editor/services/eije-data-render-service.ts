@@ -149,7 +149,7 @@ export class EIJEDataRenderService {
                     <input id="input-key-${t.id}" class="form-control ${t.valid ? '' : 'is-invalid'}" type="text" placeholder="${I18nService.getInstance().t('ui.placeholders.key')}" value="${t.key.replace(
                 /"/g,
                 '&quot;'
-            )}" onfocus="mark(${t.id})" onchange="updateInput(this,${t.id});" />
+            )}" onfocus="mark(${t.id})" oninput="updateInput(this,${t.id});" onchange="updateInput(this,${t.id});" />
                     <div id="input-key-${t.id}-feedback" class="invalid-feedback error-vscode">${t.error}</div>
                 </td>
             `;
@@ -166,6 +166,7 @@ export class EIJEDataRenderService {
                 const isEmpty = !t.languages[language] || t.languages[language].trim() === '';
                 render += `<input class="form-control ${rtlClass} ${isEmpty ? 'empty-translation' : ''}" type="text" placeholder="${I18nService.getInstance().t('ui.placeholders.translation')}" 
                     onfocus="mark(${t.id})" 
+                    oninput="updateInput(this,${t.id},'${language}');" 
                     onchange="updateInput(this,${t.id},'${language}');" 
                     ${isRTL ? 'dir="rtl"' : ''} `;
                 if (t.languages[language]) {
@@ -255,7 +256,7 @@ export class EIJEDataRenderService {
                         <div class="col-11 p-0">
                             <input id="input-key-${selectTranslation.id}" class="form-control ${
                 selectTranslation.valid ? '' : 'is-invalid'
-            }" type="text" placeholder="${I18nService.getInstance().t('ui.placeholders.key')}" value="${selectTranslation.key}" onchange="updateInput(this,${selectTranslation.id});" />
+            }" type="text" placeholder="${I18nService.getInstance().t('ui.placeholders.key')}" value="${selectTranslation.key}" oninput="updateInput(this,${selectTranslation.id});" onchange="updateInput(this,${selectTranslation.id});" />
                             <div id="input-key-${selectTranslation.id}-feedback" class="invalid-feedback error-vscode">${selectTranslation.error}</div>
                         </div>
                     </div>
@@ -273,6 +274,7 @@ export class EIJEDataRenderService {
                 }
                 render += `<textarea class="form-control mb-2 ${rtlClass}" rows="6" 
                     placeholder="${I18nService.getInstance().t('ui.placeholders.translation')}" 
+                    oninput="updateInput(this,${selectTranslation.id},'${language}');" 
                     onchange="updateInput(this,${selectTranslation.id},'${language}');" 
                     ${isRTL ? 'dir="rtl"' : ''}>`;
                 if (selectTranslation.languages[language]) {

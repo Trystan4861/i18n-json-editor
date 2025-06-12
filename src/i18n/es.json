@@ -16,7 +16,8 @@
     "errors": {
       "invalidKey": "La clave no es válida.",
       "keyNotEmpty": "La clave debe completarse.",
-      "duplicatePath": "La ruta de la clave ya está definida."
+      "duplicatePath": "La ruta de la clave ya está definida.",
+      "emptyTranslation": "Las traducciones no pueden estar vacías cuando allowEmptyTranslations está configurado como false."
     },
     "prompts": {
       "enterLanguageCode": "Ingrese el código de idioma (máx. 5 caracteres)",

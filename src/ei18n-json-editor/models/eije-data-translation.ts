@@ -12,7 +12,8 @@ import { I18nService } from '../../i18n/i18n-service';
 export enum EIJEDataTranslationError {
     INVALID_KEY = 'ui.errors.invalidKey',
     KEY_NOT_EMPTY = 'ui.errors.keyNotEmpty',
-    DUPLICATE_PATH = 'ui.errors.duplicatePath'
+    DUPLICATE_PATH = 'ui.errors.duplicatePath',
+    EMPTY_TRANSLATION = 'ui.errors.emptyTranslation'
 }
 
 // Helper function to get translated error message

@@ -16,7 +16,8 @@
     "errors": {
       "invalidKey": "The key is invalid.",
       "keyNotEmpty": "The Key must be filled.",
-      "duplicatePath": "The key path is already defined."
+      "duplicatePath": "The key path is already defined.",
+      "emptyTranslation": "Translations cannot be empty when allowEmptyTranslations is set to false."
     },
     "prompts": {
       "enterLanguageCode": "Enter language code (max 5 characters)",
