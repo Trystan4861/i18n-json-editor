@@ -317,7 +317,7 @@ export class EIJEManager {
         const linksPath = [
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'bootstrap.min.css')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'template.css')),
-            //vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'fontello', 'css', 'fontello.css')),
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'tippy.css')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'font-awesome.min.css'))
         ];
 
@@ -325,6 +325,7 @@ export class EIJEManager {
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'jquery.min.js')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'bootstrap.min.js')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'popper.min.js')),
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'tippy.min.js')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'template.js'))
         ];
         

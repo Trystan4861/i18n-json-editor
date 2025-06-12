@@ -14,9 +14,9 @@
         <form class="form-inline form-search mr-auto" onsubmit="return false;">
             <select id="select-folder" class="form-control mr-2" style="display: none;" onchange="filterFolder(this)">
                 <option value='*'>*</option>
-           </select>
+            </select>
             <div class="d-flex align-items-center">
-                <button id="toggle-search-btn" class="btn btn-vscode mr-2" onclick="toggleSearch()"><i class="fa fa-search"></i></button>
+                <button id="toggle-search-btn" data-tippy-content="Tooltip" data-placement="bottom" class="btn btn-vscode mr-2" onclick="toggleSearch()"><i class="fa fa-search"></i></button>
                 <div id="search-container" style="display: none; position: relative;">
                     <input id="search-input" class="form-control" style="width:400px; padding-right: 30px;" oninput="search(this); toggleClearButton(this)" type="text" placeholder="{{i18n.ui.labels.search}}" aria-label="{{i18n.ui.labels.search}}">
                     <button id="clear-search-btn" class="btn btn-clear" style="display: none;" onclick="clearSearch()"><i class="fa-solid fa-xmark"></i></button>

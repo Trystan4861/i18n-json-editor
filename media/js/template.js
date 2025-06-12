@@ -10,6 +10,7 @@ var hasUnsavedChanges = false;
     if (saveButton) {
       saveButton.disabled = true;
     }
+    tippy('[data-tippy-content]');
   });
 
   window.addEventListener("message", (event) => {
