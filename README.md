@@ -8,7 +8,7 @@ Enhanced i18n JSON Editor is a powerful Visual Studio Code extension designed to
 
 - **Intuitive Interface**: Clean and user-friendly interface for managing translations
 - **Multiple Access Methods**: Open via context menu, activity bar, or status bar
-- **Translation Services**: Built-in support for Microsoft Translator API
+- **Translation Services**: Coming soon - API integration for automatic translations
 - **RTL Language Support**: Full support for right-to-left languages
 - **Column Management**: Show/hide language columns as needed
 - **Missing Translation Detection**: Easily find and fill missing translations
@@ -40,11 +40,7 @@ Manage multiple translation folders simultaneously by clicking **ei18n editor** 
 ![status bar extension](media/images/workspace.png)
 
 ### 4. Translation Services
-Integrate with translation services for automatic translations:
-- Configure `i18nJsonEditor.translationService` and `i18nJsonEditor.translationServiceApiKey`
-- Currently supports Microsoft Translator
-
-![extension demo translate](media/images/demo-translate.gif)
+*Coming soon* - API integration for automatic translations will be available in future versions.
 
 ## ⚙️ Configuration
 
@@ -93,14 +89,14 @@ Integrate with translation services for automatic translations:
 
 ### Translation Services
 
-**`i18nJsonEditor.translationService`** - Translation service provider
+**`i18nJsonEditor.translationService`** - Translation service provider (*Coming soon*)
 ```json
-"i18nJsonEditor.translationService": "MicrosoftTranslator"
+"i18nJsonEditor.translationService": "Coming soon"
 ```
 
-**`i18nJsonEditor.translationServiceApiKey`** - API key for translation service
+**`i18nJsonEditor.translationServiceApiKey`** - API key for translation service (*Coming soon*)
 ```json
-"i18nJsonEditor.translationServiceApiKey": "your-api-key-here"
+"i18nJsonEditor.translationServiceApiKey": "Coming soon"
 ```
 
 ### Advanced Settings

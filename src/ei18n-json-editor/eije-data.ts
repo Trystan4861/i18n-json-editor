@@ -115,9 +115,17 @@ export class EIJEData {
         }
     }
 
+    private _hasTranslationService(): boolean {
+        return !!EIJEConfiguration.TRANSLATION_SERVICE && 
+               !!EIJEConfiguration.TRANSLATION_SERVICE_API_KEY &&
+               EIJEConfiguration.TRANSLATION_SERVICE !== 'Coming soon' &&
+               EIJEConfiguration.TRANSLATION_SERVICE_API_KEY !== 'Coming soon';
+    }
+
     render() {
         let render = '';
         let translations = this._getDisplayedTranslations();
+        const hasTranslateService = this._hasTranslationService();
 
         switch (this._view.type) {
             case EIJEViewType.LIST:
@@ -128,7 +136,7 @@ export class EIJEData {
                     this._page,
                     this._sort,
                     this._manager.isWorkspace,
-                    !!EIJEConfiguration.TRANSLATION_SERVICE && !!EIJEConfiguration.TRANSLATION_SERVICE_API_KEY
+                    hasTranslateService
                 );
                 break;
             case EIJEViewType.TABLE:
@@ -138,7 +146,7 @@ export class EIJEData {
                     this._page,
                     this._sort,
                     this._manager.isWorkspace,
-                    !!EIJEConfiguration.TRANSLATION_SERVICE && !!EIJEConfiguration.TRANSLATION_SERVICE_API_KEY
+                    hasTranslateService
                 );
                 break;
         }

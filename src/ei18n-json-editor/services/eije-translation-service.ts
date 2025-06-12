@@ -7,9 +7,14 @@ export abstract class EIJETranslationService {
     public static async translate(translation: EIJEDataTranslation, language: string, languages: string[]) {
         const tranlsationService = EIJEConfiguration.TRANSLATION_SERVICE;
 
-        if (!tranlsationService || !EIJEConfiguration.TRANSLATION_SERVICE_API_KEY) {
+        // Return early if translation service is not available yet
+        if (!tranlsationService || 
+            !EIJEConfiguration.TRANSLATION_SERVICE_API_KEY || 
+            tranlsationService === TranslationServiceEnum.ComingSoon ||
+            EIJEConfiguration.TRANSLATION_SERVICE_API_KEY === 'Coming soon') {
             return;
         }
+        
         let service: EIJETranlsation;
         if (EIJEConfiguration.TRANSLATION_SERVICE === TranslationServiceEnum.MicrosoftTranslator) {
             service = new EIJEMicrosoftTranslator();
@@ -29,5 +34,6 @@ export abstract class EIJETranslationService {
 }
 
 export enum TranslationServiceEnum {
-    MicrosoftTranslator = 'MicrosoftTranslator'
+    MicrosoftTranslator = 'MicrosoftTranslator',
+    ComingSoon = 'Coming soon'
 }

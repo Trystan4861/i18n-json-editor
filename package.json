@@ -112,14 +112,16 @@
                 },
                 "i18nJsonEditor.translationService": {
                     "type": "string",
-                    "description": "Specified wich translation service to use (Only Microsoft translator is currently available)",
+                    "description": "Translation service provider (Coming soon - API integration for automatic translations)",
                     "enum": [
-                        "MicrosoftTranslator"
-                    ]
+                        "Coming soon"
+                    ],
+                    "default": "Coming soon"
                 },
                 "i18nJsonEditor.translationServiceApiKey": {
                     "type": "string",
-                    "description": " Api key used by the translation service"
+                    "description": "API key for translation service (Coming soon - API integration for automatic translations)",
+                    "default": "Coming soon"
                 },
                 "i18nJsonEditor.workspaceFolders": {
                     "type": "array",

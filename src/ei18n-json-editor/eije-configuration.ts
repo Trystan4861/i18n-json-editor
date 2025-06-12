@@ -87,11 +87,11 @@ export class EIJEConfiguration {
     }
     
     static get TRANSLATION_SERVICE(): TranslationServiceEnum {
-        return this.getConfigValue<TranslationServiceEnum>('translationService', 'i18nJsonEditor.translationService', null);
+        return this.getConfigValue<TranslationServiceEnum>('translationService', 'i18nJsonEditor.translationService', 'Coming soon' as any);
     }
 
     static get TRANSLATION_SERVICE_API_KEY(): string {
-        return this.getConfigValue<string>('translationServiceApiKey', 'i18nJsonEditor.translationServiceApiKey', null);
+        return this.getConfigValue<string>('translationServiceApiKey', 'i18nJsonEditor.translationServiceApiKey', 'Coming soon');
     }
     
     static get ALLOW_EMPTY_TRANSLATIONS(): boolean {
