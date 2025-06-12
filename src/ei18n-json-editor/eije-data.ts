@@ -12,6 +12,7 @@ import { EIJEPage } from './models/eije-page';
 import { EIJESort } from './models/eije-sort';
 import { EIJEView, EIJEViewType } from './models/eije-view';
 import { I18nService } from '../i18n/i18n-service';
+import { NotificationService } from './services/notification-service';
 
 export class EIJEData {
     private _currentID = 1;
@@ -161,7 +162,7 @@ export class EIJEData {
         if (invalidTranslations.length > 0) {
             // Si hay traducciones inválidas, mostrar un mensaje de error y no guardar
             const i18n = I18nService.getInstance();
-            vscode.window.showErrorMessage(i18n.t('ui.messages.cannotSaveInvalidTranslations'));
+            NotificationService.getInstance().showErrorMessage(i18n.t('ui.messages.cannotSaveInvalidTranslations'));
             
             // Seleccionar y mostrar la primera traducción inválida para facilitar la corrección
             const firstInvalidTranslation = invalidTranslations[0];
@@ -220,13 +221,13 @@ export class EIJEData {
             });
             
             // Mostrar mensaje de éxito en VS Code
-            vscode.window.showInformationMessage(I18nService.getInstance().t('ui.messages.saved'));
+            NotificationService.getInstance().showInformationMessage(I18nService.getInstance().t('ui.messages.saved'), true);
             
             // Informar al frontend que el guardado fue exitoso
             this._manager.sendSaveResult(true);
         } catch (error) {
             // En caso de cualquier error durante el guardado
-            vscode.window.showErrorMessage(I18nService.getInstance().t('ui.messages.saveError') + ': ' + String(error));
+            NotificationService.getInstance().showErrorMessage(I18nService.getInstance().t('ui.messages.saveError') + ': ' + String(error));
             
             // Informar al frontend que el guardado falló
             this._manager.sendSaveResult(false);

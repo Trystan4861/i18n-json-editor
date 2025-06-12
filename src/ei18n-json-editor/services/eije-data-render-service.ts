@@ -55,7 +55,7 @@ export class EIJEDataRenderService {
         return `<th class="text-center ${rtlClass}" style="cursor: pointer;" onclick="sort('${column}',${sort.column === column ? !sort.ascending : true})" ${isRTL ? 'dir="rtl"' : ''}>
             <div class="th">
            ${column}             
-           ${sort.column === column ? (sort.ascending ? '<i class="icon-up-open"></i>' : '<i class="icon-down-open"></i>') : ''}
+           ${sort.column === column ? (sort.ascending ? '<i class="fa-solid fa-chevron-up"></i>' : '<i class="fa-solid fa-chevron-down"></i>') : ''}
             </div>
         </th>`;
     }

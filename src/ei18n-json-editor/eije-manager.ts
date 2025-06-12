@@ -6,6 +6,7 @@ import { EIJEConfiguration } from './eije-configuration';
 import { EIJEData } from './eije-data';
 import { EIJEDataTranslation } from './models/eije-data-translation';
 import { I18nService } from '../i18n/i18n-service';
+import { NotificationService } from './services/notification-service';
 
 export class EIJEManager {
     get isWorkspace() {
@@ -152,7 +153,7 @@ export class EIJEManager {
         this._data = new EIJEData(this);
         this.refreshDataTable();
         const i18n = I18nService.getInstance();
-        vscode.window.showInformationMessage(i18n.t('ui.messages.reloaded'));
+        NotificationService.getInstance().showInformationMessage(i18n.t('ui.messages.reloaded'));
     }
     
     async _showNewLanguageInput() {
@@ -182,7 +183,7 @@ export class EIJEManager {
         const i18n = I18nService.getInstance();
         
         if (!langCode || langCode.length > 5) {
-            vscode.window.showErrorMessage(i18n.t('ui.messages.languageCodeInvalid'));
+            NotificationService.getInstance().showErrorMessage(i18n.t('ui.messages.languageCodeInvalid'));
             return;
         }
         
@@ -196,7 +197,7 @@ export class EIJEManager {
                 // Use the first workspace folder if opened from workspace
                 targetPath = EIJEConfiguration.WORKSPACE_FOLDERS[0].path;
             } else {
-                vscode.window.showErrorMessage(i18n.t('ui.messages.noTargetFolder'));
+                NotificationService.getInstance().showErrorMessage(i18n.t('ui.messages.noTargetFolder'));
                 return;
             }
             
@@ -204,7 +205,7 @@ export class EIJEManager {
             
             // Check if file already exists
             if (fs.existsSync(filePath)) {
-                vscode.window.showWarningMessage(i18n.t('ui.messages.languageFileExists', `${langCode}.json`));
+                NotificationService.getInstance().showWarningMessage(i18n.t('ui.messages.languageFileExists', `${langCode}.json`));
                 return;
             }
             
@@ -217,20 +218,20 @@ export class EIJEManager {
                     // Use English file as template
                     const englishContent = fs.readFileSync(englishFilePath, 'utf8');
                     jsonContent = JSON.parse(englishContent);
-                    vscode.window.showInformationMessage(i18n.t('ui.messages.createdWithTemplate', `${langCode}.json`));
+                    NotificationService.getInstance().showInformationMessage(i18n.t('ui.messages.createdWithTemplate', `${langCode}.json`));
                 } catch (err) {
                     // If there's an error reading/parsing the English file, use empty object
-                    vscode.window.showWarningMessage(i18n.t('ui.messages.templateReadError'));
+                    NotificationService.getInstance().showWarningMessage(i18n.t('ui.messages.templateReadError'));
                 }
             } else {
-                vscode.window.showInformationMessage(i18n.t('ui.messages.templateNotFound'));
+                NotificationService.getInstance().showInformationMessage(i18n.t('ui.messages.templateNotFound'));
             }
             
             // Create new language file
             const fileContent = JSON.stringify(jsonContent, null, EIJEConfiguration.JSON_SPACE);
             fs.writeFileSync(filePath, fileContent);
             
-            vscode.window.showInformationMessage(i18n.t('ui.messages.languageFileCreated', `${langCode}.json`));
+            NotificationService.getInstance().showInformationMessage(i18n.t('ui.messages.languageFileCreated', `${langCode}.json`));
             
             // Guardar la configuración completa
             EIJEConfiguration.saveFullConfiguration();
@@ -239,7 +240,7 @@ export class EIJEManager {
             this.reloadData();
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            vscode.window.showErrorMessage(i18n.t('ui.messages.fileCreationError', errorMessage));
+            NotificationService.getInstance().showErrorMessage(i18n.t('ui.messages.fileCreationError', errorMessage));
         }
     }
     
@@ -274,7 +275,7 @@ export class EIJEManager {
         } else {
             // If no empty translation is found, show a message
             const i18n = I18nService.getInstance();
-            vscode.window.showInformationMessage(i18n.t('ui.messages.noEmptyTranslations'));
+            NotificationService.getInstance().showInformationMessage(i18n.t('ui.messages.noEmptyTranslations'));
         }
     }
 
