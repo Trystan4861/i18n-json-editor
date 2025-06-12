@@ -132,7 +132,7 @@ export class EIJEDataRenderService {
 
         translations.forEach(t => {
             render += '<tr>';
-            render += `<td class="td-remove"><button type="button" class="btn p-0 px-1" onclick="remove(${t.id})"><i class="error-vscode icon-trash-empty"></i></button></td>`;
+            render += `<td class="td-remove"><button type="button" class="btn p-0 px-1" onclick="remove(${t.id})"><i class="error-vscode fa-duotone fa-regular fa-circle-minus"></i></button></td>`;
 
             if (showFolder) {
                 render += `<td><select id="select-folder-${t.id}" class="form-control" onchange="updateFolder(this,${t.id})">`;
@@ -249,7 +249,7 @@ export class EIJEDataRenderService {
                     <label>${I18nService.getInstance().t('ui.labels.key')}</label>
                     <div class="row ml--30 mr--18">
                         <div class="col-1 p-0 align-content-center div-remove">
-                            <button type="button" class="btn p-0 px-1" onclick="remove(${selectTranslation.id})"><i class=" error-vscode icon-trash-empty"></i></button>
+                            <button type="button" class="btn p-0 px-1" onclick="remove(${selectTranslation.id})"><i class="error-vscode fa-duotone fa-regular fa-circle-minus"></i></button>
                         </div>
                         <div class="col-11 p-0">
                             <input id="input-key-${selectTranslation.id}" class="form-control ${

@@ -315,17 +315,17 @@ export class EIJEManager {
         const template = vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'template.html'));
 
         const linksPath = [
-            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'bootstrap.min.css')),
-            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'template.css')),
-            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'fontello', 'css', 'fontello.css')),
-            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'font-awesome.min.css'))
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'bootstrap.min.css')),
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'template.css')),
+            //vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'fontello', 'css', 'fontello.css')),
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'font-awesome.min.css'))
         ];
 
         const scriptsPath = [
-            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'jquery.min.js')),
-            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'bootstrap.min.js')),
-            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'popper.min.js')),
-            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'template.js'))
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'jquery.min.js')),
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'bootstrap.min.js')),
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'popper.min.js')),
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'template.js'))
         ];
         
         // Get i18n translations

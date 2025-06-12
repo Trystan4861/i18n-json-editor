@@ -244,12 +244,12 @@ newLanguage = () => {
 };
 switchView = () => {
   const el = document.getElementById("icon-switch-view");
-  const isTableView = !el.classList.contains("icon-table");
-  isTableView ? el.classList.replace("icon-list-bullet", "icon-table") : el.classList.replace("icon-table", "icon-list-bullet");
+  const isTableView = el.classList.contains("fa-table-rows");
   vscode.postMessage({
     command: "switch-view",
     view: isTableView ? "list" : "table",
   });
+  isTableView ? el.classList.replace("fa-table-rows", "fa-table-cells") : el.classList.replace("fa-table-cells", "fa-table-rows");
 };
 updateInput = (el, id, language = "") => {
   const wasEmpty = el.classList.contains('empty-translation');
