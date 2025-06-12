@@ -430,16 +430,29 @@ function toggleColumnSelector() {
 // Función para aplicar cambios en la selección de columnas
 function applyColumnChanges() {
   const languages = document.querySelectorAll('input[id^="column-"]:not([disabled])');
+  
+  // Crear arrays para enviar todos los cambios de una vez
+  const columnsToShow = [];
+  const columnsToHide = [];
+  
   languages.forEach(checkbox => {
     const language = checkbox.id.replace('column-', '');
-    if (language !== 'key') {
-      vscode.postMessage({ 
-        command: "toggleColumn", 
-        language: language, 
-        visible: checkbox.checked 
-      });
+    if (language !== 'key' && language !== 'en') { // 'en' no se puede ocultar
+      if (checkbox.checked) {
+        columnsToShow.push(language);
+      } else {
+        columnsToHide.push(language);
+      }
     }
   });
+  
+  // Enviar mensaje con todos los cambios
+  vscode.postMessage({ 
+    command: "updateColumnVisibility", 
+    columnsToShow: columnsToShow,
+    columnsToHide: columnsToHide
+  });
+  
   document.getElementById('apply-columns-btn').disabled = true;
 }
 

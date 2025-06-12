@@ -98,11 +98,13 @@ export class EIJEConfiguration {
         return this.getConfigValue<boolean>('allowEmptyTranslations', 'i18nJsonEditor.allowEmptyTranslations', false);
     }
 
+    static get DEFAULT_LANGUAGE(): string {
+        return this.getConfigValue<string>('defaultLanguage', 'i18nJsonEditor.defaultLanguage', 'en');
+    }
+
     static get VISIBLE_COLUMNS(): string[] {
-        // Get visible columns from workspace state or settings
         let visibleColumns: string[] = [];
         try {
-            // Try to get from the local project settings file
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             if (workspaceFolder) {
                 const configPath = this.getConfigPath(workspaceFolder);
@@ -118,13 +120,10 @@ export class EIJEConfiguration {
             console.error('Error loading visible columns:', e);
         }
         
-        // Si no hay columnas visibles guardadas, mostrar todas por defecto
-        // Esto se hace en IJEData._loadFolder donde se cargan los idiomas
         return visibleColumns;
     }
     
     static get HIDDEN_COLUMNS(): string[] {
-        // Obtener columnas ocultas de la configuración
         let hiddenColumns: string[] = [];
         try {
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
@@ -168,15 +167,11 @@ export class EIJEConfiguration {
                 config.translationService = this.TRANSLATION_SERVICE;
                 config.translationServiceApiKey = this.TRANSLATION_SERVICE_API_KEY;
                 config.allowEmptyTranslations = this.ALLOW_EMPTY_TRANSLATIONS;
+                config.defaultLanguage = this.DEFAULT_LANGUAGE;
                 
-                // Mantener las columnas visibles y ocultas si existen
-                if (!config.visibleColumns) {
-                    config.visibleColumns = this.VISIBLE_COLUMNS;
-                }
-                
-                if (!config.hiddenColumns) {
-                    config.hiddenColumns = this.HIDDEN_COLUMNS;
-                }
+                // Actualizar las columnas visibles y ocultas
+                config.visibleColumns = this.VISIBLE_COLUMNS;
+                config.hiddenColumns = this.HIDDEN_COLUMNS;
                 
                 // Save config
                 fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
@@ -193,16 +188,12 @@ export class EIJEConfiguration {
                 const configPath = this.getConfigPath(workspaceFolder);
                 let config: any = {};
                 
-                // Load existing config if it exists
                 if (fs.existsSync(configPath)) {
                     const configContent = fs.readFileSync(configPath, 'utf8');
                     config = JSON.parse(configContent);
                 }
                 
-                // Update hidden columns
                 config.hiddenColumns = columns;
-                
-                // Save config
                 fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
             }
         } catch (e) {
@@ -217,16 +208,12 @@ export class EIJEConfiguration {
                 const configPath = this.getConfigPath(workspaceFolder);
                 let config: any = {};
                 
-                // Load existing config if it exists
                 if (fs.existsSync(configPath)) {
                     const configContent = fs.readFileSync(configPath, 'utf8');
                     config = JSON.parse(configContent);
                 }
                 
-                // Update visible columns
                 config.visibleColumns = columns;
-                
-                // Save config
                 fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
             }
         } catch (e) {

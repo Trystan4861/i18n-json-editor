@@ -150,6 +150,32 @@ th.rtl-header {
     padding: 10px;
 }
 
+.column-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px 16px;
+    margin-bottom: 1rem;
+}
+
+.column-selector-item {
+    display: flex;
+    align-items: center;
+}
+
+.column-selector-item .form-check {
+    margin-bottom: 0;
+    width: 100%;
+}
+
+.column-selector-item .form-check-label {
+    margin-left: 8px;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100% - 20px);
+}
+
 .div-remove{
     -ms-flex: 0 0 3.5%;
     flex: 0 0 3.5%;

@@ -129,6 +129,11 @@
                     "default": false,
                     "type": "boolean",
                     "description": "Allow empty translations to be saved in JSON files"
+                },
+                "i18nJsonEditor.defaultLanguage": {
+                    "default": "en",
+                    "type": "string",
+                    "description": "Default language code to use as reference when editing translations. This language will be locked and cannot be hidden."
                 }
             }
         }

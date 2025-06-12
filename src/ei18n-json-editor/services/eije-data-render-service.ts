@@ -60,29 +60,50 @@ export class EIJEDataRenderService {
         </th>`;
     }
 
+    /**
+     * Ordena los idiomas poniendo el idioma por defecto primero, luego el resto alfabéticamente
+     */
+    private static sortLanguages(languages: string[]): string[] {
+        const defaultLanguage = EIJEConfiguration.DEFAULT_LANGUAGE;
+        const sortedLanguages = [...languages];
+        return sortedLanguages.sort((a, b) => {
+            // El idioma por defecto siempre va primero
+            if (a === defaultLanguage) return -1;
+            if (b === defaultLanguage) return 1;
+            // El resto alfabéticamente
+            return a.localeCompare(b);
+        });
+    }
+
     static renderColumnSelector(languages: string[]) {
         const i18n = I18nService.getInstance();
         const visibleColumns = EIJEConfiguration.VISIBLE_COLUMNS;
+        const hiddenColumns = EIJEConfiguration.HIDDEN_COLUMNS;
+        
+        // Ordenar idiomas con el idioma por defecto primero
+        const sortedLanguages = this.sortLanguages(languages);
         
         let render = '<div class="column-selector">';
         
         render += '<div id="columnSelectorContent" class="column-selector-panel" style="display:none;">';
         render += '<div class="card card-body">';
-        render += '<div class="row">';
+        render += '<div class="column-selector-grid">';
         
-        // Siempre mostrar las columnas de "key" y "en" (deshabilitadas)
-        render += '<div class="col-md-3 mb-2">';
+        // Siempre mostrar la columna "key" (deshabilitada)
+        render += '<div class="column-selector-item">';
         render += '<div class="form-check">';
         render += `<input type="checkbox" class="form-check-input" id="column-key" checked disabled>`;
         render += `<label class="form-check-label" for="column-key">${i18n.t('ui.labels.keyColumn')}</label>`;
         render += '</div>';
         render += '</div>';
         
-        languages.forEach(language => {
-            const isChecked = language === 'en' || visibleColumns.includes(language);
-            const isDisabled = language === 'en'; // No se puede ocultar la columna 'en'
+        // Mostrar idiomas ordenados
+        const defaultLanguage = EIJEConfiguration.DEFAULT_LANGUAGE;
+        sortedLanguages.forEach(language => {
+            const isChecked = language === defaultLanguage || visibleColumns.includes(language);
+            const isDisabled = language === defaultLanguage; // No se puede ocultar el idioma por defecto
             
-            render += '<div class="col-md-3 mb-2">';
+            render += '<div class="column-selector-item">';
             render += '<div class="form-check">';
             render += `<input type="checkbox" class="form-check-input" id="column-${language}" `;
             render += isChecked ? 'checked ' : '';
@@ -94,7 +115,7 @@ export class EIJEDataRenderService {
         });
         
         render += '</div>';
-        render += '<div class="text-right mt-2">';
+        render += '<div class="text-right mt-3">';
         render += `<button type="button" id="apply-columns-btn" class="btn btn-vscode" onclick="applyColumnChanges()" disabled>${i18n.t('ui.buttons.apply')}</button>`;
         render += '</div>';
         render += '</div>';
@@ -109,9 +130,12 @@ export class EIJEDataRenderService {
         const visibleColumns = EIJEConfiguration.VISIBLE_COLUMNS;
         const allLanguages = [...languages]; // Copia para no modificar el original
         
-        // Filtrar idiomas según visibilidad
-        const filteredLanguages = allLanguages.filter(lang => 
-            lang === 'en' || visibleColumns.includes(lang)
+        // Filtrar idiomas según visibilidad y ordenar con el idioma por defecto primero
+        const defaultLanguage = EIJEConfiguration.DEFAULT_LANGUAGE;
+        const filteredLanguages = this.sortLanguages(
+            allLanguages.filter(lang => 
+                lang === defaultLanguage || visibleColumns.includes(lang)
+            )
         );
         
         // Crear selector de columnas
@@ -204,9 +228,12 @@ export class EIJEDataRenderService {
         const visibleColumns = EIJEConfiguration.VISIBLE_COLUMNS;
         const allLanguages = [...languages]; // Copia para no modificar el original
         
-        // Filtrar idiomas según visibilidad
-        const filteredLanguages = allLanguages.filter(lang => 
-            lang === 'en' || visibleColumns.includes(lang)
+        // Filtrar idiomas según visibilidad y ordenar con el idioma por defecto primero
+        const defaultLanguage = EIJEConfiguration.DEFAULT_LANGUAGE;
+        const filteredLanguages = this.sortLanguages(
+            allLanguages.filter(lang => 
+                lang === defaultLanguage || visibleColumns.includes(lang)
+            )
         );
         
         let render = this.renderColumnSelector(languages);

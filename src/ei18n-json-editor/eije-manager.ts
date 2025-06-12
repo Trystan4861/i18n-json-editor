@@ -131,6 +131,9 @@ export class EIJEManager {
                 case 'toggleColumn':
                     this.toggleColumnVisibility(message.language, message.visible);
                     return;
+                case 'updateColumnVisibility':
+                    this.updateColumnVisibility(message.columnsToShow, message.columnsToHide);
+                    return;
                 case 'checkEmptyTranslations':
                     this.checkEmptyTranslations(message.currentPage);
                     return;
@@ -142,8 +145,9 @@ export class EIJEManager {
     }
     
     toggleColumnVisibility(language: string, visible: boolean) {
-        // No se permite ocultar la columna 'key' ni 'en'
-        if (language === 'key' || language === 'en') {
+        // No se permite ocultar la columna 'key' ni el idioma por defecto
+        const defaultLanguage = EIJEConfiguration.DEFAULT_LANGUAGE;
+        if (language === 'key' || language === defaultLanguage) {
             return;
         }
         
@@ -174,6 +178,40 @@ export class EIJEManager {
         EIJEConfiguration.saveFullConfiguration();
         
         // Actualizar la tabla
+        this.refreshDataTable();
+    }
+    
+    updateColumnVisibility(columnsToShow: string[], columnsToHide: string[]) {
+        const allLanguages = this._data.getLanguages();
+        let newVisibleColumns: string[] = [];
+        let newHiddenColumns: string[] = [];
+        
+        const defaultLanguage = EIJEConfiguration.DEFAULT_LANGUAGE;
+        allLanguages.forEach(language => {
+            if (language === defaultLanguage) {
+                return;
+            }
+            
+            if (columnsToShow.includes(language)) {
+                newVisibleColumns.push(language);
+            } else if (columnsToHide.includes(language)) {
+                newHiddenColumns.push(language);
+            } else {
+                const currentVisible = EIJEConfiguration.VISIBLE_COLUMNS;
+                const currentHidden = EIJEConfiguration.HIDDEN_COLUMNS;
+                
+                if (currentVisible.includes(language)) {
+                    newVisibleColumns.push(language);
+                } else if (currentHidden.includes(language)) {
+                    newHiddenColumns.push(language);
+                } else {
+                    newVisibleColumns.push(language);
+                }
+            }
+        });
+        
+        EIJEConfiguration.saveVisibleColumns(newVisibleColumns);
+        EIJEConfiguration.saveHiddenColumns(newHiddenColumns);
         this.refreshDataTable();
     }
     

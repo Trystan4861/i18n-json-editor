@@ -567,41 +567,26 @@ export class EIJEData {
         const currentVisibleColumns = EIJEConfiguration.VISIBLE_COLUMNS;
         const currentHiddenColumns = EIJEConfiguration.HIDDEN_COLUMNS;
         
-        // Si no hay configuración guardada de columnas visibles,
-        // inicializar para que todas las columnas sean visibles (excepto 'en' que ya es visible por defecto)
         if (this._languages.length > 0) {
-            if (currentVisibleColumns.length === 0 && currentHiddenColumns.length === 0) {
-                // Primera inicialización - mostrar todos los idiomas
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            let hasConfigFile = false;
+            if (workspaceFolder) {
+                const configPath = _path.join(workspaceFolder.uri.fsPath, '.vscode', '.ei18n-editor-config.json');
+                hasConfigFile = fs.existsSync(configPath);
+            }
+            
+            if (!hasConfigFile) {
                 const columnsToShow = this._languages.filter(lang => lang !== 'en');
                 EIJEConfiguration.saveVisibleColumns(columnsToShow);
             } else {
-                // CASO 1: Idiomas que son completamente nuevos
-                // Comprobar si hay nuevos idiomas que no están en las columnas visibles ni ocultas
                 const completelyNewLanguages = this._languages.filter(lang => 
                     lang !== 'en' && 
                     !currentVisibleColumns.includes(lang) && 
                     !currentHiddenColumns.includes(lang)
                 );
                 
-                // CASO 2: Idiomas que se volvieron a crear
-                // Idiomas que existen ahora, están en la lista de ocultos, pero se acaban de añadir nuevamente
-                const recreatedLanguages = newlyAddedLanguages.filter(lang => 
-                    lang !== 'en' && 
-                    currentHiddenColumns.includes(lang)
-                );
-                
-                // Eliminar idiomas recreados de la lista de ocultos
-                if (recreatedLanguages.length > 0) {
-                    const updatedHiddenColumns = currentHiddenColumns.filter(
-                        lang => !recreatedLanguages.includes(lang)
-                    );
-                    EIJEConfiguration.saveHiddenColumns(updatedHiddenColumns);
-                }
-                
-                // Añadir a columnas visibles tanto los nuevos como los recreados
-                const languagesToAdd = [...completelyNewLanguages, ...recreatedLanguages];
-                if (languagesToAdd.length > 0) {
-                    const updatedColumns = [...currentVisibleColumns, ...languagesToAdd];
+                if (completelyNewLanguages.length > 0) {
+                    const updatedColumns = [...currentVisibleColumns, ...completelyNewLanguages];
                     EIJEConfiguration.saveVisibleColumns(updatedColumns);
                 }
             }
