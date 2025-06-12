@@ -1,6 +1,6 @@
 # Enhanced i18n JSON Editor
 
-![logo](media/ei18n_logo.png)
+![logo](media/images/ei18n_logo.png)
 
 Enhanced i18n JSON Editor is a powerful Visual Studio Code extension designed to simplify the management and editing of JSON translation files. This enhanced version builds upon the original concept with numerous improvements, new features, and bug fixes.
 
@@ -28,7 +28,7 @@ Right-click on any supported folder (default: **i18n**) and select **Enhanced i1
 - Folder names can be customized with `i18nJsonEditor.supportedFolders`
 - Supports relative paths like `src/i18n`, `./locales`, etc.
 
-![extension demo](media/demo.gif)
+![extension demo](media/images/demo.gif)
 
 ### 2. Activity Bar
 Click on the **Enhanced i18n JSON Editor** icon in the Activity Bar for quick access
@@ -37,14 +37,14 @@ Click on the **Enhanced i18n JSON Editor** icon in the Activity Bar for quick ac
 Manage multiple translation folders simultaneously by clicking **ei18n editor** in the Status Bar
 - Requires `i18nJsonEditor.workspaceFolders` configuration
 
-![status bar extension](media/workspace.png)
+![status bar extension](media/images/workspace.png)
 
 ### 4. Translation Services
 Integrate with translation services for automatic translations:
 - Configure `i18nJsonEditor.translationService` and `i18nJsonEditor.translationServiceApiKey`
 - Currently supports Microsoft Translator
 
-![extension demo translate](media/demo-translate.gif)
+![extension demo translate](media/images/demo-translate.gif)
 
 ## ⚙️ Configuration
 

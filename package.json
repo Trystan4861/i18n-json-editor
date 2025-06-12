@@ -10,7 +10,7 @@
         "url": "https://github.com/trystan4861/i18n-json-editor.git"
     },
     "description": "Easily edit your i18n json files, inspired in the vscode i18n json editor by Thibault Vanderseypen",
-    "icon": "media/ei18n_logo.png",
+    "icon": "media/images/ei18n_logo.png",
     "version": "1.0.0",
     "engines": {
         "vscode": "^1.30.0"
@@ -36,7 +36,7 @@
             {
                 "command": "ei18n-json-editor",
                 "title": "Enhanced i18n json editor",
-                "icon": "media/ei18n_logo.svg"
+                "icon": "media/images/ei18n_logo.svg"
             }
         ],
         "menus": {
@@ -58,7 +58,7 @@
                 {
                     "id": "trystan4861-eije",
                     "title": "Enhanced i18n.json Editor",
-                    "icon": "media/ei18n_logo-black.svg"
+                    "icon": "media/images/ei18n_logo-black.svg"
                 }
             ]
         },
@@ -67,7 +67,7 @@
                 {
                     "id": "trystan4861-eije-view",
                     "name": "Enhanced i18n.json Editor",
-                    "icon": "media/ei18n_logo-black.svg"
+                    "icon": "media/images/ei18n_logo-black.svg"
                 }
             ]
         },
