@@ -30,7 +30,15 @@
       "translation": "Traducción...",
       "of": "de",
       "folder": "CARPETA",
-      "keyColumn": "CLAVE"
+      "keyColumn": "CLAVE",
+      "toggle_search": "Mostrar/ocultar búsqueda",
+      "save": "Guardar",
+      "add_translation": "Agregar traducción",
+      "reload": "Recargar",
+      "add_language": "Agregar idioma",
+      "toggle_column_selector": "Mostrar/ocultar selector de columnas",
+      "chage_view_mode": "Cambiar modo de vista",
+      "error_translations": "Hay algunos errores de traducción"
     },
     "pagination": {
       "itemsPerPage": "Elementos por página"

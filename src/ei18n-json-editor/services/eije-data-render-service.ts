@@ -53,9 +53,10 @@ export class EIJEDataRenderService {
         const rtlClass = isRTL ? 'rtl-header' : '';
         
         return `<th class="text-center ${rtlClass}" style="cursor: pointer;" onclick="sort('${column}',${sort.column === column ? !sort.ascending : true})" ${isRTL ? 'dir="rtl"' : ''}>
+            <div class="th">
            ${column}             
            ${sort.column === column ? (sort.ascending ? '<i class="icon-up-open"></i>' : '<i class="icon-down-open"></i>') : ''}
-            
+            </div>
         </th>`;
     }
 

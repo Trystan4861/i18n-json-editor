@@ -10,7 +10,9 @@ var hasUnsavedChanges = false;
     if (saveButton) {
       saveButton.disabled = true;
     }
-    tippy('[data-tippy-content]');
+    tippy('[title]',{
+      content: (reference) => reference.getAttribute('title'),      
+    });
   });
 
   window.addEventListener("message", (event) => {

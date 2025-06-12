@@ -30,7 +30,15 @@
       "translation": "Translation...",
       "of": "of",
       "folder": "FOLDER",
-      "keyColumn": "KEY"
+      "keyColumn": "KEY",
+      "toggle_search": "Toggle search",
+      "save": "Save",
+      "add_translation": "Add translation",
+      "reload": "Reload",
+      "add_language": "Add language",
+      "toggle_column_selector": "Toggle column selector",
+      "chage_view_mode": "Change view mode",
+      "error_translations": "There are some translation errors"
     },
     "pagination": {
       "itemsPerPage": "Items per page"
