@@ -37,7 +37,8 @@ Click on the **Enhanced i18n JSON Editor** icon in the Activity Bar for quick ac
 Manage multiple translation folders simultaneously by clicking **ei18n editor** in the Status Bar
 - Requires `i18nJsonEditor.workspaceFolders` configuration
 
-![status bar extension](media/images/workspace.png)
+![table workspace mode](media/images/workspace_1.png)
+![form workspace mode](media/images/workspace_2.png)
 
 ### 4. Translation Services
 *Coming soon* - API integration for automatic translations will be available in future versions.
