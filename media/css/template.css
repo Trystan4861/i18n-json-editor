@@ -303,3 +303,12 @@ th.rtl-header {
     padding-top: 10px;
     margin-inline: 2px;
 }
+.pt-15px
+{
+    padding-top: 15px;
+}
+textarea.form-control {
+    height: auto;
+    max-height: 140px;
+    overflow-y: auto;
+}

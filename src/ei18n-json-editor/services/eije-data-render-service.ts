@@ -212,7 +212,8 @@ export class EIJEDataRenderService {
         
         render += '<div>';
         render += '<div class="row">';
-        render += '<div class="col-5">';
+        render += '<div class="col-5 pt-15px">';
+        render += this.renderPagination(translations, page, false);
         render += '<div style="word-wrap: break-word;" class="list-group">';
         translations.forEach(t => {
             render += `<a href="#" id="select-key-${t.id}" onclick="select(${t.id})" class="btn-vscode-secondary list-group-item list-group-item-action ${
@@ -220,7 +221,6 @@ export class EIJEDataRenderService {
             }">${t.key === '' ? '&nbsp;' : t.key}</a>`;
         });
         render += '</div>';
-        render += this.renderPagination(translations, page, false);
         render += '</div>';
 
         render += '<div class="col-7">';
