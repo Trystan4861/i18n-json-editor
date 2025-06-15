@@ -7,3 +7,4 @@ node_modules
 .vscode-test-web
 web-extensions.md
 .docs
+dist/**
