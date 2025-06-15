@@ -19,13 +19,38 @@ export class EIJEData {
 
     private _languages: string[] = [];
     private _translations: EIJEDataTranslation[] = [];
+    private _unsavedChanges: boolean = false;
 
     private _searchPattern: string = '';
-    private _filteredFolder: string = '*';
 
     private _view: EIJEView;
     private _page: EIJEPage;
     private _sort: EIJESort;
+    
+    // Método para verificar si hay cambios sin guardar
+    hasUnsavedChanges(): boolean {
+        return this._unsavedChanges;
+    }
+    
+    // Método para marcar que hay cambios sin guardar
+    markAsChanged(): void {
+        this._unsavedChanges = true;
+        // Notificar al frontend que hay cambios
+        this._manager.postMessage({
+            command: 'unsavedChanges',
+            hasUnsavedChanges: true
+        });
+    }
+    
+    // Método para marcar que no hay cambios sin guardar
+    markAsSaved(): void {
+        this._unsavedChanges = false;
+        // Notificar al frontend que no hay cambios
+        this._manager.postMessage({
+            command: 'unsavedChanges',
+            hasUnsavedChanges: false
+        });
+    }
     
     // Métodos para obtener datos necesarios para las funciones de traducciones vacías
     getAllTranslations(): EIJEDataTranslation[] {
@@ -50,7 +75,14 @@ export class EIJEData {
     }
 
     async initialize(): Promise<void> {
-        await this._loadFiles();
+        // Limpiar datos existentes
+        this._translations = [];
+        this._languages = [];
+        
+        // Solo cargar archivos si hay una carpeta seleccionada
+        if (this._manager.folderPath) {
+            await this._loadFiles();
+        }
     }
 
     private _defaultValues() {
@@ -83,20 +115,14 @@ export class EIJEData {
         this._insert(translation);
         this._view.selectionId = translation.id;
         this._manager.refreshDataTable();
+        
+        // Marcar que hay cambios sin guardar
+        this.markAsChanged();
     }
 
-    changeFolder(id: number, value: string) {
-        const translation = this._get(id);
-        translation.folder = value;
-        this._validate(translation, true);
-        this._manager.updateTranslation(translation);
-        return translation;
-    }
 
-    filterFolder(value: string) {
-        this._filteredFolder = value;
-        this._manager.refreshDataTable();
-    }
+
+
 
     mark(id: number) {
         const translation = this._get(id);
@@ -139,7 +165,7 @@ export class EIJEData {
                     this._languages,
                     this._page,
                     this._sort,
-                    this._manager.isWorkspace,
+                    false, // No mostrar columna de carpeta ya que trabajamos con carpeta específica
                     hasTranslateService
                 );
                 break;
@@ -149,7 +175,7 @@ export class EIJEData {
                     this._languages,
                     this._page,
                     this._sort,
-                    this._manager.isWorkspace,
+                    false, // No mostrar columna de carpeta ya que trabajamos con carpeta específica
                     hasTranslateService
                 );
                 break;
@@ -165,6 +191,9 @@ export class EIJEData {
             this._translations.splice(index, 1);
 
             this._manager.refreshDataTable();
+            
+            // Marcar que hay cambios sin guardar
+            this.markAsChanged();
         }
     }
 
@@ -268,6 +297,9 @@ export class EIJEData {
             
             // Informar al frontend que el guardado fue exitoso
             this._manager.sendSaveResult(true);
+            
+            // Marcar que no hay cambios sin guardar
+            this.markAsSaved();
         } catch (error) {
             // En caso de cualquier error durante el guardado
             NotificationService.getInstance().showErrorMessage(I18nService.getInstance().t('ui.messages.saveError') + ': ' + String(error));
@@ -280,6 +312,15 @@ export class EIJEData {
     search(value: string) {
         this._searchPattern = value;
         this._manager.refreshDataTable();
+    }
+    
+    // Método para descartar cambios
+    async discardChanges(): Promise<void> {
+        // Reinicializar los datos
+        await this.initialize();
+        
+        // Marcar que no hay cambios sin guardar
+        this.markAsSaved();
     }
 
     select(id: number, skipRefresh: boolean = false) {
@@ -335,6 +376,9 @@ export class EIJEData {
                 this._validate(translation, true);
                 this._manager.updateTranslation(translation);
             }
+            
+            // Marcar que hay cambios sin guardar
+            this.markAsChanged();
         }
 
         return translation;
@@ -348,11 +392,8 @@ export class EIJEData {
         // Get hidden languages to ignore
         const hiddenLanguages = EIJEConfiguration.HIDDEN_COLUMNS;
         
-        // Get all filtered translations
+        // Get all translations (no folder filtering needed since we work with specific folders now)
         let filteredTranslations = this._translations;
-        if (this._filteredFolder !== '*') {
-            filteredTranslations = filteredTranslations.filter(t => t.folder === this._filteredFolder);
-        }
         
         // Apply search filter if there is one
         if (this._searchPattern) {
@@ -460,9 +501,6 @@ export class EIJEData {
         
         // Get filtered translations (using the same filtering logic as _getDisplayedTranslations)
         let filteredTranslations = this._translations;
-        if (this._filteredFolder !== '*') {
-            filteredTranslations = filteredTranslations.filter(t => t.folder === this._filteredFolder);
-        }
         
         // Apply search filter if there is one
         if (this._searchPattern) {
@@ -556,6 +594,12 @@ export class EIJEData {
      *  Load methods
      */
     private async _loadFiles(): Promise<void> {
+        // Verificar si hay una carpeta seleccionada
+        if (!this._manager.folderPath && this._manager.isWorkspace) {
+            // Si no hay carpeta seleccionada y estamos en modo workspace, no cargar nada
+            return;
+        }
+        
         // Almacenar los idiomas antes de cargar los nuevos archivos
         const previousLanguages = [...this._languages];
         
@@ -563,9 +607,9 @@ export class EIJEData {
         if (!this._manager.isWorkspace) {
             await this._loadFolder(this._manager.folderPath);
         } else {
-            const directories = EIJEConfiguration.WORKSPACE_FOLDERS;
-            for (const d of directories) {
-                await this._loadFolder(d.path);
+            // En modo workspace, solo cargar la carpeta seleccionada
+            if (this._manager.folderPath) {
+                await this._loadFolder(this._manager.folderPath);
             }
         }
         
@@ -666,9 +710,6 @@ export class EIJEData {
      */
     private _getDisplayedTranslations(): EIJEDataTranslation[] {
         var o = this._translations;
-        if (this._filteredFolder !== '*') {
-            o = o.filter(t => t.folder === this._filteredFolder);
-        }
 
         o = o
             .filter(t => {
@@ -814,7 +855,7 @@ export class EIJEData {
     private _createFactoryIJEDataTranslation(): EIJEDataTranslation {
         return {
             id: this._currentID++,
-            folder: !this._manager.isWorkspace ? this._manager.folderPath : this._filteredFolder !== '*' ? this._filteredFolder : EIJEConfiguration.WORKSPACE_FOLDERS[0].path,
+            folder: this._manager.folderPath || (EIJEConfiguration.WORKSPACE_FOLDERS.length > 0 ? EIJEConfiguration.WORKSPACE_FOLDERS[0].path : ''),
             valid: true,
             error: '',
             key: '',
