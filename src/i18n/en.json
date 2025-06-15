@@ -39,7 +39,9 @@
       "add_language": "Add language",
       "toggle_column_selector": "Toggle column selector",
       "chage_view_mode": "Change view mode",
-      "error_translations": "There are some translation errors"
+      "error_translations": "There are some translation errors",
+      "select_workspace_folder": "Select workspace folder",
+      "discard_changes": "Discard changes"
     },
     "pagination": {
       "itemsPerPage": "Items per page"
@@ -60,7 +62,8 @@
       "languageFileCreated": "New language file {0} created",
       "fileCreationError": "Error creating language file: {0}",
       "unsupportedFolder": "The folder '{0}' is not supported. Please configure supported folders in settings.",
-      "noEmptyTranslations": "No empty translations found."
+      "noEmptyTranslations": "No empty translations found.",
+      "changesDiscarded": "Changes discarded"
     },
     "placeholders": {
       "key": "Key...",
