@@ -94,10 +94,16 @@ export class EIJEManager {
 
     private async _initializeData(): Promise<void> {
         try {
+            // Establecer la carpeta de trabajo inicial
+            await this.setInitialWorkspaceFolder();
+            
             await this._data.initialize();
             
             // Limpiar idiomas eliminados de las listas de visibles/ocultos
             await this.cleanupDeletedLanguages();
+            
+            // Inicializar el selector de carpetas de trabajo
+            this.initializeWorkspaceFolderSelector();
             
             this.refreshDataTable();
         } catch (error) {
@@ -149,8 +155,18 @@ export class EIJEManager {
                 case 'save':
                     await this._data.save();
                     return;
-                case 'filterFolder':
-                    this._data.filterFolder(message.value);
+                case 'switchWorkspaceFolder':
+                    await this.switchWorkspaceFolder(message.folderName);
+                    return;
+                case 'saveAndSwitchWorkspaceFolder':
+                    await this._data.save();
+                    await this.switchWorkspaceFolder(message.folderName);
+                    return;
+                case 'discardAndSwitchWorkspaceFolder':
+                    await this.discardChangesAndSwitchWorkspaceFolder(message.folderName);
+                    return;
+                case 'discardChanges':
+                    await this.discardChanges();
                     return;
                 case 'search':
                     this._data.search(message.value);
@@ -170,9 +186,7 @@ export class EIJEManager {
                 case 'translate':
                     this._data.translate(message.id, message.language);
                     return;
-                case 'folder':
-                    this._data.changeFolder(message.id, message.value);
-                    return;
+
                 case 'toggleColumn':
                     this.toggleColumnVisibility(message.language, message.visible);
                     return;
@@ -429,7 +443,10 @@ export class EIJEManager {
             // Limpiar caché antes de leer la configuración actual
             EIJEConfiguration.clearConfigCache();
             
-            // Obtener las columnas actuales
+            // Obtener la carpeta de trabajo actual
+            const currentWorkspaceFolder = EIJEConfiguration.DEFAULT_WORKSPACE_FOLDER;
+            
+            // Obtener las columnas actuales (específicas para la carpeta actual)
             let visibleColumns = [...EIJEConfiguration.VISIBLE_COLUMNS];
             let hiddenColumns = [...EIJEConfiguration.HIDDEN_COLUMNS];
             
@@ -453,6 +470,97 @@ export class EIJEManager {
                 await EIJEConfiguration.saveHiddenColumns(hiddenColumns);
                 
                 console.log('Cleaned up deleted languages from visibility configuration');
+            }
+            
+            // Limpiar también todas las configuraciones de carpetas de trabajo
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (workspaceFolder) {
+                const configPath = _path.join(workspaceFolder.uri.fsPath, '.vscode', '.ei18n-editor-config.json');
+                
+                if (EIJEFileSystem.existsSync(configPath)) {
+                    const configContent = EIJEFileSystem.readFileSync(configPath);
+                    const config = JSON.parse(configContent);
+                    
+                    // Limpiar las configuraciones globales
+                    if (config.visibleColumns) {
+                        const originalGlobalVisibleCount = config.visibleColumns.length;
+                        config.visibleColumns = config.visibleColumns.filter((col: string) => 
+                            col === 'key' || availableLanguages.includes(col)
+                        );
+                        
+                        if (config.visibleColumns.length !== originalGlobalVisibleCount) {
+                            // Guardar la configuración actualizada
+                            EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                            console.log('Cleaned up deleted languages from global visibility configuration');
+                        }
+                    }
+                    
+                    if (config.hiddenColumns) {
+                        const originalGlobalHiddenCount = config.hiddenColumns.length;
+                        config.hiddenColumns = config.hiddenColumns.filter((col: string) => 
+                            availableLanguages.includes(col)
+                        );
+                        
+                        if (config.hiddenColumns.length !== originalGlobalHiddenCount) {
+                            // Guardar la configuración actualizada
+                            EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                            console.log('Cleaned up deleted languages from global visibility configuration');
+                        }
+                    }
+                    
+                    // Limpiar las configuraciones específicas por carpeta
+                    if (config.workspaceFolders && Array.isArray(config.workspaceFolders)) {
+                        let configUpdated = false;
+                        
+                        // Recorrer todas las carpetas de trabajo
+                        config.workspaceFolders.forEach((folder: any) => {
+                            // Limpiar visibleColumns
+                            if (folder.visibleColumns && Array.isArray(folder.visibleColumns)) {
+                                const originalFolderVisibleCount = folder.visibleColumns.length;
+                                folder.visibleColumns = folder.visibleColumns.filter((col: string) => 
+                                    col === 'key' || availableLanguages.includes(col)
+                                );
+                                
+                                if (folder.visibleColumns.length !== originalFolderVisibleCount) {
+                                    configUpdated = true;
+                                }
+                            }
+                            
+                            // Limpiar hiddenColumns
+                            if (folder.hiddenColumns && Array.isArray(folder.hiddenColumns)) {
+                                const originalFolderHiddenCount = folder.hiddenColumns.length;
+                                folder.hiddenColumns = folder.hiddenColumns.filter((col: string) => 
+                                    availableLanguages.includes(col)
+                                );
+                                
+                                if (folder.hiddenColumns.length !== originalFolderHiddenCount) {
+                                    configUpdated = true;
+                                }
+                            }
+                        });
+                        
+                        // Si se actualizó alguna configuración, guardar el archivo
+                        if (configUpdated) {
+                            EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                            console.log('Cleaned up deleted languages from workspace folders configuration');
+                        }
+                    }
+                    
+                    // Eliminar configuraciones específicas por carpeta en el nivel raíz
+                    let rootConfigUpdated = false;
+                    Object.keys(config).forEach(key => {
+                        if (key.startsWith('visibleColumns_') || key.startsWith('hiddenColumns_')) {
+                            delete config[key];
+                            rootConfigUpdated = true;
+                        }
+                    });
+                    
+                    // Si se eliminaron configuraciones en el nivel raíz, guardar el archivo
+                    if (rootConfigUpdated) {
+                        EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                        console.log('Removed legacy workspace-specific configurations from root level');
+                    }
+                }
             }
             
         } catch (error) {
@@ -529,6 +637,14 @@ export class EIJEManager {
         // Actualizar el contador de traducciones faltantes después de cada modificación
         const currentPage = this._data.getCurrentPage();
         this.checkEmptyTranslations(currentPage);
+    }
+    
+    /**
+     * Envía un mensaje al frontend
+     * @param message El mensaje a enviar
+     */
+    postMessage(message: any) {
+        this._panel.webview.postMessage(message);
     }
     
     /**
@@ -669,5 +785,196 @@ export class EIJEManager {
             console.error('Error generating template:', error);
             return '<html><body><h1>Error loading template</h1><p>' + error + '</p></body></html>';
         }
+    }
+
+    // Método para cambiar la carpeta de trabajo
+    private async switchWorkspaceFolder(folderName: string): Promise<void> {
+        try {
+            // Si no hay nombre de carpeta, no hacer nada
+            if (!folderName) {
+                return;
+            }
+            
+            // Verificar si hay cambios sin guardar
+            if (this._data && this._data.hasUnsavedChanges()) {
+                // Usar el servicio de notificaciones para mostrar el mensaje de error
+                NotificationService.getInstance().showErrorMessage(
+                    I18nService.getInstance().t('ui.messages.cannotSwitchWithUnsavedChanges', 'No se puede cambiar de carpeta de trabajo sin guardar o descartar los cambios.')
+                );
+                
+                // Enviar mensaje al frontend para restaurar la selección anterior
+                this._panel.webview.postMessage({
+                    command: 'restoreWorkspaceFolderSelection',
+                    folderName: EIJEConfiguration.DEFAULT_WORKSPACE_FOLDER
+                });
+                
+                return;
+            }
+            
+            // Guardar la carpeta seleccionada como predeterminada
+            await EIJEConfiguration.saveDefaultWorkspaceFolder(folderName);
+            
+            // Limpiar la caché de configuración para forzar la recarga de las columnas visibles/ocultas
+            EIJEConfiguration.clearConfigCache('visibleColumns');
+            EIJEConfiguration.clearConfigCache('hiddenColumns');
+            EIJEConfiguration.clearConfigCache('workspaceFolders');
+            
+            // Buscar la carpeta en la configuración
+            const workspaceFolders = EIJEConfiguration.WORKSPACE_FOLDERS;
+            const selectedFolder = workspaceFolders.find(f => f.name === folderName);
+            
+            if (selectedFolder) {
+                // Crear nueva instancia de EIJEData para la nueva carpeta
+                this._data = new EIJEData(this);
+                
+                // Cambiar la ruta de la carpeta
+                this.folderPath = selectedFolder.path;
+                
+                // Reinicializar los datos
+                await this._data.initialize();
+                
+                // Limpiar idiomas eliminados de las listas de visibles/ocultos
+                await this.cleanupDeletedLanguages();
+                
+                // Actualizar la interfaz
+                this.refreshDataTable();
+                
+                // Enviar confirmación al frontend
+                this._panel.webview.postMessage({
+                    command: 'workspaceFolderChanged',
+                    folderName: folderName
+                });
+                
+                // Inicializar el selector de carpetas con la nueva carpeta activa
+                this.initializeWorkspaceFolderSelector(folderName);
+                
+                // Enviar la configuración actualizada al frontend
+                this._panel.webview.postMessage({ 
+                    command: 'configurationUpdate', 
+                    allowEmptyTranslations: EIJEConfiguration.ALLOW_EMPTY_TRANSLATIONS,
+                    defaultLanguage: EIJEConfiguration.DEFAULT_LANGUAGE,
+                    forceKeyUPPERCASE: EIJEConfiguration.FORCE_KEY_UPPERCASE
+                });
+                
+            } else {
+                console.error('Workspace folder not found:', folderName);
+            }
+        } catch (error) {
+            console.error('Error switching workspace folder:', error);
+        }
+    }
+
+    // Método para descartar cambios
+    private async discardChanges(): Promise<void> {
+        try {
+            // Descartar cambios en los datos
+            if (this._data) {
+                await this._data.discardChanges();
+            }
+            
+            // Actualizar la interfaz
+            this.refreshDataTable();
+            
+            // Mostrar mensaje de confirmación
+            NotificationService.getInstance().showInformationMessage(I18nService.getInstance().t('ui.messages.changesDiscarded'), true);
+        } catch (error) {
+            console.error('Error discarding changes:', error);
+        }
+    }
+    
+    // Método para descartar cambios y cambiar de carpeta
+    private async discardChangesAndSwitchWorkspaceFolder(folderName: string): Promise<void> {
+        try {
+            // Descartar cambios
+            await this.discardChanges();
+            
+            // Cambiar de carpeta
+            await this.switchWorkspaceFolder(folderName);
+        } catch (error) {
+            console.error('Error discarding changes and switching workspace folder:', error);
+        }
+    }
+
+    // Método para establecer la carpeta de trabajo inicial
+    private async setInitialWorkspaceFolder(): Promise<void> {
+        const workspaceFolders = EIJEConfiguration.WORKSPACE_FOLDERS;
+        
+        if (workspaceFolders.length === 0) {
+            return;
+        }
+        
+        // Obtener la carpeta por defecto de la configuración
+        const defaultFolder = EIJEConfiguration.DEFAULT_WORKSPACE_FOLDER;
+        let selectedFolder: any = null;
+        
+        // Si hay una carpeta específica proporcionada al abrir la extensión, usarla
+        if (this.folderPath) {
+            // Verificar si la carpeta proporcionada está en la lista de carpetas de trabajo
+            const matchingFolder = workspaceFolders.find(f => f.path === this.folderPath);
+            if (matchingFolder) {
+                // Si la carpeta está en la lista, usarla
+                selectedFolder = matchingFolder;
+            } else if (defaultFolder && workspaceFolders.some(f => f.name === defaultFolder)) {
+                // Si la carpeta no está en la lista pero hay una carpeta por defecto, usarla
+                selectedFolder = workspaceFolders.find(f => f.name === defaultFolder);
+            }
+            // Si no hay carpeta por defecto, no seleccionar ninguna automáticamente
+        } else if (defaultFolder && workspaceFolders.some(f => f.name === defaultFolder)) {
+            // Si no hay folderPath específico pero hay una carpeta por defecto, usarla
+            selectedFolder = workspaceFolders.find(f => f.name === defaultFolder);
+        }
+        // Si no hay carpeta por defecto, no seleccionar ninguna automáticamente
+        
+        // Actualizar el folderPath con la carpeta seleccionada
+        if (selectedFolder) {
+            this.folderPath = selectedFolder.path;
+            
+            // Si la carpeta seleccionada es diferente a la carpeta por defecto, actualizar la configuración
+            if (selectedFolder.name !== defaultFolder) {
+                await EIJEConfiguration.saveDefaultWorkspaceFolder(selectedFolder.name);
+            }
+        } else {
+            // Si no hay carpeta seleccionada, limpiar el folderPath para que no se carguen datos
+            this.folderPath = '';
+        }
+    }
+
+    // Método para inicializar el selector de carpetas de trabajo
+    private initializeWorkspaceFolderSelector(currentFolder?: string): void {
+        const workspaceFolders = EIJEConfiguration.WORKSPACE_FOLDERS;
+        
+        console.log('Initializing workspace folder selector:', { workspaceFolders, currentFolder, folderPath: this.folderPath });
+        
+        if (workspaceFolders.length === 0) {
+            console.log('No workspace folders found');
+            return;
+        }
+        
+        // Determinar la carpeta actual
+        let activeFolder = currentFolder;
+        if (!activeFolder) {
+            // Buscar la carpeta que corresponde al folderPath actual
+            const currentFolderObj = workspaceFolders.find(f => f.path === this.folderPath);
+            if (currentFolderObj) {
+                activeFolder = currentFolderObj.name;
+            } else {
+                const defaultFolder = EIJEConfiguration.DEFAULT_WORKSPACE_FOLDER;
+                if (defaultFolder && workspaceFolders.some(f => f.name === defaultFolder)) {
+                    activeFolder = defaultFolder;
+                }
+                // Si no hay carpeta por defecto, no seleccionar ninguna automáticamente
+            }
+        }
+        
+        console.log('Sending initWorkspaceFolders message:', { folders: workspaceFolders, currentFolder: activeFolder });
+        
+        // Enviar datos al frontend con un pequeño delay para asegurar que el webview esté listo
+        setTimeout(() => {
+            this._panel.webview.postMessage({
+                command: 'initWorkspaceFolders',
+                folders: workspaceFolders,
+                currentFolder: activeFolder || null
+            });
+        }, 100);
     }
 }
