@@ -4,7 +4,7 @@ All notable changes to the "ei18n-json-editor" extension will be documented in t
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+## [v1.0.0]
 
 ### Added
 - Botón lateral para abrir el editor de traducciones
