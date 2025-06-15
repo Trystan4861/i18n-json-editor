@@ -4,6 +4,18 @@ All notable changes to the "ei18n-json-editor" extension will be documented in t
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [v1.0.1]
+
+### Added
+- Soporte para múltiples carpetas de trabajo
+- Selector de carpetas de trabajo en la interfaz
+- Control de cambios sin guardar al cambiar entre carpetas
+
+### Fixed
+- Reemplazados diálogos modales nativos por personalizados para evitar restricciones del sandbox
+- Unificado el sistema de notificaciones para evitar mensajes duplicados
+- Corregido el manejo de confirmaciones al descartar cambios
+
 ## [v1.0.0]
 
 ### Added
