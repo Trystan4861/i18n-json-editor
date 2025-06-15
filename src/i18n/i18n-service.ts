@@ -1,14 +1,17 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 import * as path from 'path';
+import { EIJEFileSystem } from '../ei18n-json-editor/services/eije-filesystem';
+import { translations } from './translations';
 
 export class I18nService {
     private static instance: I18nService;
     private translations: { [key: string]: any } = {};
     private currentLanguage: string = 'en';
+    private isLoaded: boolean = false;
+    private loadPromise: Promise<void> | null = null;
 
     private constructor(private context: vscode.ExtensionContext) {
-        this.loadTranslations();
+        this.loadPromise = this.loadTranslations();
     }
 
     public static getInstance(context?: vscode.ExtensionContext): I18nService {
@@ -18,22 +21,47 @@ export class I18nService {
         return I18nService.instance;
     }
 
-    private loadTranslations(): void {
-        const langFiles = ['en.json', 'es.json'];
-        const i18nDir = path.join(this.context.extensionPath, 'src', 'i18n');
+    private isWebEnvironment(): boolean {
+        return typeof process === 'undefined' || process.versions?.node === undefined;
+    }
 
-        langFiles.forEach(file => {
-            try {
-                const lang = file.split('.')[0];
-                const filePath = path.join(i18nDir, file);
-                if (fs.existsSync(filePath)) {
-                    const content = fs.readFileSync(filePath, 'utf8');
-                    this.translations[lang] = JSON.parse(content);
+    private async loadTranslations(): Promise<void> {
+        try {
+            if (this.isWebEnvironment()) {
+                // En entorno web, usar las traducciones embebidas
+                this.translations = translations;
+                this.isLoaded = true;
+            } else {
+                // En entorno Node.js, cargar desde archivos
+                const langFiles = ['en.json', 'es.json'];
+                const i18nDir = path.join(this.context.extensionPath, 'src', 'i18n');
+
+                for (const file of langFiles) {
+                    try {
+                        const lang = file.split('.')[0];
+                        const filePath = path.join(i18nDir, file);
+                        if (await EIJEFileSystem.exists(filePath)) {
+                            const content = await EIJEFileSystem.readFile(filePath);
+                            this.translations[lang] = JSON.parse(content);
+                        }
+                    } catch (error) {
+                        console.error(`Failed to load translation file ${file}:`, error);
+                    }
                 }
-            } catch (error) {
-                console.error(`Failed to load translation file ${file}:`, error);
+                this.isLoaded = true;
             }
-        });
+        } catch (error) {
+            console.error('Failed to load translations:', error);
+            // Fallback a traducciones embebidas
+            this.translations = translations;
+            this.isLoaded = true;
+        }
+    }
+
+    public async waitForLoad(): Promise<void> {
+        if (this.loadPromise) {
+            await this.loadPromise;
+        }
     }
 
     public setLanguage(lang: string): void {
@@ -50,11 +78,36 @@ export class I18nService {
 
     public t(key: string, ...args: any[]): string {
         try {
+            // Si las traducciones no están cargadas, usar fallback
+            if (!this.isLoaded || !this.translations[this.currentLanguage]) {
+                // Intentar usar traducciones embebidas como fallback
+                const fallbackTranslations = translations[this.currentLanguage as keyof typeof translations] || translations.en;
+                const keyParts = key.split('.');
+                let value: any = fallbackTranslations;
+                
+                for (const part of keyParts) {
+                    value = value?.[part];
+                    if (value === undefined) {
+                        return key; // Return the key if the translation is not found
+                    }
+                }
+                
+                // Replace {0}, {1}, etc. with the corresponding arguments
+                if (args.length > 0 && typeof value === 'string') {
+                    return value.replace(/{(\d+)}/g, (match, index) => {
+                        const argIndex = parseInt(index, 10);
+                        return argIndex < args.length ? args[argIndex] : match;
+                    });
+                }
+                
+                return typeof value === 'string' ? value : key;
+            }
+
             const keyParts = key.split('.');
-            let value = this.translations[this.currentLanguage];
+            let value: any = this.translations[this.currentLanguage];
             
             for (const part of keyParts) {
-                value = value[part];
+                value = value?.[part];
                 if (value === undefined) {
                     return key; // Return the key if the translation is not found
                 }
@@ -68,7 +121,7 @@ export class I18nService {
                 });
             }
             
-            return value;
+            return typeof value === 'string' ? value : key;
         } catch (error) {
             console.error(`Translation error for key ${key}:`, error);
             return key;

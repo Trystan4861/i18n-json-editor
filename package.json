@@ -11,7 +11,7 @@
     },
     "description": "Easily edit your i18n json files, inspired in the vscode i18n json editor by Thibault Vanderseypen",
     "icon": "media/images/ei18n_logo.png",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "engines": {
         "vscode": "^1.30.0"
     },
@@ -31,6 +31,7 @@
         "workspaceContains:**"
     ],
     "main": "./out/extension.js",
+    "browser": "./dist/web/extension.js",
     "contributes": {
         "commands": [
             {
@@ -136,15 +137,34 @@
                     "default": "en",
                     "type": "string",
                     "description": "Default language code to use as reference when editing translations. This language will be locked and cannot be hidden."
+                },
+                "i18nJsonEditor.visibleColumns": {
+                    "default": [],
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Array of language codes that should be visible as columns in the editor"
+                },
+                "i18nJsonEditor.hiddenColumns": {
+                    "default": [],
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Array of language codes that should be hidden as columns in the editor"
                 }
             }
         }
     },
     "scripts": {
-        "vscode:prepublish": "npm run compile",
+        "vscode:prepublish": "npm run package-web",
         "compile": "tsc -p ./",
-        "lint": "eslint src --ext ts",
+        "compile-web": "webpack",
         "watch": "tsc -watch -p ./",
+        "watch-web": "webpack --watch",
+        "package-web": "webpack --mode production --devtool hidden-source-map",
+        "lint": "eslint src --ext ts",
         "pretest": "npm run compile && npm run lint",
         "test": "node ./out/test/runTest.js"
     },
@@ -153,13 +173,20 @@
         "@types/mocha": "^9.1.1",
         "@types/node": "16.x",
         "@types/vscode": "^1.30.0",
+        "@types/webpack-env": "^1.18.0",
         "@typescript-eslint/eslint-plugin": "^5.30.0",
         "@typescript-eslint/parser": "^5.30.0",
         "@vscode/test-electron": "^2.1.5",
+        "assert": "^2.0.0",
         "eslint": "^8.18.0",
         "glob": "^8.0.3",
         "mocha": "^10.0.0",
-        "typescript": "^4.7.4"
+        "path-browserify": "^1.0.1",
+        "process": "^0.11.10",
+        "ts-loader": "^9.4.2",
+        "typescript": "^4.7.4",
+        "webpack": "^5.75.0",
+        "webpack-cli": "^5.0.1"
     },
     "dependencies": {
         "axios": "^1.9.0"

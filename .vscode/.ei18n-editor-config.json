@@ -1,0 +1,15 @@
+{
+  "forceKeyUPPERCASE": true,
+  "jsonSpace": 2,
+  "keySeparator": ".",
+  "lineEnding": "\n",
+  "supportedFolders": [
+    "i18n"
+  ],
+  "translationService": "Coming soon",
+  "translationServiceApiKey": "Coming soon",
+  "allowEmptyTranslations": false,
+  "defaultLanguage": "en",
+  "visibleColumns": [],
+  "hiddenColumns": []
+}

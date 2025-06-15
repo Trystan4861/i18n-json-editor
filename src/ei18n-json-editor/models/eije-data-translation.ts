@@ -17,6 +17,6 @@ export enum EIJEDataTranslationError {
 }
 
 // Helper function to get translated error message
-export function getTranslatedError(error: EIJEDataTranslationError): string {
-    return I18nService.getInstance().t(error);
+export function getTranslatedError(error: EIJEDataTranslationError, ...params: string[]): string {
+    return I18nService.getInstance().t(error, ...params);
 }

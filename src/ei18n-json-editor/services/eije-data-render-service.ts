@@ -68,8 +68,12 @@ export class EIJEDataRenderService {
         const sortedLanguages = [...languages];
         return sortedLanguages.sort((a, b) => {
             // El idioma por defecto siempre va primero
-            if (a === defaultLanguage) return -1;
-            if (b === defaultLanguage) return 1;
+            if (a === defaultLanguage) {
+                return -1;
+            }
+            if (b === defaultLanguage) {
+                return 1;
+            }
             // El resto alfabéticamente
             return a.localeCompare(b);
         });

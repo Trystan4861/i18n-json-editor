@@ -20,6 +20,22 @@
 			"type": "npm",
 			"script": "compile",
 			"problemMatcher": []
+		},
+		{
+			"type": "npm",
+			"script": "compile-web",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"type": "npm",
+			"script": "watch-web",
+			"problemMatcher": "$tsc-watch",
+			"isBackground": true,
+			"presentation": {
+				"reveal": "never"
+			},
+			"group": "build"
 		}
 	]
 }

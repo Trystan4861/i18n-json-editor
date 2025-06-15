@@ -7,6 +7,7 @@
 
 var vscode;
 var hasUnsavedChanges = false;
+var allowEmptyTranslations = false; // Variable global para almacenar la configuración
 
 (function () {
   vscode = acquireVsCodeApi();
@@ -180,6 +181,16 @@ var hasUnsavedChanges = false;
           }, 2000);
         }
         break;
+      case "configurationUpdate":
+        // Actualizar configuración global
+        allowEmptyTranslations = message.allowEmptyTranslations;
+        
+        // Revalidar el estado actual después de recibir la configuración
+        checkEmptyTranslations();
+        break;
+      case "showFlashyNotification":
+        showFlashyNotification(message.message, message.type, message.duration);
+        break;
     }
   });
   setTimeout(() => {
@@ -297,9 +308,8 @@ function updateSaveButtonStyle() {
     const hasMissingTranslations = emptyTranslationsCounter && 
                                 parseInt(emptyTranslationsCounter.textContent) > 0;
     
-    // Obtener configuración de traducciones vacías permitidas desde el botón de advertencia
-    const dangerBtn = document.getElementById('btn-warning-translations');
-    const allowEmptyTranslations = dangerBtn && dangerBtn.classList.contains('btn-warning');
+    // Usar la variable global de configuración
+    // allowEmptyTranslations ya está definida globalmente
     
     saveButtonStyle.classList.remove("btn-vscode", "btn-success", "btn-danger");
     
@@ -482,5 +492,47 @@ function clearSearch() {
   search(searchInput); // Actualizar la búsqueda con el valor vacío
   toggleClearButton(searchInput); // Ocultar el botón de limpiar
   searchInput.focus(); // Mantener el foco en el campo
+}
+
+/**
+ * Muestra una notificación usando Flashy.js
+ * @param {string} message - Mensaje a mostrar
+ * @param {string} type - Tipo de notificación (success, error, warning, info)
+ * @param {number} duration - Duración en milisegundos (0 = sin auto-cierre)
+ */
+function showFlashyNotification(message, type, duration) {
+  // Detectar si el tema de VSCode es oscuro
+  const isDarkTheme = document.body.classList.contains('vscode-dark') || 
+                     document.body.classList.contains('vscode-high-contrast') ||
+                     window.matchMedia('(prefers-color-scheme: dark)').matches;
+  
+  // Mapear iconos usando FontAwesome 6 Pro
+  const iconMap = {
+    success: '<i class="fa-solid fa-circle-check"></i>',
+    error: '<i class="fa-solid fa-circle-exclamation"></i>',
+    warning: '<i class="fa-solid fa-triangle-exclamation"></i>',
+    info: '<i class="fa-solid fa-circle-info"></i>',
+    default: '<i class="fa-solid fa-comment"></i>'
+  };
+  
+  // Configurar opciones de Flashy
+  const options = {
+    type: type,
+    position: 'bottom-right',
+    duration: duration,
+    closable: true,
+    animation: 'slide',
+    theme: isDarkTheme ? 'dark' : 'light',
+    icon: iconMap[type] || iconMap.default
+  };
+  
+  // Mostrar la notificación
+  if (typeof window.flashy === 'function') {
+    window.flashy(message, options);
+  } else {
+    // Fallback si Flashy no está disponible
+    console.warn('Flashy no está disponible, usando console.log como fallback');
+    console.log(`[${type.toUpperCase()}] ${message}`);
+  }
 }
 

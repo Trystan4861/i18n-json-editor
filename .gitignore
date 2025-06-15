@@ -2,6 +2,8 @@ out
 node_modules
 .vscode-test/
 *.vsix
-
 .github/copilot/config.yml
 .github/copilot/project_activity_log.md
+.vscode-test-web
+web-extensions.md
+.docs

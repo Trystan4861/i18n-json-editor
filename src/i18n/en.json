@@ -16,7 +16,7 @@
     "errors": {
       "invalidKey": "The key is invalid.",
       "keyNotEmpty": "The Key must be filled.",
-      "duplicatePath": "The key path is already defined.",
+      "duplicatePath": "Key path conflict: '{0}' already exists as a simple key. To create '{1}', you must first delete or rename the existing '{0}' key.",
       "emptyTranslation": "Translations cannot be empty when allowEmptyTranslations is set to false."
     },
     "prompts": {
