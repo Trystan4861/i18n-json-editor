@@ -675,7 +675,8 @@ export class EIJEManager {
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'bootstrap.min.css')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'template.css')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'tippy.css')),
-            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'font-awesome.min.css'))
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'font-awesome.min.css')),
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'sweetalert2-custom.css'))
         ];
 
         const scriptsPath = [
@@ -683,6 +684,7 @@ export class EIJEManager {
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'bootstrap.min.js')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'popper.min.js')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'tippy.min.js')),
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'sweetalert2.min.js')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'flashy.js')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'template.js'))
         ];
@@ -735,7 +737,8 @@ export class EIJEManager {
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'bootstrap.min.css')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'template.css')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'tippy.css')),
-            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'font-awesome.min.css'))
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'font-awesome.min.css')),
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'sweetalert2-custom.css'))
         ];
 
         const scriptsPath = [
@@ -743,6 +746,7 @@ export class EIJEManager {
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'bootstrap.min.js')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'popper.min.js')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'tippy.min.js')),
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'sweetalert2.min.js')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'flashy.js')),
             vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'template.js'))
         ];

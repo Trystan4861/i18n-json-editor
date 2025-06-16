@@ -386,61 +386,63 @@ function mark(id) {
 }
 
 /**
- * Muestra un diálogo de confirmación personalizado que funciona dentro del sandbox
+ * Muestra un diálogo de confirmación personalizado utilizando SweetAlert2
  * @param {string} message - Mensaje a mostrar
  * @param {Array<{text: string, action: Function}>} buttons - Botones y sus acciones
  */
 function showCustomConfirmDialog(message, buttons) {
-  // Crear el fondo oscuro
-  const overlay = document.createElement('div');
-  overlay.style.position = 'fixed';
-  overlay.style.top = '0';
-  overlay.style.left = '0';
-  overlay.style.width = '100%';
-  overlay.style.height = '100%';
-  overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-  overlay.style.zIndex = '1000';
-  overlay.style.display = 'flex';
-  overlay.style.justifyContent = 'center';
-  overlay.style.alignItems = 'center';
-
-  // Crear el diálogo
-  const dialog = document.createElement('div');
-  dialog.style.backgroundColor = 'var(--vscode-editor-background)';
-  dialog.style.color = 'var(--vscode-editor-foreground)';
-  dialog.style.padding = '20px';
-  dialog.style.borderRadius = '5px';
-  dialog.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.3)';
-  dialog.style.maxWidth = '400px';
-  dialog.style.width = '100%';
-
-  // Agregar el mensaje
-  const messageElement = document.createElement('p');
-  messageElement.textContent = message;
-  messageElement.style.marginBottom = '20px';
-  dialog.appendChild(messageElement);
-
-  // Contenedor de botones
-  const buttonContainer = document.createElement('div');
-  buttonContainer.style.display = 'flex';
-  buttonContainer.style.justifyContent = 'flex-end';
-  buttonContainer.style.gap = '10px';
-
-  // Agregar botones
-  buttons.forEach(button => {
-    const buttonElement = document.createElement('button');
-    buttonElement.textContent = button.text;
-    buttonElement.className = 'btn btn-vscode';
-    buttonElement.addEventListener('click', () => {
-      document.body.removeChild(overlay);
-      button.action();
-    });
-    buttonContainer.appendChild(buttonElement);
+  // Detectar si el tema de VSCode es oscuro
+  const isDarkTheme = document.body.classList.contains('vscode-dark') || 
+                     document.body.classList.contains('vscode-high-contrast') ||
+                     window.matchMedia('(prefers-color-scheme: dark)').matches;
+  
+  // Configurar opciones de SweetAlert2
+  const swalOptions = {
+    title: '',
+    text: message,
+    icon: 'question',
+    showCancelButton: false,
+    showConfirmButton: false,
+    focusConfirm: false,
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    backdrop: true,
+    customClass: {
+      popup: 'swal-vscode-popup',
+      title: 'swal-vscode-title',
+      content: 'swal-vscode-content',
+      actions: 'swal-vscode-actions'
+    },
+    // Adaptar colores al tema de VSCode
+    background: 'var(--vscode-editor-background)',
+    color: 'var(--vscode-editor-foreground)'
+  };
+  
+  // Crear botones personalizados
+  const footerHtml = buttons.map((button, index) => {
+    return `<button id="swal-custom-btn-${index}" class="btn btn-vscode">${button.text}</button>`;
+  }).join('');
+  
+  // Agregar los botones al footer
+  swalOptions.footer = `<div class="swal-vscode-footer">${footerHtml}</div>`;
+  
+  // Mostrar el diálogo
+  Swal.fire(swalOptions).then(() => {
+    // Este bloque se ejecuta cuando se cierra el diálogo
   });
-
-  dialog.appendChild(buttonContainer);
-  overlay.appendChild(dialog);
-  document.body.appendChild(overlay);
+  
+  // Agregar event listeners a los botones personalizados
+  buttons.forEach((button, index) => {
+    setTimeout(() => {
+      const btnElement = document.getElementById(`swal-custom-btn-${index}`);
+      if (btnElement) {
+        btnElement.addEventListener('click', () => {
+          Swal.close();
+          button.action();
+        });
+      }
+    }, 100); // Pequeño retraso para asegurar que los elementos estén en el DOM
+  });
 }
 
 function navigate(page) {
