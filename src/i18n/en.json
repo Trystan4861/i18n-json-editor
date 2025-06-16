@@ -63,7 +63,11 @@
       "fileCreationError": "Error creating language file: {0}",
       "unsupportedFolder": "The folder '{0}' is not supported. Please configure supported folders in settings.",
       "noEmptyTranslations": "No empty translations found.",
-      "changesDiscarded": "Changes discarded"
+      "changesDiscarded": "Changes discarded",
+      "languageFileNotFound": "Language file {0} not found",
+      "cannotDeleteDefaultLanguage": "Cannot delete the default language",
+      "languageFileDeleted": "Language file {0} deleted successfully",
+      "fileDeletionError": "Error deleting language file: {0}"
     },
     "placeholders": {
       "key": "Key...",

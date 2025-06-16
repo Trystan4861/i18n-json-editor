@@ -338,3 +338,51 @@ textarea.form-control {
     max-height: 140px;
     overflow-y: auto;
 }
+
+/* Estilos para el menú contextual */
+.context-menu {
+    display: none;
+    position: absolute;
+    z-index: 1000;
+    min-width: 180px;
+    background-color: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-input-background);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 5px 0;
+}
+
+.context-menu-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--vscode-editor-foreground);
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+}
+
+.context-menu-item i {
+    margin-right: 8px;
+    width: 16px;
+    text-align: center;
+}
+
+.context-menu-item:hover {
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+}
+
+.context-menu-item.danger {
+    color: #DC3545;
+}
+
+.context-menu-item.danger:hover {
+    background-color: #DC3545;
+    color: white;
+}
+
+.context-menu-divider {
+    height: 1px;
+    background-color: var(--vscode-input-background);
+    margin: 5px 0;
+}

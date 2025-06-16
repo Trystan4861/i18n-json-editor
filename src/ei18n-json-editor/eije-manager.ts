@@ -199,57 +199,75 @@ export class EIJEManager {
                 case 'navigateToNextEmptyTranslation':
                     this.navigateToNextEmptyTranslation();
                     return;
+                case 'deleteLanguage':
+                    await this.deleteLanguage(message.language);
+                    return;
             }
         });
     }
     
-    toggleColumnVisibility(language: string, visible: boolean) {
+    async toggleColumnVisibility(language: string, visible: boolean) {
         // No se permite ocultar la columna 'key' ni el idioma por defecto
         const defaultLanguage = EIJEConfiguration.DEFAULT_LANGUAGE;
         if (language === 'key' || language === defaultLanguage) {
             return;
         }
         
-        // Limpiar caché antes de leer la configuración actual
-        EIJEConfiguration.clearConfigCache();
-        
-        // Forzar recarga de configuración
-        let visibleColumns = [...EIJEConfiguration.VISIBLE_COLUMNS];
-        let hiddenColumns = [...EIJEConfiguration.HIDDEN_COLUMNS];
-        
-        if (visible) {
-            // Mostrar columna
-            if (!visibleColumns.includes(language)) {
-                visibleColumns.push(language);
+        try {
+            // Limpiar caché completamente antes de leer la configuración actual
+            EIJEConfiguration.clearConfigCache();
+            
+            // Forzar recarga de configuración
+            let visibleColumns = [...EIJEConfiguration.VISIBLE_COLUMNS];
+            let hiddenColumns = [...EIJEConfiguration.HIDDEN_COLUMNS];
+            
+            if (visible) {
+                // Mostrar columna
+                if (!visibleColumns.includes(language)) {
+                    visibleColumns.push(language);
+                }
+                // Eliminar de columnas ocultas si existe
+                hiddenColumns = hiddenColumns.filter(col => col !== language);
+            } else {
+                // Ocultar columna
+                visibleColumns = visibleColumns.filter(col => col !== language);
+                // Añadir a columnas ocultas si no existe
+                if (!hiddenColumns.includes(language)) {
+                    hiddenColumns.push(language);
+                }
             }
-            // Eliminar de columnas ocultas si existe
-            hiddenColumns = hiddenColumns.filter(col => col !== language);
-        } else {
-            // Ocultar columna
-            visibleColumns = visibleColumns.filter(col => col !== language);
-            // Añadir a columnas ocultas si no existe
-            if (!hiddenColumns.includes(language)) {
-                hiddenColumns.push(language);
-            }
-        }
-        
-        // Guardar configuración de forma asíncrona
-        Promise.all([
-            EIJEConfiguration.saveVisibleColumns(visibleColumns),
-            EIJEConfiguration.saveHiddenColumns(hiddenColumns)
-        ]).then(() => {
+            
+            // Guardar configuración de forma síncrona para asegurar que se aplique
+            await EIJEConfiguration.saveVisibleColumns(visibleColumns);
+            await EIJEConfiguration.saveHiddenColumns(hiddenColumns);
+            
             // Guardar la configuración completa para mantener el archivo actualizado
-            EIJEConfiguration.saveFullConfiguration();
+            await EIJEConfiguration.saveFullConfiguration();
             
-            // Limpiar caché específico para forzar recarga
-            EIJEConfiguration.clearConfigCache('visibleColumns');
-            EIJEConfiguration.clearConfigCache('hiddenColumns');
+            // Limpiar caché completamente para forzar recarga
+            EIJEConfiguration.clearConfigCache();
             
-            // Actualizar la tabla después de un pequeño delay
-            setTimeout(() => {
-                this.refreshDataTable();
-            }, 100);
-        });
+            // Notificar al webview sobre el cambio
+            this._panel.webview.postMessage({
+                command: 'showFlashyNotification',
+                message: visible ? `Columna "${language}" mostrada` : `Columna "${language}" ocultada`,
+                type: 'info',
+                duration: 2000
+            });
+            
+            // Actualizar la tabla inmediatamente
+            this.refreshDataTable();
+        } catch (error) {
+            console.error('Error al cambiar visibilidad de columna:', error);
+            
+            // Notificar al webview sobre el error
+            this._panel.webview.postMessage({
+                command: 'showFlashyNotification',
+                message: `Error al ${visible ? 'mostrar' : 'ocultar'} la columna "${language}"`,
+                type: 'error',
+                duration: 3000
+            });
+        }
     }
     
     updateColumnVisibility(columnsToShow: string[], columnsToHide: string[]) {
@@ -400,6 +418,95 @@ export class EIJEManager {
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             NotificationService.getInstance().showErrorMessage(i18n.t('ui.messages.fileCreationError', errorMessage));
+        }
+    }
+
+    /**
+     * Elimina un archivo de idioma
+     * @param language Código del idioma a eliminar
+     */
+    async deleteLanguage(language: string): Promise<void> {
+        const i18n = I18nService.getInstance();
+        
+        if (!language) {
+            NotificationService.getInstance().showErrorMessage(i18n.t('ui.messages.languageCodeInvalid'));
+            return;
+        }
+        
+        try {
+            let targetPath: string;
+            
+            if (this.folderPath) {
+                // Usar la carpeta actual si se abrió desde una carpeta específica
+                targetPath = this.folderPath;
+            } else if (EIJEConfiguration.WORKSPACE_FOLDERS && EIJEConfiguration.WORKSPACE_FOLDERS.length > 0) {
+                // Usar la primera carpeta del workspace si se abrió desde el workspace
+                targetPath = EIJEConfiguration.WORKSPACE_FOLDERS[0].path;
+            } else {
+                NotificationService.getInstance().showErrorMessage(i18n.t('ui.messages.noTargetFolder'));
+                return;
+            }
+            
+            const filePath = _path.join(targetPath, `${language}.json`);
+            
+            // Verificar si el archivo existe
+            if (!(await EIJEFileSystem.exists(filePath))) {
+                NotificationService.getInstance().showWarningMessage(i18n.t('ui.messages.languageFileNotFound', `${language}.json`));
+                return;
+            }
+            
+            // Verificar que no sea el idioma por defecto (en)
+            if (language === EIJEConfiguration.DEFAULT_LANGUAGE) {
+                NotificationService.getInstance().showErrorMessage(i18n.t('ui.messages.cannotDeleteDefaultLanguage'));
+                return;
+            }
+            
+            // Eliminar el archivo
+            await EIJEFileSystem.deleteFile(filePath);
+            
+            // Eliminar el idioma de las columnas visibles
+            await this.removeLanguageFromVisibleColumns(language);
+            
+            // Guardar la configuración completa
+            EIJEConfiguration.saveFullConfiguration();
+            
+            // Mostrar mensaje de éxito
+            NotificationService.getInstance().showInformationMessage(i18n.t('ui.messages.languageFileDeleted', `${language}.json`));
+            
+            // Recargar el editor para reflejar los cambios
+            await this.reloadData();
+            
+            // Enviar notificación al webview
+            this._panel.webview.postMessage({
+                command: 'showFlashyNotification',
+                message: `El idioma ${language} ha sido eliminado permanentemente`,
+                type: 'success',
+                duration: 3000
+            });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            NotificationService.getInstance().showErrorMessage(i18n.t('ui.messages.fileDeletionError', errorMessage));
+        }
+    }
+    
+    /**
+     * Elimina un idioma de las columnas visibles
+     */
+    private async removeLanguageFromVisibleColumns(langCode: string): Promise<void> {
+        try {
+            // Limpiar caché antes de leer la configuración actual
+            EIJEConfiguration.clearConfigCache();
+            
+            // Obtener las columnas actuales
+            let visibleColumns = [...EIJEConfiguration.VISIBLE_COLUMNS];
+            
+            // Remover el idioma de las columnas visibles
+            visibleColumns = visibleColumns.filter(col => col !== langCode);
+            
+            // Actualizar la configuración
+            await EIJEConfiguration.updateVisibleColumns(visibleColumns);
+        } catch (error) {
+            console.error('Error removing language from visible columns:', error);
         }
     }
 
@@ -624,7 +731,14 @@ export class EIJEManager {
     }
 
     refreshDataTable() {
-        this._panel.webview.postMessage({ command: 'content', render: this._data.render() });
+        // Limpiar caché de configuración para asegurar que se usen los valores más recientes
+        EIJEConfiguration.clearConfigCache();
+        
+        // Renderizar el contenido con los datos actualizados
+        const renderedContent = this._data.render();
+        
+        // Enviar el contenido actualizado al webview
+        this._panel.webview.postMessage({ command: 'content', render: renderedContent });
     }
 
     /**

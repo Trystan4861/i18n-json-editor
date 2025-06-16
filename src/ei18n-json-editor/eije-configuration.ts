@@ -536,6 +536,9 @@ export class EIJEConfiguration {
         // Obtener la carpeta de trabajo actual
         const currentWorkspaceFolder = this.DEFAULT_WORKSPACE_FOLDER;
         
+        // Limpiar caché para asegurar que se lea la configuración más reciente
+        this.clearConfigCache('hiddenColumns');
+        
         if (this.isWebEnvironment()) {
             // En entorno web, usar configuración global de VS Code
             if (currentWorkspaceFolder) {
@@ -560,7 +563,13 @@ export class EIJEConfiguration {
                     
                     if (EIJEFileSystem.existsSync(configPath)) {
                         const configContent = EIJEFileSystem.readFileSync(configPath);
-                        config = JSON.parse(configContent);
+                        try {
+                            config = JSON.parse(configContent);
+                        } catch (parseError) {
+                            console.error('Error parsing config file:', parseError);
+                            // Si hay error al parsear, usar un objeto vacío
+                            config = {};
+                        }
                     }
                     
                     if (currentWorkspaceFolder) {
@@ -573,6 +582,12 @@ export class EIJEConfiguration {
                         if (folderIndex >= 0) {
                             // Si se encontró la carpeta, actualizar su configuración
                             config.workspaceFolders[folderIndex].hiddenColumns = columns;
+                        } else {
+                            // Si no se encontró la carpeta, agregarla
+                            config.workspaceFolders.push({
+                                name: currentWorkspaceFolder,
+                                hiddenColumns: columns
+                            });
                         }
                         
                         // Si hay carpetas de trabajo configuradas, eliminar la configuración global
@@ -584,17 +599,31 @@ export class EIJEConfiguration {
                         config.hiddenColumns = columns;
                     }
                     
+                    // Guardar la configuración
                     EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                    
+                    // Actualizar el caché inmediatamente
+                    if (currentWorkspaceFolder) {
+                        // Actualizar el caché de workspaceFolders
+                        this._configCache['config_workspaceFolders'] = config.workspaceFolders;
+                    } else {
+                        // Actualizar el caché de hiddenColumns
+                        this._configCache['config_hiddenColumns'] = columns;
+                    }
                 }
             }
         } catch (e) {
             console.error('Error saving hidden columns:', e);
+            throw e; // Propagar el error para manejarlo en el llamador
         }
     }
     
     static async saveVisibleColumns(columns: string[]): Promise<void> {
         // Obtener la carpeta de trabajo actual
         const currentWorkspaceFolder = this.DEFAULT_WORKSPACE_FOLDER;
+        
+        // Limpiar caché para asegurar que se lea la configuración más reciente
+        this.clearConfigCache('visibleColumns');
         
         if (this.isWebEnvironment()) {
             // En entorno web, usar configuración global de VS Code
@@ -620,7 +649,13 @@ export class EIJEConfiguration {
                     
                     if (EIJEFileSystem.existsSync(configPath)) {
                         const configContent = EIJEFileSystem.readFileSync(configPath);
-                        config = JSON.parse(configContent);
+                        try {
+                            config = JSON.parse(configContent);
+                        } catch (parseError) {
+                            console.error('Error parsing config file:', parseError);
+                            // Si hay error al parsear, usar un objeto vacío
+                            config = {};
+                        }
                     }
                     
                     if (currentWorkspaceFolder) {
@@ -633,6 +668,12 @@ export class EIJEConfiguration {
                         if (folderIndex >= 0) {
                             // Si se encontró la carpeta, actualizar su configuración
                             config.workspaceFolders[folderIndex].visibleColumns = columns;
+                        } else {
+                            // Si no se encontró la carpeta, agregarla
+                            config.workspaceFolders.push({
+                                name: currentWorkspaceFolder,
+                                visibleColumns: columns
+                            });
                         }
                         
                         // Si hay carpetas de trabajo configuradas, eliminar la configuración global
@@ -644,11 +685,22 @@ export class EIJEConfiguration {
                         config.visibleColumns = columns;
                     }
                     
+                    // Guardar la configuración
                     EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                    
+                    // Actualizar el caché inmediatamente
+                    if (currentWorkspaceFolder) {
+                        // Actualizar el caché de workspaceFolders
+                        this._configCache['config_workspaceFolders'] = config.workspaceFolders;
+                    } else {
+                        // Actualizar el caché de visibleColumns
+                        this._configCache['config_visibleColumns'] = columns;
+                    }
                 }
             }
         } catch (e) {
             console.error('Error saving visible columns:', e);
+            throw e; // Propagar el error para manejarlo en el llamador
         }
     }
     

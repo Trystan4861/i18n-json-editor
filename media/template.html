@@ -37,6 +37,24 @@
     <div id="content-view" class="p-0">
         <div class="text-center">{{i18n.ui.labels.loading}}</div>
     </div>
+    
+    <!-- Menú contextual para columnas de idioma -->
+    <div id="language-context-menu" class="context-menu">
+        <div class="context-menu-item" onclick="sortLanguageColumn(true); hideContextMenu();">
+            <i class="fa-solid fa-arrow-down-a-z"></i> Orden Alfabético
+        </div>
+        <div class="context-menu-item" onclick="sortLanguageColumn(false); hideContextMenu();">
+            <i class="fa-solid fa-arrow-down-z-a"></i> Orden Descendente
+        </div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" onclick="hideLanguageColumn(); hideContextMenu();">
+            <i class="fa-solid fa-eye-slash"></i> Ocultar Columna
+        </div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item danger" onclick="confirmDeleteLanguage(); hideContextMenu();">
+            <i class="fa-solid fa-trash"></i> Eliminar Idioma
+        </div>
+    </div>
 </body>
 
 </html>
