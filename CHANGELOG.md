@@ -4,6 +4,22 @@ All notable changes to the "ei18n-json-editor" extension will be documented in t
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [v1.0.3]
+
+### Added
+- Menú contextual para columnas de idioma con opciones avanzadas
+- Función para ordenar traducciones alfabéticamente (ascendente/descendente) por idioma
+- Opción para ocultar columnas de idioma directamente desde el encabezado
+- Función para eliminar archivos de idioma con confirmación doble
+
+### Changed
+- Mejorado el sistema de gestión de visibilidad de columnas
+- Optimizado el manejo de la configuración para evitar problemas de caché
+
+### Fixed
+- Corregidos problemas con la actualización de la interfaz al cambiar la visibilidad de columnas
+- Mejorado el manejo de errores en operaciones de archivo
+
 ## [v1.0.2]
 
 ### Changed
