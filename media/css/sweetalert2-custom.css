@@ -1,0 +1,68 @@
+/**
+ * Estilos personalizados para SweetAlert2 en la extensión i18n JSON Editor
+ * Adapta los diálogos de SweetAlert2 al tema de VSCode
+ * @author trystan4861
+ */
+
+/* Estilos generales para el popup */
+.swal-vscode-popup {
+  border-radius: 4px;
+  padding: 20px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Estilos para el título */
+.swal-vscode-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+/* Estilos para el contenido */
+.swal-vscode-content {
+  font-size: 1rem;
+  margin-bottom: 20px;
+}
+
+/* Estilos para el contenedor de acciones */
+.swal-vscode-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Estilos para el footer personalizado */
+.swal-vscode-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+  width: 100%;
+}
+
+/* Estilos para los botones */
+.swal-vscode-footer .btn-vscode {
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  padding: 6px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.swal-vscode-footer .btn-vscode:hover {
+  background-color: var(--vscode-button-hoverBackground);
+}
+
+/* Ajustes para tema oscuro */
+.vscode-dark .swal2-popup,
+.vscode-high-contrast .swal2-popup {
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
+}
+
+/* Ocultar iconos por defecto de SweetAlert2 si no son necesarios */
+.swal2-icon {
+  margin: 0 auto 15px;
+}

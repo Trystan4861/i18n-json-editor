@@ -5,6 +5,9 @@ src/**
 .gitignore
 vsc-extension-quickstart.md
 **/tsconfig.json
+**/tsconfig.web.json
 **/.eslintrc.json
 **/*.map
 **/*.ts
+webpack.config.js
+node_modules/**

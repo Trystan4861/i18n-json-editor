@@ -7,6 +7,8 @@
 
 var vscode;
 var hasUnsavedChanges = false;
+var allowEmptyTranslations = false; // Variable global para almacenar la configuración
+var currentWorkspaceFolder = ''; // Variable para rastrear la carpeta de trabajo actual
 
 (function () {
   vscode = acquireVsCodeApi();
@@ -96,20 +98,41 @@ var hasUnsavedChanges = false;
           }
         }
         break;
+        
+      case "initWorkspaceFolders":
+        // Inicializar el desplegable de carpetas de trabajo
+        console.log('Received initWorkspaceFolders message:', message);
+        initializeWorkspaceFolderSelector(message.folders, message.currentFolder);
+        break;
+        
+      case "workspaceFolderChanged":
+        // Actualizar la carpeta actual después del cambio
+        currentWorkspaceFolder = message.folderName;
+        hasUnsavedChanges = false;
+        updateSaveButtonStyle();
+        break;
+        
+      case "restoreWorkspaceFolderSelection":
+        // Restaurar la selección anterior en el selector de carpetas
+        const selector = document.getElementById('workspace-folder-selector');
+        if (selector) {
+          // Si hay una carpeta actual, seleccionarla
+          if (currentWorkspaceFolder) {
+            for (let i = 0; i < selector.options.length; i++) {
+              if (selector.options[i].value === currentWorkspaceFolder) {
+                selector.selectedIndex = i;
+                break;
+              }
+            }
+          } else {
+            // Si no hay carpeta actual, seleccionar el placeholder
+            selector.selectedIndex = 0;
+          }
+        }
+        break;
 
       case "folders":
-        const folders = message.folders;
-        if (folders) {
-          var select = document.getElementById("select-folder");
-          for (const d of folders) {
-            var option = document.createElement("option");
-            option.text = d.name;
-            option.value = d.path;
-            select.add(option);
-          }
-          select.style.display = "inline";
-        }
-
+        // Legacy code - no longer needed as we use workspace folder selector
         break;
 
       case "update":
@@ -180,6 +203,22 @@ var hasUnsavedChanges = false;
           }, 2000);
         }
         break;
+      case "configurationUpdate":
+        // Actualizar configuración global
+        allowEmptyTranslations = message.allowEmptyTranslations;
+        
+        // Revalidar el estado actual después de recibir la configuración
+        checkEmptyTranslations();
+        break;
+        
+      case "unsavedChanges":
+        // Actualizar el estado de cambios sin guardar
+        hasUnsavedChanges = message.hasUnsavedChanges;
+        updateSaveButtonStyle();
+        break;
+      case "showFlashyNotification":
+        showFlashyNotification(message.message, message.type, message.duration);
+        break;
     }
   });
   setTimeout(() => {
@@ -229,12 +268,181 @@ function add() {
   updateSaveButtonStyle();
 }
 
-function filterFolder(el) {
-  vscode.postMessage({ command: "filterFolder", value: el.value });
+function initializeWorkspaceFolderSelector(folders, currentFolder) {
+  console.log('initializeWorkspaceFolderSelector called with:', { folders, currentFolder });
+  
+  const selector = document.getElementById('workspace-folder-selector');
+  if (!selector) {
+    console.error('workspace-folder-selector not found in DOM');
+    return;
+  }
+  
+  // Obtener la traducción del placeholder
+  const placeholderText = document.body.getAttribute('data-i18n-select-workspace-folder') || 'Select workspace folder';
+  
+  // Limpiar opciones existentes
+  selector.innerHTML = '';
+  
+  // Agregar la opción de placeholder con las propiedades correctas
+  const placeholderOption = document.createElement('option');
+  placeholderOption.value = '';
+  placeholderOption.textContent = placeholderText;
+  placeholderOption.disabled = true;
+  placeholderOption.hidden = true;
+  placeholderOption.selected = !currentFolder; // Seleccionar si no hay carpeta actual
+  placeholderOption.classList.add('d-none');
+  selector.appendChild(placeholderOption);
+  
+  if (!folders || folders.length === 0) {
+    console.log('No folders provided or empty folders array');
+    // Ocultar el selector si no hay carpetas configuradas
+    selector.style.display = 'none';
+    return;
+  }
+  
+  // Agregar opciones para cada carpeta de trabajo
+  folders.forEach(folder => {
+    const option = document.createElement('option');
+    option.value = folder.name;
+    option.textContent = folder.name;
+    if (folder.name === currentFolder) {
+      option.selected = true;
+      currentWorkspaceFolder = folder.name;
+    }
+    selector.appendChild(option);
+  });
+  
+  // Si no hay carpeta seleccionada, mantener el placeholder seleccionado
+  if (!currentFolder) {
+    selector.selectedIndex = 0; // Seleccionar el placeholder
+    currentWorkspaceFolder = ''; // No hay carpeta actual
+  }
+  
+  // Mostrar el selector siempre que haya carpetas (incluso si es solo una para mostrar cuál está activa)
+  selector.style.display = 'block';
+  
+  console.log('Workspace folder selector initialized with', folders.length, 'folders. Current:', currentFolder);
+}
+
+function switchWorkspaceFolder(el) {
+  const newFolder = el.value;
+  
+  // Si no hay valor seleccionado, no hacer nada
+  if (!newFolder) {
+    return;
+  }
+  
+  // Si no hay cambios o es la misma carpeta, cambiar directamente
+  if (!hasUnsavedChanges || newFolder === currentWorkspaceFolder) {
+    vscode.postMessage({ command: "switchWorkspaceFolder", folderName: newFolder });
+    return;
+  }
+  
+  // En lugar de usar confirm(), usamos un enfoque basado en elementos DOM
+  // para mostrar opciones al usuario
+  showCustomConfirmDialog(
+    "Tienes cambios sin guardar. ¿Qué deseas hacer?",
+    [
+      {
+        text: "Guardar y cambiar",
+        action: () => {
+          vscode.postMessage({ command: "saveAndSwitchWorkspaceFolder", folderName: newFolder });
+        }
+      },
+      {
+        text: "Descartar cambios",
+        action: () => {
+          showCustomConfirmDialog(
+            "¿Estás seguro de que quieres descartar los cambios sin guardar?",
+            [
+              {
+                text: "Sí, descartar",
+                action: () => {
+                  vscode.postMessage({ command: "discardAndSwitchWorkspaceFolder", folderName: newFolder });
+                }
+              },
+              {
+                text: "No, cancelar",
+                action: () => {
+                  el.value = currentWorkspaceFolder || '';
+                }
+              }
+            ]
+          );
+        }
+      },
+      {
+        text: "Cancelar",
+        action: () => {
+          el.value = currentWorkspaceFolder || '';
+        }
+      }
+    ]
+  );
 }
 
 function mark(id) {
   vscode.postMessage({ command: "mark", id: id });
+}
+
+/**
+ * Muestra un diálogo de confirmación personalizado utilizando SweetAlert2
+ * @param {string} message - Mensaje a mostrar
+ * @param {Array<{text: string, action: Function}>} buttons - Botones y sus acciones
+ */
+function showCustomConfirmDialog(message, buttons) {
+  // Detectar si el tema de VSCode es oscuro
+  const isDarkTheme = document.body.classList.contains('vscode-dark') || 
+                     document.body.classList.contains('vscode-high-contrast') ||
+                     window.matchMedia('(prefers-color-scheme: dark)').matches;
+  
+  // Configurar opciones de SweetAlert2
+  const swalOptions = {
+    title: '',
+    text: message,
+    icon: 'question',
+    showCancelButton: false,
+    showConfirmButton: false,
+    focusConfirm: false,
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    backdrop: true,
+    customClass: {
+      popup: 'swal-vscode-popup',
+      title: 'swal-vscode-title',
+      content: 'swal-vscode-content',
+      actions: 'swal-vscode-actions'
+    },
+    // Adaptar colores al tema de VSCode
+    background: 'var(--vscode-editor-background)',
+    color: 'var(--vscode-editor-foreground)'
+  };
+  
+  // Crear botones personalizados
+  const footerHtml = buttons.map((button, index) => {
+    return `<button id="swal-custom-btn-${index}" class="btn btn-vscode">${button.text}</button>`;
+  }).join('');
+  
+  // Agregar los botones al footer
+  swalOptions.footer = `<div class="swal-vscode-footer">${footerHtml}</div>`;
+  
+  // Mostrar el diálogo
+  Swal.fire(swalOptions).then(() => {
+    // Este bloque se ejecuta cuando se cierra el diálogo
+  });
+  
+  // Agregar event listeners a los botones personalizados
+  buttons.forEach((button, index) => {
+    setTimeout(() => {
+      const btnElement = document.getElementById(`swal-custom-btn-${index}`);
+      if (btnElement) {
+        btnElement.addEventListener('click', () => {
+          Swal.close();
+          button.action();
+        });
+      }
+    }, 100); // Pequeño retraso para asegurar que los elementos estén en el DOM
+  });
 }
 
 function navigate(page) {
@@ -256,6 +464,29 @@ function reload() {
   saveButtonReload.classList.remove("btn-warning", "btn-success", "btn-danger");
   saveButtonReload.classList.add("btn-vscode");
   saveButtonReload.disabled = true; // Deshabilitar cuando se restablece al estilo primary
+}
+
+function discardChanges() {
+  // Usar el diálogo personalizado en lugar de confirm()
+  showCustomConfirmDialog(
+    "¿Estás seguro de que quieres descartar todos los cambios sin guardar?",
+    [
+      {
+        text: "Sí, descartar",
+        action: () => {
+          vscode.postMessage({ command: "discardChanges" });
+          hasUnsavedChanges = false;
+          updateSaveButtonStyle();
+        }
+      },
+      {
+        text: "No, cancelar",
+        action: () => {
+          // No hacer nada, simplemente cerrar el diálogo
+        }
+      }
+    ]
+  );
 }
 
 function remove(id) {
@@ -291,15 +522,16 @@ function save() {
 // Función para actualizar el estilo del botón de guardado según si hay cambios
 function updateSaveButtonStyle() {
   const saveButtonStyle = document.getElementById("save-button");
+  const discardButtonStyle = document.getElementById("discard-button");
+  
   if (hasUnsavedChanges) {
     // Verificar si hay traducciones vacías y si están permitidas
     const emptyTranslationsCounter = document.getElementById('missing-translations-counter');
     const hasMissingTranslations = emptyTranslationsCounter && 
                                 parseInt(emptyTranslationsCounter.textContent) > 0;
     
-    // Obtener configuración de traducciones vacías permitidas desde el botón de advertencia
-    const dangerBtn = document.getElementById('btn-warning-translations');
-    const allowEmptyTranslations = dangerBtn && dangerBtn.classList.contains('btn-warning');
+    // Usar la variable global de configuración
+    // allowEmptyTranslations ya está definida globalmente
     
     saveButtonStyle.classList.remove("btn-vscode", "btn-success", "btn-danger");
     
@@ -311,11 +543,17 @@ function updateSaveButtonStyle() {
       saveButtonStyle.classList.add("btn-warning");
     }
     saveButtonStyle.disabled = false; // Habilitar inmediatamente cuando hay cambios
+    
+    // Mostrar el botón de descartar cambios
+    discardButtonStyle.style.display = "inline-block";
   } else {
     // Cuando no hay cambios, volver al estado normal (azul) y deshabilitar
     saveButtonStyle.classList.remove("btn-warning", "btn-success", "btn-danger");
     saveButtonStyle.classList.add("btn-vscode");
     saveButtonStyle.disabled = true; // Deshabilitar cuando no hay cambios
+    
+    // Ocultar el botón de descartar cambios
+    discardButtonStyle.style.display = "none";
   }
 }
 function search(el) {
@@ -407,9 +645,7 @@ function translateInput(el, id, language = "") {
   vscode.postMessage({ command: "translate", id: id, language: language });
 }
 
-function updateFolder(el, id) {
-  vscode.postMessage({ command: "folder", id: id, value: el.value });
-}
+
 
 function toggleColumn(language, visible) {
   vscode.postMessage({ command: "toggleColumn", language: language, visible: visible });
@@ -482,5 +718,47 @@ function clearSearch() {
   search(searchInput); // Actualizar la búsqueda con el valor vacío
   toggleClearButton(searchInput); // Ocultar el botón de limpiar
   searchInput.focus(); // Mantener el foco en el campo
+}
+
+/**
+ * Muestra una notificación usando Flashy.js
+ * @param {string} message - Mensaje a mostrar
+ * @param {string} type - Tipo de notificación (success, error, warning, info)
+ * @param {number} duration - Duración en milisegundos (0 = sin auto-cierre)
+ */
+function showFlashyNotification(message, type, duration) {
+  // Detectar si el tema de VSCode es oscuro
+  const isDarkTheme = document.body.classList.contains('vscode-dark') || 
+                     document.body.classList.contains('vscode-high-contrast') ||
+                     window.matchMedia('(prefers-color-scheme: dark)').matches;
+  
+  // Mapear iconos usando FontAwesome 6 Pro
+  const iconMap = {
+    success: '<i class="fa-solid fa-circle-check"></i>',
+    error: '<i class="fa-solid fa-circle-exclamation"></i>',
+    warning: '<i class="fa-solid fa-triangle-exclamation"></i>',
+    info: '<i class="fa-solid fa-circle-info"></i>',
+    default: '<i class="fa-solid fa-comment"></i>'
+  };
+  
+  // Configurar opciones de Flashy
+  const options = {
+    type: type,
+    position: 'bottom-right',
+    duration: duration,
+    closable: true,
+    animation: 'slide',
+    theme: isDarkTheme ? 'dark' : 'light',
+    icon: iconMap[type] || iconMap.default
+  };
+  
+  // Mostrar la notificación
+  if (typeof window.flashy === 'function') {
+    window.flashy(message, options);
+  } else {
+    // Fallback si Flashy no está disponible
+    console.warn('Flashy no está disponible, usando console.log como fallback');
+    console.log(`[${type.toUpperCase()}] ${message}`);
+  }
 }
 

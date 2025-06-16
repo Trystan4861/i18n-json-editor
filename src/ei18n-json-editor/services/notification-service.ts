@@ -1,19 +1,13 @@
 /**
- * Servicio para manejar notificaciones con tiempos personalizados
+ * Servicio para manejar notificaciones usando Flashy.js
+ * @author trystan4861
  */
 
 import * as vscode from 'vscode';
 
 export class NotificationService {
     private static _instance: NotificationService;
-    
-    // Tiempos de notificación por tipo
-    private readonly INFO_TIMEOUT = 3000; // 3 segundos para notificaciones informativas
-    private readonly SAVED_TIMEOUT = 3000; // 3 segundos para notificación de guardado
-    private readonly ERROR_TIMEOUT = 0; // 0 significa que requiere cierre manual
-    
-    // Almacena los timers activos para poder cancelarlos
-    private _activeTimers: Map<string, NodeJS.Timeout> = new Map();
+    private _webviewPanel: vscode.WebviewPanel | null = null;
     
     private constructor() {}
     
@@ -25,80 +19,68 @@ export class NotificationService {
     }
     
     /**
-     * Muestra un mensaje informativo que desaparece después de un tiempo determinado
-     * @param message Mensaje a mostrar
-     * @param isSaveMessage Indica si es un mensaje de guardado (para usar tiempo específico)
+     * Establece el panel de webview para enviar notificaciones
+     * @param panel Panel de webview activo
      */
-    public showInformationMessage(message: string, isSaveMessage: boolean = false): void {
-        // Primero cancelamos cualquier timer existente para este mensaje
-        this.clearTimer(message);
-        
-        // Mostramos la notificación usando el API de VSCode
-        const timeout = isSaveMessage ? this.SAVED_TIMEOUT : this.INFO_TIMEOUT;
-        
-        // Mostramos el mensaje y configuramos un timer para cerrarlo
-        const messagePromise = vscode.window.showInformationMessage(message);
-        
-        // Guardar referencia al timer para poder cancelarlo si es necesario
-        const timer = setTimeout(() => {
-            // VSCode no proporciona un API directo para cerrar notificaciones, pero podemos
-            // usar un truco: mostrar un mensaje vacío con el mismo título
-            // que será reemplazado inmediatamente
-            vscode.window.showInformationMessage('');
-            this._activeTimers.delete(message);
-        }, timeout);
-        
-        this._activeTimers.set(message, timer);
+    public setWebviewPanel(panel: vscode.WebviewPanel): void {
+        this._webviewPanel = panel;
     }
     
     /**
-     * Muestra un mensaje de error que requiere cierre manual por el usuario
+     * Muestra un mensaje informativo usando Flashy
+     * @param message Mensaje a mostrar
+     * @param isSaveMessage Indica si es un mensaje de guardado
+     */
+    public showInformationMessage(message: string, isSaveMessage: boolean = false): void {
+        this.sendFlashyNotification(message, 'success', 3000);
+    }
+    
+    /**
+     * Muestra un mensaje de error usando Flashy
      * @param message Mensaje de error a mostrar
      */
     public showErrorMessage(message: string): void {
-        // Los mensajes de error no tienen auto-cierre (timeout = 0)
-        vscode.window.showErrorMessage(message);
+        this.sendFlashyNotification(message, 'error', 0); // 0 = sin auto-cierre
     }
     
     /**
-     * Muestra un mensaje de advertencia
+     * Muestra un mensaje de advertencia usando Flashy
      * @param message Mensaje de advertencia a mostrar
      */
     public showWarningMessage(message: string): void {
-        // Primero cancelamos cualquier timer existente para este mensaje
-        this.clearTimer(message);
-        
-        // Mostramos el mensaje y configuramos un timer para cerrarlo
-        const messagePromise = vscode.window.showWarningMessage(message);
-        
-        // Guardar referencia al timer para poder cancelarlo si es necesario
-        const timer = setTimeout(() => {
-            // Truco para cerrar la notificación
-            vscode.window.showWarningMessage('');
-            this._activeTimers.delete(message);
-        }, this.INFO_TIMEOUT);
-        
-        this._activeTimers.set(message, timer);
+        this.sendFlashyNotification(message, 'warning', 3000);
     }
     
     /**
-     * Cancela el timer para un mensaje específico
-     * @param message El mensaje cuyo timer se cancelará
+     * Envía una notificación Flashy al webview
+     * @param message Mensaje a mostrar
+     * @param type Tipo de notificación (success, error, warning, info)
+     * @param duration Duración en milisegundos (0 = sin auto-cierre)
      */
-    private clearTimer(message: string): void {
-        if (this._activeTimers.has(message)) {
-            clearTimeout(this._activeTimers.get(message)!);
-            this._activeTimers.delete(message);
+    private sendFlashyNotification(message: string, type: string, duration: number): void {
+        if (!this._webviewPanel) {
+            // Fallback a notificaciones nativas de VSCode si no hay webview
+            switch (type) {
+                case 'success':
+                    vscode.window.showInformationMessage(message);
+                    break;
+                case 'error':
+                    vscode.window.showErrorMessage(message);
+                    break;
+                case 'warning':
+                    vscode.window.showWarningMessage(message);
+                    break;
+                default:
+                    vscode.window.showInformationMessage(message);
+            }
+            return;
         }
-    }
-    
-    /**
-     * Cancela todos los timers activos
-     */
-    public clearAllTimers(): void {
-        this._activeTimers.forEach(timer => {
-            clearTimeout(timer);
+
+        this._webviewPanel.webview.postMessage({
+            command: 'showFlashyNotification',
+            message: message,
+            type: type,
+            duration: duration
         });
-        this._activeTimers.clear();
     }
 }

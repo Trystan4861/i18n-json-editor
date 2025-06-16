@@ -4,7 +4,26 @@ All notable changes to the "ei18n-json-editor" extension will be documented in t
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+## [v1.0.2]
+
+### Changed
+- Reemplazados modales personalizados por SweetAlert2 para diálogos de confirmación
+- Mejorada la experiencia de usuario en diálogos de selección múltiple
+- Añadidos estilos personalizados para integrar SweetAlert2 con el tema de VSCode
+
+## [v1.0.1]
+
+### Added
+- Soporte para múltiples carpetas de trabajo
+- Selector de carpetas de trabajo en la interfaz
+- Control de cambios sin guardar al cambiar entre carpetas
+
+### Fixed
+- Reemplazados diálogos modales nativos por personalizados para evitar restricciones del sandbox
+- Unificado el sistema de notificaciones para evitar mensajes duplicados
+- Corregido el manejo de confirmaciones al descartar cambios
+
+## [v1.0.0]
 
 ### Added
 - Botón lateral para abrir el editor de traducciones

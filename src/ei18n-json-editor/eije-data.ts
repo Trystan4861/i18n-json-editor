@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 import * as _path from 'path';
+import { EIJEFileSystem } from './services/eije-filesystem';
 
 import { EIJEConfiguration } from './eije-configuration';
 import { EIJEDataRenderService } from './services/eije-data-render-service';
@@ -19,13 +19,38 @@ export class EIJEData {
 
     private _languages: string[] = [];
     private _translations: EIJEDataTranslation[] = [];
+    private _unsavedChanges: boolean = false;
 
     private _searchPattern: string = '';
-    private _filteredFolder: string = '*';
 
     private _view: EIJEView;
     private _page: EIJEPage;
     private _sort: EIJESort;
+    
+    // Método para verificar si hay cambios sin guardar
+    hasUnsavedChanges(): boolean {
+        return this._unsavedChanges;
+    }
+    
+    // Método para marcar que hay cambios sin guardar
+    markAsChanged(): void {
+        this._unsavedChanges = true;
+        // Notificar al frontend que hay cambios
+        this._manager.postMessage({
+            command: 'unsavedChanges',
+            hasUnsavedChanges: true
+        });
+    }
+    
+    // Método para marcar que no hay cambios sin guardar
+    markAsSaved(): void {
+        this._unsavedChanges = false;
+        // Notificar al frontend que no hay cambios
+        this._manager.postMessage({
+            command: 'unsavedChanges',
+            hasUnsavedChanges: false
+        });
+    }
     
     // Métodos para obtener datos necesarios para las funciones de traducciones vacías
     getAllTranslations(): EIJEDataTranslation[] {
@@ -45,8 +70,19 @@ export class EIJEData {
     }
 
     constructor(private _manager: EIJEManager) {
-        this._loadFiles();
         this._defaultValues();
+        // La carga de archivos ahora debe ser llamada explícitamente de forma asíncrona
+    }
+
+    async initialize(): Promise<void> {
+        // Limpiar datos existentes
+        this._translations = [];
+        this._languages = [];
+        
+        // Solo cargar archivos si hay una carpeta seleccionada
+        if (this._manager.folderPath) {
+            await this._loadFiles();
+        }
     }
 
     private _defaultValues() {
@@ -79,20 +115,14 @@ export class EIJEData {
         this._insert(translation);
         this._view.selectionId = translation.id;
         this._manager.refreshDataTable();
+        
+        // Marcar que hay cambios sin guardar
+        this.markAsChanged();
     }
 
-    changeFolder(id: number, value: string) {
-        const translation = this._get(id);
-        translation.folder = value;
-        this._validate(translation, true);
-        this._manager.updateTranslation(translation);
-        return translation;
-    }
 
-    filterFolder(value: string) {
-        this._filteredFolder = value;
-        this._manager.refreshDataTable();
-    }
+
+
 
     mark(id: number) {
         const translation = this._get(id);
@@ -135,7 +165,7 @@ export class EIJEData {
                     this._languages,
                     this._page,
                     this._sort,
-                    this._manager.isWorkspace,
+                    false, // No mostrar columna de carpeta ya que trabajamos con carpeta específica
                     hasTranslateService
                 );
                 break;
@@ -145,7 +175,7 @@ export class EIJEData {
                     this._languages,
                     this._page,
                     this._sort,
-                    this._manager.isWorkspace,
+                    false, // No mostrar columna de carpeta ya que trabajamos con carpeta específica
                     hasTranslateService
                 );
                 break;
@@ -161,6 +191,9 @@ export class EIJEData {
             this._translations.splice(index, 1);
 
             this._manager.refreshDataTable();
+            
+            // Marcar que hay cambios sin guardar
+            this.markAsChanged();
         }
     }
 
@@ -174,7 +207,7 @@ export class EIJEData {
         });
     }
     
-    save() {
+    async save() {
         // Revalidar todas las traducciones para asegurar que cumplen con la configuración actual
         this._revalidateAllTranslations();
         
@@ -207,18 +240,18 @@ export class EIJEData {
             } else {
                 existingFolders = EIJEConfiguration.WORKSPACE_FOLDERS.map(d => d.path);
             }
-            existingFolders.forEach(d => {
-                this._languages.forEach(language => {
+            for (const d of existingFolders) {
+                for (const language of this._languages) {
                     // Saltar idiomas ocultos - no deben limpiarse ni guardarse
                     if (hiddenLanguages.includes(language)) {
-                        return;
+                        continue;
                     }
                     
                     const json = JSON.stringify({}, null, EIJEConfiguration.JSON_SPACE);
-                    const f = vscode.Uri.file(_path.join(d, language + '.json')).fsPath;
-                    fs.writeFileSync(f, json);
-                });
-            });
+                    const f = _path.join(d, language + '.json');
+                    await EIJEFileSystem.writeFile(f, json);
+                }
+            }
 
             // Agrupar traducciones por carpeta
             let folders: { [key: string]: EIJEDataTranslation[] } = this._translations.reduce((r, a) => {
@@ -228,12 +261,11 @@ export class EIJEData {
             }, {});
 
             // Guardar traducciones válidas
-            Object.entries(folders).forEach(entry => {
-                const [key, value] = entry;
-                this._languages.forEach(language => {
+            for (const [key, value] of Object.entries(folders)) {
+                for (const language of this._languages) {
                     // Saltar idiomas ocultos - no deben guardarse
                     if (hiddenLanguages.includes(language)) {
-                        return;
+                        continue;
                     }
                     
                     let o = {};
@@ -255,16 +287,19 @@ export class EIJEData {
 
                     var json = JSON.stringify(o, null, EIJEConfiguration.JSON_SPACE);
                     json = json.replace(/\n/g, EIJEConfiguration.LINE_ENDING);
-                    const f = vscode.Uri.file(_path.join(key, language + '.json')).fsPath;
-                    fs.writeFileSync(f, json);
-                });
-            });
+                    const f = _path.join(key, language + '.json');
+                    await EIJEFileSystem.writeFile(f, json);
+                }
+            }
             
             // Mostrar mensaje de éxito en VS Code
             NotificationService.getInstance().showInformationMessage(I18nService.getInstance().t('ui.messages.saved'), true);
             
             // Informar al frontend que el guardado fue exitoso
             this._manager.sendSaveResult(true);
+            
+            // Marcar que no hay cambios sin guardar
+            this.markAsSaved();
         } catch (error) {
             // En caso de cualquier error durante el guardado
             NotificationService.getInstance().showErrorMessage(I18nService.getInstance().t('ui.messages.saveError') + ': ' + String(error));
@@ -277,6 +312,15 @@ export class EIJEData {
     search(value: string) {
         this._searchPattern = value;
         this._manager.refreshDataTable();
+    }
+    
+    // Método para descartar cambios
+    async discardChanges(): Promise<void> {
+        // Reinicializar los datos
+        await this.initialize();
+        
+        // Marcar que no hay cambios sin guardar
+        this.markAsSaved();
     }
 
     select(id: number, skipRefresh: boolean = false) {
@@ -332,6 +376,9 @@ export class EIJEData {
                 this._validate(translation, true);
                 this._manager.updateTranslation(translation);
             }
+            
+            // Marcar que hay cambios sin guardar
+            this.markAsChanged();
         }
 
         return translation;
@@ -345,11 +392,8 @@ export class EIJEData {
         // Get hidden languages to ignore
         const hiddenLanguages = EIJEConfiguration.HIDDEN_COLUMNS;
         
-        // Get all filtered translations
+        // Get all translations (no folder filtering needed since we work with specific folders now)
         let filteredTranslations = this._translations;
-        if (this._filteredFolder !== '*') {
-            filteredTranslations = filteredTranslations.filter(t => t.folder === this._filteredFolder);
-        }
         
         // Apply search filter if there is one
         if (this._searchPattern) {
@@ -457,9 +501,6 @@ export class EIJEData {
         
         // Get filtered translations (using the same filtering logic as _getDisplayedTranslations)
         let filteredTranslations = this._translations;
-        if (this._filteredFolder !== '*') {
-            filteredTranslations = filteredTranslations.filter(t => t.folder === this._filteredFolder);
-        }
         
         // Apply search filter if there is one
         if (this._searchPattern) {
@@ -552,18 +593,24 @@ export class EIJEData {
     /**
      *  Load methods
      */
-    private _loadFiles() {
+    private async _loadFiles(): Promise<void> {
+        // Verificar si hay una carpeta seleccionada
+        if (!this._manager.folderPath && this._manager.isWorkspace) {
+            // Si no hay carpeta seleccionada y estamos en modo workspace, no cargar nada
+            return;
+        }
+        
         // Almacenar los idiomas antes de cargar los nuevos archivos
         const previousLanguages = [...this._languages];
         
         // Cargar archivos de idioma
         if (!this._manager.isWorkspace) {
-            this._loadFolder(this._manager.folderPath);
+            await this._loadFolder(this._manager.folderPath);
         } else {
-            const directories = EIJEConfiguration.WORKSPACE_FOLDERS;
-            directories.forEach(d => {
-                this._loadFolder(d.path);
-            });
+            // En modo workspace, solo cargar la carpeta seleccionada
+            if (this._manager.folderPath) {
+                await this._loadFolder(this._manager.folderPath);
+            }
         }
         
         // Detectar idiomas nuevos (no existían antes de cargar los archivos)
@@ -576,17 +623,15 @@ export class EIJEData {
         const currentHiddenColumns = EIJEConfiguration.HIDDEN_COLUMNS;
         
         if (this._languages.length > 0) {
-            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-            let hasConfigFile = false;
-            if (workspaceFolder) {
-                const configPath = _path.join(workspaceFolder.uri.fsPath, '.vscode', '.ei18n-editor-config.json');
-                hasConfigFile = fs.existsSync(configPath);
-            }
+            // Verificar si es la primera vez que se ejecuta (no hay configuración previa)
+            const isFirstRun = currentVisibleColumns.length === 0 && currentHiddenColumns.length === 0;
             
-            if (!hasConfigFile) {
+            if (isFirstRun) {
+                // Primera ejecución: mostrar todos los idiomas excepto 'en'
                 const columnsToShow = this._languages.filter(lang => lang !== 'en');
                 EIJEConfiguration.saveVisibleColumns(columnsToShow);
             } else {
+                // Ejecuciones posteriores: solo agregar idiomas completamente nuevos
                 const completelyNewLanguages = this._languages.filter(lang => 
                     lang !== 'en' && 
                     !currentVisibleColumns.includes(lang) && 
@@ -601,36 +646,34 @@ export class EIJEData {
         }
     }
 
-    private _loadFolder(folderPath: string) {
-        const files = fs.readdirSync(folderPath);
+    private async _loadFolder(folderPath: string): Promise<void> {
+        const files = await EIJEFileSystem.readdir(folderPath);
 
         const translate: any = {};
         const keys: string[] = [];
-        files
-            .filter(f => f.endsWith('.json'))
-            .forEach((file: string) => {
-                var language = file.split('.')[0];
-                if (this._languages.indexOf(language) === -1) {
-                    this._languages.push(language);
-                }
+        for (const file of files.filter(f => f.endsWith('.json'))) {
+            var language = file.split('.')[0];
+            if (this._languages.indexOf(language) === -1) {
+                this._languages.push(language);
+            }
 
-                try {
-                    let rawdata = fs.readFileSync(_path.join(folderPath, file));
-                    let jsonData = this._stripBOM(rawdata.toString());
-                    let content = JSON.parse(jsonData);
+            try {
+                let rawdata = await EIJEFileSystem.readFile(_path.join(folderPath, file));
+                let jsonData = this._stripBOM(rawdata.toString());
+                let content = JSON.parse(jsonData);
 
-                    let keysValues = this._getKeysValues(content);
+                let keysValues = this._getKeysValues(content);
 
-                    for (let key in keysValues) {
-                        if (keys.indexOf(key) === -1) {
-                            keys.push(key);
-                        }
+                for (let key in keysValues) {
+                    if (keys.indexOf(key) === -1) {
+                        keys.push(key);
                     }
-                    translate[language] = keysValues;
-                } catch (e) {
-                    translate[language] = {};
                 }
-            });
+                translate[language] = keysValues;
+            } catch (e) {
+                translate[language] = {};
+            }
+        }
 
         keys.forEach((key: string) => {
             const languages: any = {};
@@ -667,9 +710,6 @@ export class EIJEData {
      */
     private _getDisplayedTranslations(): EIJEDataTranslation[] {
         var o = this._translations;
-        if (this._filteredFolder !== '*') {
-            o = o.filter(t => t.folder === this._filteredFolder);
-        }
 
         o = o
             .filter(t => {
@@ -748,7 +788,29 @@ export class EIJEData {
                 translation.error = getTranslatedError(EIJEDataTranslationError.INVALID_KEY);
             } else if (this._validatePath(translation).length > 0) {
                 translation.valid = false;
-                translation.error = getTranslatedError(EIJEDataTranslationError.DUPLICATE_PATH);
+                // Encontrar la clave conflictiva para mostrar un mensaje más descriptivo
+                const conflictingTranslations = this._validatePath(translation);
+                const conflictingKey = conflictingTranslations[0]?.key || '';
+                const currentKey = translation.key;
+                
+                // Determinar cuál es la clave base y cuál es la que se está intentando crear
+                const splitCurrent = this._split(currentKey);
+                const splitConflicting = this._split(conflictingKey);
+                
+                let baseKey = '';
+                let attemptedKey = '';
+                
+                if (splitCurrent.length > splitConflicting.length) {
+                    // Se está intentando crear una sub-clave de una clave existente
+                    baseKey = conflictingKey;
+                    attemptedKey = currentKey;
+                } else {
+                    // Se está intentando crear una clave que entraría en conflicto con sub-claves existentes
+                    baseKey = currentKey;
+                    attemptedKey = conflictingKey;
+                }
+                
+                translation.error = getTranslatedError(EIJEDataTranslationError.DUPLICATE_PATH, baseKey, attemptedKey);
             } else {
                 translation.valid = true;
                 translation.error = '';
@@ -793,7 +855,7 @@ export class EIJEData {
     private _createFactoryIJEDataTranslation(): EIJEDataTranslation {
         return {
             id: this._currentID++,
-            folder: !this._manager.isWorkspace ? this._manager.folderPath : this._filteredFolder !== '*' ? this._filteredFolder : EIJEConfiguration.WORKSPACE_FOLDERS[0].path,
+            folder: this._manager.folderPath || (EIJEConfiguration.WORKSPACE_FOLDERS.length > 0 ? EIJEConfiguration.WORKSPACE_FOLDERS[0].path : ''),
             valid: true,
             error: '',
             key: '',

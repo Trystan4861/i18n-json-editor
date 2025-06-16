@@ -5,9 +5,12 @@ import { EIJEEditorProvider } from './ei18n-json-editor/providers/eije-editor-pr
 import { EIJEConfiguration } from './ei18n-json-editor/eije-configuration';
 import { I18nService } from './i18n/i18n-service';
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
     // Initialize the i18n service
     const i18n = I18nService.getInstance(context);
+    
+    // Wait for translations to load
+    await i18n.waitForLoad();
     
     // Set language based on VS Code UI language
     const vscodeLanguage = vscode.env.language;
