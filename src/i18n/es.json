@@ -63,7 +63,11 @@
       "fileCreationError": "Error al crear el archivo de idioma: {0}",
       "unsupportedFolder": "La carpeta '{0}' no está soportada. Por favor configure las carpetas soportadas en la configuración.",
       "noEmptyTranslations": "No se encontraron traducciones vacías.",
-      "changesDiscarded": "Cambios descartados"
+      "changesDiscarded": "Cambios descartados",
+      "languageFileNotFound": "Archivo de idioma {0} no encontrado",
+      "cannotDeleteDefaultLanguage": "No se puede eliminar el idioma predeterminado",
+      "languageFileDeleted": "Archivo de idioma {0} eliminado correctamente",
+      "fileDeletionError": "Error al eliminar el archivo de idioma: {0}"
     },
     "placeholders": {
       "key": "Clave...",

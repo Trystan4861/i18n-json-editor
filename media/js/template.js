@@ -22,6 +22,17 @@ var currentWorkspaceFolder = ''; // Variable para rastrear la carpeta de trabajo
     tippy('[title]',{
       content: (reference) => reference.getAttribute('title'),      
     });
+    
+    // Cerrar el menú contextual al hacer clic en cualquier parte de la página
+    document.addEventListener('click', function(event) {
+      const contextMenu = document.getElementById('language-context-menu');
+      if (contextMenu && contextMenu.style.display === 'block') {
+        // Si el clic no fue dentro del menú contextual, cerrarlo
+        if (!contextMenu.contains(event.target)) {
+          hideContextMenu();
+        }
+      }
+    });
   });
 
   window.addEventListener("message", (event) => {
@@ -760,5 +771,119 @@ function showFlashyNotification(message, type, duration) {
     console.warn('Flashy no está disponible, usando console.log como fallback');
     console.log(`[${type.toUpperCase()}] ${message}`);
   }
+}
+
+// Variable para almacenar el idioma seleccionado en el menú contextual
+let contextMenuLanguage = '';
+
+/**
+ * Muestra el menú contextual para una columna de idioma
+ * @param {Event} event - Evento de clic derecho
+ * @param {string} language - Idioma de la columna
+ */
+function showLanguageContextMenu(event, language) {
+  event.preventDefault();
+  
+  // Guardar el idioma seleccionado
+  contextMenuLanguage = language;
+  
+  // Obtener el menú contextual
+  const contextMenu = document.getElementById('language-context-menu');
+  
+  // Posicionar el menú en la ubicación del clic
+  contextMenu.style.left = `${event.pageX}px`;
+  contextMenu.style.top = `${event.pageY}px`;
+  
+  // Mostrar el menú
+  contextMenu.style.display = 'block';
+  
+  // Agregar evento para cerrar el menú al hacer clic fuera de él
+  document.addEventListener('click', hideContextMenu);
+  
+  // Evitar que el evento se propague
+  event.stopPropagation();
+}
+
+/**
+ * Oculta el menú contextual
+ */
+function hideContextMenu() {
+  const contextMenu = document.getElementById('language-context-menu');
+  if (contextMenu) {
+    contextMenu.style.display = 'none';
+  }
+  document.removeEventListener('click', hideContextMenu);
+}
+
+/**
+ * Ordena la columna de idioma alfabéticamente
+ * @param {boolean} ascending - Indica si el orden es ascendente o descendente
+ */
+function sortLanguageColumn(ascending) {
+  if (contextMenuLanguage) {
+    sort(contextMenuLanguage, ascending);
+  }
+}
+
+/**
+ * Oculta la columna de idioma seleccionada
+ */
+function hideLanguageColumn() {
+  if (contextMenuLanguage) {
+    // Usar directamente el comando toggleColumn con visible=false
+    vscode.postMessage({
+      command: "toggleColumn",
+      language: contextMenuLanguage,
+      visible: false
+    });
+    
+    // No mostrar notificación aquí, ya que se mostrará desde el backend
+    // para evitar duplicados
+  }
+}
+
+/**
+ * Muestra un diálogo de confirmación para eliminar un idioma
+ */
+function confirmDeleteLanguage() {
+  if (!contextMenuLanguage) return;
+  
+  // Primera confirmación
+  Swal.fire({
+    title: 'Eliminar idioma',
+    text: `¿Estás seguro de que deseas eliminar el idioma "${contextMenuLanguage}"? Esta operación no se puede deshacer y se eliminará permanentemente el archivo del idioma.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#DC3545',
+    cancelButtonColor: 'var(--vscode-button-background)',
+    confirmButtonText: 'Eliminar',
+    cancelButtonText: 'Cancelar',
+    background: 'var(--vscode-editor-background)',
+    color: 'var(--vscode-editor-foreground)'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Segunda confirmación
+      Swal.fire({
+        title: 'Confirmar eliminación',
+        text: `¿Estás REALMENTE seguro? El archivo de idioma "${contextMenuLanguage}" será eliminado permanentemente.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#DC3545',
+        cancelButtonColor: 'var(--vscode-button-background)',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        background: 'var(--vscode-editor-background)',
+        color: 'var(--vscode-editor-foreground)'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Enviar comando para eliminar el idioma
+          vscode.postMessage({ 
+            command: "deleteLanguage", 
+            language: contextMenuLanguage 
+          });
+        }
+      });
+    }
+  });
 }
 

@@ -208,4 +208,27 @@ export class EIJEFileSystem {
             }
         }
     }
+
+    /**
+     * Elimina un archivo
+     * @param filePath Ruta del archivo a eliminar
+     */
+    static async deleteFile(filePath: string): Promise<void> {
+        if (this.isWebEnvironment()) {
+            // Usar la API de VS Code para entorno web
+            const uri = vscode.Uri.file(filePath);
+            await vscode.workspace.fs.delete(uri, { useTrash: false });
+        } else {
+            // Usar fs para entorno Node.js - importación dinámica
+            try {
+                const fs = eval('require')('fs');
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                }
+            } catch (error) {
+                console.error('Error deleting file:', error);
+                throw error; // Propagar el error para manejarlo en el llamador
+            }
+        }
+    }
 }

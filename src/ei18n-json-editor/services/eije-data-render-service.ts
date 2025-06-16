@@ -51,8 +51,17 @@ export class EIJEDataRenderService {
     private static _getTableHeader(column: string, sort: EIJESort) {
         const isRTL = EIJEConfiguration.isRTL(column);
         const rtlClass = isRTL ? 'rtl-header' : '';
+        const isLanguageColumn = column !== I18nService.getInstance().t('ui.labels.folder') &&
+                                column !== I18nService.getInstance().t('ui.labels.keyColumn');
         
-        return `<th class="text-center ${rtlClass}" style="cursor: pointer;" onclick="sort('${column}',${sort.column === column ? !sort.ascending : true})" ${isRTL ? 'dir="rtl"' : ''}>
+        // Agregar evento de clic derecho solo para columnas de idioma
+        const contextMenuEvent = isLanguageColumn ?
+            `oncontextmenu="showLanguageContextMenu(event, '${column}'); return false;"` : '';
+        
+        return `<th class="text-center ${rtlClass}" style="cursor: pointer;"
+            onclick="sort('${column}',${sort.column === column ? !sort.ascending : true})"
+            ${contextMenuEvent}
+            ${isRTL ? 'dir="rtl"' : ''}>
             <div class="th">
            ${column}             
            ${sort.column === column ? (sort.ascending ? '<i class="fa-solid fa-chevron-up"></i>' : '<i class="fa-solid fa-chevron-down"></i>') : ''}
