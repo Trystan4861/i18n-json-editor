@@ -504,7 +504,7 @@ export class EIJEManager {
             visibleColumns = visibleColumns.filter(col => col !== langCode);
             
             // Actualizar la configuración
-            await EIJEConfiguration.updateVisibleColumns(visibleColumns);
+            await EIJEConfiguration.saveVisibleColumns(visibleColumns);
         } catch (error) {
             console.error('Error removing language from visible columns:', error);
         }
