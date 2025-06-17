@@ -28,7 +28,10 @@
         "Other"
     ],
     "activationEvents": [
-        "workspaceContains:**"
+        "workspaceContains:**",
+        "onCommand:ei18n-json-editor",
+        "onCommand:ei18n-json-editor.openFromActivityBar",
+        "onView:trystan4861-eije"
     ],
     "main": "./out/extension.js",
     "browser": "./dist/web/extension.js",
@@ -80,11 +83,14 @@
             ]
         },
         "views": {
-            "trystan4861-eije": []
+            "trystan4861-eije": [
+                {
+                    "id": "trystan4861-eije-view",
+                    "name": "Enhanced i18n.json Editor",
+                    "when": "false"
+                }
+            ]
         },
-        "activationEvents": [
-            "onView:trystan4861-eije"
-        ],
 
         "configuration": {
             "title": "Enhanced i18n json editor",

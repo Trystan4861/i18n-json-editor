@@ -8,8 +8,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Fixed
 - Corregido el error "No hay ningún proveedor de datos registrado que pueda proporcionar datos de la vista" que ocurría en la extensión compilada
-- Rediseñada la integración con la barra de actividad para evitar problemas con el TreeDataProvider
-- Simplificada la arquitectura de la extensión para mejorar la compatibilidad entre desarrollo y producción
+- Mejorada la integración con la barra de actividad para garantizar compatibilidad en la versión compilada
+- Optimizada la inicialización de la extensión para asegurar que todos los puntos de entrada funcionen correctamente
+- Reforzada la activación de la extensión mediante múltiples eventos de activación
 
 ## [v1.0.3]
 

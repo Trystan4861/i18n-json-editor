@@ -20,23 +20,31 @@ export async function activate(context: vscode.ExtensionContext) {
         i18n.setLanguage('en');
     }
 
-    if (EIJEConfiguration.WORKSPACE_FOLDERS) {
-        let myStatusBarItem: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-        myStatusBarItem.command = 'ei18n-json-editor';
-        myStatusBarItem.text = `$(symbol-string) ${i18n.t('extension.statusBar')}`;
-        myStatusBarItem.show();
-    }
+    // Crear el elemento de la barra de estado
+    let myStatusBarItem: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    myStatusBarItem.command = 'ei18n-json-editor';
+    myStatusBarItem.text = `$(symbol-string) ${i18n.t('extension.statusBar')}`;
+    myStatusBarItem.show();
+    context.subscriptions.push(myStatusBarItem);
 
     // Registrar un comando para abrir el editor directamente desde la barra de actividad
     const openFromActivityBarCommand = vscode.commands.registerCommand('ei18n-json-editor.openFromActivityBar', () => {
-        vscode.commands.executeCommand('ei18n-json-editor').then(() => {
-            // Opcionalmente, ocultar la vista después de abrir el editor
-            vscode.commands.executeCommand('workbench.action.toggleSidebarVisibility');
-        });
+        vscode.commands.executeCommand('ei18n-json-editor');
     });
     
     context.subscriptions.push(openFromActivityBarCommand);
     
+    // Configurar el contexto para mostrar el menú contextual
+    vscode.commands.executeCommand('setContext', 'ext:showContextMenu', true);
+    
     // Registrar el proveedor del editor
     context.subscriptions.push(EIJEEditorProvider.register(context));
+    
+    // Cuando se hace clic en el icono de la barra de actividad, abrir el editor directamente
+    context.subscriptions.push(vscode.window.registerWebviewViewProvider('trystan4861-eije-view', {
+        resolveWebviewView: () => {
+            // Abrir el editor directamente
+            vscode.commands.executeCommand('ei18n-json-editor');
+        }
+    }));
 }
