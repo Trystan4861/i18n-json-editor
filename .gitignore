@@ -8,3 +8,4 @@ node_modules
 web-extensions.md
 .docs
 dist/**
+.vscode/.ei18n-editor-config.json
