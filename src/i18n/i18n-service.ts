@@ -22,34 +22,63 @@ export class I18nService {
     }
 
     private isWebEnvironment(): boolean {
-        return typeof process === 'undefined' || process.versions?.node === undefined;
+        // Siempre retornamos false ya que solo funcionará en escritorio
+        return false;
     }
 
     private async loadTranslations(): Promise<void> {
         try {
-            if (this.isWebEnvironment()) {
-                // En entorno web, usar las traducciones embebidas
-                this.translations = translations;
-                this.isLoaded = true;
-            } else {
-                // En entorno Node.js, cargar desde archivos
-                const langFiles = ['en.json', 'es.json'];
-                const i18nDir = path.join(this.context.extensionPath, 'src', 'i18n');
-
+            // Solo cargamos desde archivos ya que estamos en entorno de escritorio
+            const langFiles = ['en.json', 'es.json'];
+            
+            // Intentar cargar desde la carpeta out/i18n primero (compilado)
+            const outI18nDir = path.join(this.context.extensionPath, 'out', 'i18n');
+            const srcI18nDir = path.join(this.context.extensionPath, 'src', 'i18n');
+            
+            let loaded = false;
+            
+            // Primero intentar cargar desde out/i18n
+            for (const file of langFiles) {
+                try {
+                    const lang = file.split('.')[0];
+                    const filePath = path.join(outI18nDir, file);
+                    
+                    if (await EIJEFileSystem.exists(filePath)) {
+                        const content = await EIJEFileSystem.readFile(filePath);
+                        this.translations[lang] = JSON.parse(content);
+                        loaded = true;
+                        console.log(`Loaded translation file ${file} from out/i18n`);
+                    }
+                } catch (error) {
+                    console.error(`Failed to load translation file ${file} from out/i18n:`, error);
+                }
+            }
+            
+            // Si no se cargó nada desde out/i18n, intentar desde src/i18n
+            if (!loaded) {
                 for (const file of langFiles) {
                     try {
                         const lang = file.split('.')[0];
-                        const filePath = path.join(i18nDir, file);
+                        const filePath = path.join(srcI18nDir, file);
+                        
                         if (await EIJEFileSystem.exists(filePath)) {
                             const content = await EIJEFileSystem.readFile(filePath);
                             this.translations[lang] = JSON.parse(content);
+                            console.log(`Loaded translation file ${file} from src/i18n`);
                         }
                     } catch (error) {
-                        console.error(`Failed to load translation file ${file}:`, error);
+                        console.error(`Failed to load translation file ${file} from src/i18n:`, error);
                     }
                 }
-                this.isLoaded = true;
             }
+            
+            // Si no se cargó nada, usar traducciones embebidas
+            if (Object.keys(this.translations).length === 0) {
+                console.log('No translation files found, using embedded translations');
+                this.translations = translations;
+            }
+            
+            this.isLoaded = true;
         } catch (error) {
             console.error('Failed to load translations:', error);
             // Fallback a traducciones embebidas

@@ -12,6 +12,10 @@ export const translations = {
       "openingEditor": "Opening Editor..."
     },
     "ui": {
+      "activityBar": {
+        "description": "Easily edit your i18n translation files",
+        "openEditor": "Open Editor"
+      },
       "buttons": {
         "translate": "Translate",
         "remove": "Remove",
@@ -45,7 +49,9 @@ export const translations = {
         "add_language": "Add language",
         "toggle_column_selector": "Toggle column selector",
         "chage_view_mode": "Change view mode",
-        "error_translations": "There are some translation errors"
+        "error_translations": "There are some translation errors",
+        "select_workspace_folder": "Select workspace folder",
+        "discard_changes": "Discard changes"
       },
       "pagination": {
         "itemsPerPage": "Items per page"
@@ -66,7 +72,12 @@ export const translations = {
         "languageFileCreated": "New language file {0} created",
         "fileCreationError": "Error creating language file: {0}",
         "unsupportedFolder": "The folder '{0}' is not supported. Please configure supported folders in settings.",
-        "noEmptyTranslations": "No empty translations found."
+        "noEmptyTranslations": "No empty translations found.",
+        "changesDiscarded": "Changes discarded",
+        "languageFileNotFound": "Language file {0} not found",
+        "cannotDeleteDefaultLanguage": "Cannot delete the default language",
+        "languageFileDeleted": "Language file {0} deleted successfully",
+        "fileDeletionError": "Error deleting language file: {0}"
       },
       "placeholders": {
         "key": "Key...",
@@ -82,6 +93,10 @@ export const translations = {
       "openingEditor": "Abriendo Editor..."
     },
     "ui": {
+      "activityBar": {
+        "description": "Edita fácilmente tus archivos de traducción i18n",
+        "openEditor": "Abrir Editor"
+      },
       "buttons": {
         "translate": "Traducir",
         "remove": "Eliminar",
@@ -115,7 +130,9 @@ export const translations = {
         "add_language": "Agregar idioma",
         "toggle_column_selector": "Mostrar/ocultar selector de columnas",
         "chage_view_mode": "Cambiar modo de vista",
-        "error_translations": "Hay algunos errores de traducción"
+        "error_translations": "Hay algunos errores de traducción",
+        "select_workspace_folder": "Seleccione carpeta de trabajo",
+        "discard_changes": "Descartar cambios"
       },
       "pagination": {
         "itemsPerPage": "Elementos por página"
@@ -136,7 +153,12 @@ export const translations = {
         "languageFileCreated": "Nuevo archivo de idioma {0} creado",
         "fileCreationError": "Error al crear el archivo de idioma: {0}",
         "unsupportedFolder": "La carpeta '{0}' no está soportada. Por favor configure las carpetas soportadas en la configuración.",
-        "noEmptyTranslations": "No se encontraron traducciones vacías."
+        "noEmptyTranslations": "No se encontraron traducciones vacías.",
+        "changesDiscarded": "Cambios descartados",
+        "languageFileNotFound": "Archivo de idioma {0} no encontrado",
+        "cannotDeleteDefaultLanguage": "No se puede eliminar el idioma predeterminado",
+        "languageFileDeleted": "Archivo de idioma {0} eliminado correctamente",
+        "fileDeletionError": "Error al eliminar el archivo de idioma: {0}"
       },
       "placeholders": {
         "key": "Clave...",

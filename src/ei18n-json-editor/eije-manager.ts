@@ -945,8 +945,8 @@ export class EIJEManager {
                 // Crear nueva instancia de EIJEData para la nueva carpeta
                 this._data = new EIJEData(this);
                 
-                // Cambiar la ruta de la carpeta
-                this.folderPath = selectedFolder.path;
+                // Cambiar la ruta de la carpeta (convertir de relativa a absoluta)
+                this.folderPath = EIJEConfiguration.resolveRelativePath(selectedFolder.path);
                 
                 // Reinicializar los datos
                 await this._data.initialize();
@@ -1028,7 +1028,17 @@ export class EIJEManager {
         // Si hay una carpeta específica proporcionada al abrir la extensión, usarla
         if (this.folderPath) {
             // Verificar si la carpeta proporcionada está en la lista de carpetas de trabajo
-            const matchingFolder = workspaceFolders.find(f => f.path === this.folderPath);
+            // Primero intentar con la ruta tal como está
+            let matchingFolder = workspaceFolders.find(f => f.path === this.folderPath);
+            
+            // Si no se encuentra, intentar resolver las rutas relativas de las carpetas de trabajo
+            if (!matchingFolder) {
+                matchingFolder = workspaceFolders.find(f => {
+                    const absolutePath = EIJEConfiguration.resolveRelativePath(f.path);
+                    return absolutePath === this.folderPath;
+                });
+            }
+            
             if (matchingFolder) {
                 // Si la carpeta está en la lista, usarla
                 selectedFolder = matchingFolder;
@@ -1045,7 +1055,8 @@ export class EIJEManager {
         
         // Actualizar el folderPath con la carpeta seleccionada
         if (selectedFolder) {
-            this.folderPath = selectedFolder.path;
+            // Convertir la ruta relativa a absoluta si es necesario
+            this.folderPath = EIJEConfiguration.resolveRelativePath(selectedFolder.path);
             
             // Si la carpeta seleccionada es diferente a la carpeta por defecto, actualizar la configuración
             if (selectedFolder.name !== defaultFolder) {
@@ -1072,7 +1083,17 @@ export class EIJEManager {
         let activeFolder = currentFolder;
         if (!activeFolder) {
             // Buscar la carpeta que corresponde al folderPath actual
-            const currentFolderObj = workspaceFolders.find(f => f.path === this.folderPath);
+            // Primero intentar con la ruta tal como está
+            let currentFolderObj = workspaceFolders.find(f => f.path === this.folderPath);
+            
+            // Si no se encuentra, intentar resolver las rutas relativas
+            if (!currentFolderObj) {
+                currentFolderObj = workspaceFolders.find(f => {
+                    const absolutePath = EIJEConfiguration.resolveRelativePath(f.path);
+                    return absolutePath === this.folderPath;
+                });
+            }
+            
             if (currentFolderObj) {
                 activeFolder = currentFolderObj.name;
             } else {

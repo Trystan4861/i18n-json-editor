@@ -13,7 +13,8 @@ export class EIJEEditorProvider {
     private static currentManager: EIJEManager | undefined;
 
     private static isWebEnvironment(): boolean {
-        return typeof process === 'undefined' || process.versions?.node === undefined;
+        // Siempre retornamos false ya que solo funcionará en escritorio
+        return false;
     }
 
     public static register(context: vscode.ExtensionContext): vscode.Disposable {
@@ -202,10 +203,8 @@ export class EIJEEditorProvider {
                         testPath = _path.join(rootPath, supportedFolder);
                     }
                     
-                    // Usar método apropiado según el entorno
-                    const exists = this.isWebEnvironment() 
-                        ? await EIJEFileSystem.exists(testPath)
-                        : EIJEFileSystem.existsSync(testPath);
+                    // Usar método síncrono ya que estamos en entorno de escritorio
+                    const exists = EIJEFileSystem.existsSync(testPath);
                     
                     if (exists) {
                         folderPath = testPath;
@@ -214,9 +213,7 @@ export class EIJEEditorProvider {
                 }
             } else if (uri) {
                 // Verificar si la carpeta seleccionada es soportada
-                const isSupported = this.isWebEnvironment()
-                    ? await isSupportedFolderAsync(uri.fsPath)
-                    : isSupportedFolder(uri.fsPath);
+                const isSupported = isSupportedFolder(uri.fsPath);
                 
                 if (isSupported) {
                     folderPath = uri.fsPath;

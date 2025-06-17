@@ -3,6 +3,8 @@
 out/test/**
 src/**
 .gitignore
+.github/**
+demo/**
 vsc-extension-quickstart.md
 **/tsconfig.json
 **/tsconfig.web.json
