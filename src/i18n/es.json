@@ -11,7 +11,14 @@
       "remove": "Eliminar",
       "reload": "Recargar",
       "columnSelector": "Idiomas",
-      "apply": "Aplicar"
+      "apply": "Aplicar",
+      "yes": "Sí",
+      "no": "No",
+      "cancel": "Cancelar",
+      "create": "Crear",
+      "createInRoot": "Crear en raíz",
+      "customPath": "Ruta personalizada",
+      "understood": "Entendido"
     },
     "errors": {
       "invalidKey": "La clave no es válida.",
@@ -21,7 +28,10 @@
     },
     "prompts": {
       "enterLanguageCode": "Ingrese el código de idioma (máx. 5 caracteres)",
-      "languageCodePlaceholder": "ej. es_ES o de"
+      "languageCodePlaceholder": "ej. es_ES o de",
+      "createI18nFolderTitle": "Crear carpeta i18n",
+      "enterPath": "Ingrese la ruta relativa donde desea crear la carpeta i18n (ej: frontend)",
+      "invalidPath": "La ruta contiene caracteres inválidos"
     },
     "labels": {
       "search": "Buscar...",
@@ -67,7 +77,13 @@
       "languageFileNotFound": "Archivo de idioma {0} no encontrado",
       "cannotDeleteDefaultLanguage": "No se puede eliminar el idioma predeterminado",
       "languageFileDeleted": "Archivo de idioma {0} eliminado correctamente",
-      "fileDeletionError": "Error al eliminar el archivo de idioma: {0}"
+      "fileDeletionError": "Error al eliminar el archivo de idioma: {0}",
+      "noI18nFoldersFound": "No se encontraron directorios i18n en el proyecto",
+      "createI18nFolder": "¿Desea crear uno?",
+      "i18nFolderCreated": "Directorio i18n creado con éxito",
+      "i18nFolderCreationError": "Error al crear el directorio i18n",
+      "noWorkspaceFolders": "No hay carpetas de trabajo configuradas",
+      "createI18nToStart": "Por favor, cree una carpeta i18n para comenzar"
     },
     "placeholders": {
       "key": "Clave...",

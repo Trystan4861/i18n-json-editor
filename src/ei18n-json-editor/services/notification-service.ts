@@ -36,6 +36,19 @@ export class NotificationService {
     }
     
     /**
+     * Muestra un mensaje de éxito usando Flashy
+     * @param message Mensaje a mostrar
+     * @param useFlashy Indica si se debe usar Flashy o notificaciones nativas
+     */
+    public showSuccessMessage(message: string, useFlashy: boolean = true): void {
+        if (useFlashy) {
+            this.sendFlashyNotification(message, 'success', 3000);
+        } else {
+            vscode.window.showInformationMessage(message);
+        }
+    }
+    
+    /**
      * Muestra un mensaje de error usando Flashy
      * @param message Mensaje de error a mostrar
      */

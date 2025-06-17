@@ -202,6 +202,41 @@ export class EIJEManager {
                 case 'deleteLanguage':
                     await this.deleteLanguage(message.language);
                     return;
+                    
+                case 'createI18nDirectory':
+                    // Crear directorio i18n
+                    const customPath = message.customPath;
+                    const createdPath = EIJEConfiguration.createI18nDirectory(customPath);
+                    
+                    if (createdPath) {
+                        // Limpiar la caché de configuración para forzar la recarga
+                        EIJEConfiguration.clearConfigCache();
+                        
+                        // Notificar al usuario usando el servicio de notificaciones
+                        const i18n = I18nService.getInstance();
+                        NotificationService.getInstance().showSuccessMessage(
+                            i18n.t('ui.messages.i18nFolderCreated'),
+                            true // Usar Flashy
+                        );
+                        
+                        // Esperar un momento para que la configuración se actualice
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        
+                        // Obtener el nombre de la carpeta creada
+                        const folderName = customPath ? 
+                            (customPath.endsWith('/i18n') || customPath.endsWith('\\i18n') ? 
+                                customPath.slice(0, -5) : customPath) : 
+                            '/';
+                        
+                        // Reiniciar completamente el editor con la nueva carpeta
+                        await this.switchWorkspaceFolder(folderName);
+                    }
+                    return;
+                    
+                case 'closeEditor':
+                    // Cerrar el editor
+                    this._panel.dispose();
+                    return;
             }
         });
     }
@@ -1015,9 +1050,29 @@ export class EIJEManager {
 
     // Método para establecer la carpeta de trabajo inicial
     private async setInitialWorkspaceFolder(): Promise<void> {
+        // Validar las carpetas de trabajo y eliminar las que no existen
+        await this.validateWorkspaceFolders();
+        
+        // Obtener las carpetas de trabajo actualizadas
         const workspaceFolders = EIJEConfiguration.WORKSPACE_FOLDERS;
         
         if (workspaceFolders.length === 0) {
+            console.log('No workspace folders found, showing prompt to create one');
+            
+            // Mostrar diálogo para crear una carpeta i18n
+            // Usamos setTimeout para asegurarnos de que el panel esté completamente inicializado
+            setTimeout(() => {
+                // Mostrar mensaje en el webview usando SweetAlert2
+                this._panel.webview.postMessage({
+                    command: 'showCreateI18nPrompt',
+                    title: 'No se encontraron carpetas i18n',
+                    text: 'No se encontraron directorios i18n en el proyecto. ¿Desea crear uno?'
+                });
+            }, 500);
+            
+            // No retornamos aquí para permitir que el editor se inicialice completamente
+            // Mostramos un mensaje de estado en lugar de cerrar el editor
+            this._panel.webview.html = this.getHtmlForNoWorkspaceFolders();
             return;
         }
         
@@ -1068,6 +1123,130 @@ export class EIJEManager {
         }
     }
 
+    // Método para validar las carpetas de trabajo y eliminar las que no existen
+    private async validateWorkspaceFolders(): Promise<void> {
+        // Obtener las carpetas de trabajo actuales
+        const workspaceFolders = [...EIJEConfiguration.WORKSPACE_FOLDERS];
+        const validFolders = [];
+        let configChanged = false;
+        
+        // Verificar cada carpeta
+        for (const folder of workspaceFolders) {
+            // Resolver la ruta relativa a absoluta
+            const absolutePath = EIJEConfiguration.resolveRelativePath(folder.path);
+            
+            try {
+                // Verificar si la carpeta existe
+                const exists = await EIJEFileSystem.exists(absolutePath);
+                
+                if (exists) {
+                    // Si existe, mantenerla
+                    validFolders.push(folder);
+                } else {
+                    // Si no existe, marcar que la configuración ha cambiado
+                    console.log(`Workspace folder not found: ${folder.path} (${absolutePath})`);
+                    configChanged = true;
+                }
+            } catch (error) {
+                console.error(`Error validating workspace folder ${folder.path}:`, error);
+                // En caso de error, asumir que la carpeta no existe
+                configChanged = true;
+            }
+        }
+        
+        // Si se eliminaron carpetas, actualizar la configuración
+        if (configChanged) {
+            // Actualizar la configuración con las carpetas válidas
+            await EIJEConfiguration.saveWorkspaceFolders(validFolders);
+            
+            // Si la carpeta por defecto ya no existe, actualizarla
+            const defaultFolder = EIJEConfiguration.DEFAULT_WORKSPACE_FOLDER;
+            if (defaultFolder && !validFolders.some(f => f.name === defaultFolder)) {
+                // Establecer la primera carpeta válida como predeterminada, o vacío si no hay ninguna
+                const newDefaultFolder = validFolders.length > 0 ? validFolders[0].name : '';
+                await EIJEConfiguration.saveDefaultWorkspaceFolder(newDefaultFolder);
+            }
+            
+            // Limpiar la caché de configuración
+            EIJEConfiguration.clearConfigCache();
+        }
+    }
+    
+    // Método para obtener el HTML cuando no hay carpetas de trabajo
+    private getHtmlForNoWorkspaceFolders(): string {
+        // Obtener las rutas a los recursos
+        const styleUri = this._panel.webview.asWebviewUri(
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'bootstrap.min.css'))
+        );
+        const customStyleUri = this._panel.webview.asWebviewUri(
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'template.css'))
+        );
+        const sweetalertCssUri = this._panel.webview.asWebviewUri(
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'css', 'sweetalert2-custom.css'))
+        );
+        const jqueryUri = this._panel.webview.asWebviewUri(
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'jquery.min.js'))
+        );
+        const bootstrapJsUri = this._panel.webview.asWebviewUri(
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'bootstrap.min.js'))
+        );
+        const sweetalertJsUri = this._panel.webview.asWebviewUri(
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'sweetalert2.min.js'))
+        );
+        const templateJsUri = this._panel.webview.asWebviewUri(
+            vscode.Uri.file(_path.join(this._context.extensionPath, 'media', 'js', 'template.js'))
+        );
+        
+        return `<!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>ei18n-json-editor</title>
+            <link href="${styleUri}" rel="stylesheet">
+            <link href="${customStyleUri}" rel="stylesheet">
+            <link href="${sweetalertCssUri}" rel="stylesheet">
+        </head>
+        <body>
+            <div class="container mt-5">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <h2>${I18nService.getInstance().t('ui.messages.noWorkspaceFolders')}</h2>
+                        <p class="mt-3">${I18nService.getInstance().t('ui.messages.createI18nToStart')}</p>
+                        <button id="create-i18n-btn" class="btn btn-primary mt-3">${I18nService.getInstance().t('ui.buttons.create')}</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="flashy-container"></div>
+            
+            <script src="${jqueryUri}"></script>
+            <script src="${bootstrapJsUri}"></script>
+            <script src="${sweetalertJsUri}"></script>
+            <script src="${templateJsUri}"></script>
+            <script>
+                (function() {
+                    const vscode = acquireVsCodeApi();
+                    
+                    // Mostrar el diálogo de creación de carpeta i18n al cargar la página
+                    setTimeout(() => {
+                        const i18n = I18nService.getInstance();
+                        showCreateI18nPrompt(
+                            i18n.t('ui.messages.noI18nFoldersFound'),
+                            i18n.t('ui.messages.createI18nFolder')
+                        );
+                    }, 500);
+                    
+                    // Manejar el clic en el botón de crear carpeta i18n
+                    document.getElementById('create-i18n-btn').addEventListener('click', () => {
+                        showCreateI18nPrompt('Crear carpeta i18n', '¿Dónde desea crear la carpeta i18n?');
+                    });
+                })();
+            </script>
+        </body>
+        </html>`;
+    }
+    
     // Método para inicializar el selector de carpetas de trabajo
     private initializeWorkspaceFolderSelector(currentFolder?: string): void {
         const workspaceFolders = EIJEConfiguration.WORKSPACE_FOLDERS;

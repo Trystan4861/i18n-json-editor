@@ -11,7 +11,14 @@
       "remove": "Remove",
       "reload": "Reload",
       "columnSelector": "Languages",
-      "apply": "Apply"
+      "apply": "Apply",
+      "yes": "Yes",
+      "no": "No",
+      "cancel": "Cancel",
+      "create": "Create",
+      "createInRoot": "Create in root",
+      "customPath": "Custom path",
+      "understood": "Understood"
     },
     "errors": {
       "invalidKey": "The key is invalid.",
@@ -21,7 +28,10 @@
     },
     "prompts": {
       "enterLanguageCode": "Enter language code (max 5 characters)",
-      "languageCodePlaceholder": "e.g. es_ES or de"
+      "languageCodePlaceholder": "e.g. es_ES or de",
+      "createI18nFolderTitle": "Create i18n folder",
+      "enterPath": "Enter the relative path where you want to create the i18n folder (e.g. frontend)",
+      "invalidPath": "The path contains invalid characters"
     },
     "labels": {
       "search": "Search...",
@@ -67,7 +77,13 @@
       "languageFileNotFound": "Language file {0} not found",
       "cannotDeleteDefaultLanguage": "Cannot delete the default language",
       "languageFileDeleted": "Language file {0} deleted successfully",
-      "fileDeletionError": "Error deleting language file: {0}"
+      "fileDeletionError": "Error deleting language file: {0}",
+      "noI18nFoldersFound": "No i18n directories found in the project",
+      "createI18nFolder": "Would you like to create one?",
+      "i18nFolderCreated": "i18n directory created successfully",
+      "i18nFolderCreationError": "Error creating i18n directory",
+      "noWorkspaceFolders": "No workspace folders configured",
+      "createI18nToStart": "Please create an i18n folder to start"
     },
     "placeholders": {
       "key": "Key...",

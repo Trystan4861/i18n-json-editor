@@ -4,13 +4,22 @@ All notable changes to the "ei18n-json-editor" extension will be documented in t
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [v1.0.5]
+
+### Fixed
+- Improved i18n folder detection to find any i18n folder in the project structure
+- Enhanced recursive directory scanning to detect i18n folders at any level
+- Fixed issue where existing i18n folders were not being detected properly
+- Added detailed logging for better troubleshooting of folder detection issues
+- Optimized workspace folder configuration to automatically include found i18n directories
+
 ## [v1.0.4]
 
 ### Fixed
-- Corregido el error "No hay ningún proveedor de datos registrado que pueda proporcionar datos de la vista" que ocurría en la extensión compilada
-- Mejorada la integración con la barra de actividad para garantizar compatibilidad en la versión compilada
-- Optimizada la inicialización de la extensión para asegurar que todos los puntos de entrada funcionen correctamente
-- Reforzada la activación de la extensión mediante múltiples eventos de activación
+- Fixed the error "There is no registered data provider that can provide view data" that occurred in the compiled extension
+- Improved integration with the activity bar to ensure compatibility in the compiled version
+- Optimized extension initialization to ensure all entry points work correctly
+- Reinforced extension activation through multiple activation events
 
 ## [v1.0.3]
 

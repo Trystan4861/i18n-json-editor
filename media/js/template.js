@@ -230,6 +230,14 @@ var currentWorkspaceFolder = ''; // Variable para rastrear la carpeta de trabajo
       case "showFlashyNotification":
         showFlashyNotification(message.message, message.type, message.duration);
         break;
+        
+      case "showCreateI18nPrompt":
+        showCreateI18nPrompt(message.title, message.text);
+        break;
+        
+      case "showNoWorkspaceFoldersMessage":
+        showNoWorkspaceFoldersMessage();
+        break;
     }
   });
   setTimeout(() => {
@@ -884,6 +892,113 @@ function confirmDeleteLanguage() {
         }
       });
     }
+  });
+}
+
+// Función para mostrar el diálogo de creación de carpeta i18n
+function showCreateI18nPrompt(title, text) {
+  // Obtener los textos de los botones del atributo data-i18n del body
+  const createInRootText = document.body.getAttribute('data-i18n-btn-create-in-root') || 'Crear en raíz';
+  const cancelText = document.body.getAttribute('data-i18n-btn-cancel') || 'Cancelar';
+  const customPathText = document.body.getAttribute('data-i18n-btn-custom-path') || 'Ruta personalizada';
+  
+  Swal.fire({
+    title: title || document.body.getAttribute('data-i18n-no-i18n-folders') || 'No se encontraron carpetas i18n',
+    text: text || document.body.getAttribute('data-i18n-create-i18n-folder') || '¿Desea crear uno?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: createInRootText,
+    cancelButtonText: cancelText,
+    showDenyButton: true,
+    denyButtonText: customPathText,
+    reverseButtons: true,
+    background: 'var(--vscode-editor-background)',
+    color: 'var(--vscode-editor-foreground)',
+    confirmButtonColor: 'var(--vscode-button-background)',
+    denyButtonColor: '#6c757d',
+    cancelButtonColor: '#dc3545'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Crear en la raíz del proyecto
+      vscode.postMessage({
+        command: 'createI18nDirectory'
+      });
+    } else if (result.isDenied) {
+      // Mostrar diálogo para ingresar ruta personalizada
+      showCustomPathPrompt();
+    } else {
+      // Cancelar - cerrar el editor
+      console.log('Operación cancelada por el usuario');
+      vscode.postMessage({
+        command: 'closeEditor'
+      });
+    }
+  });
+}
+
+// Función para mostrar el diálogo de ruta personalizada
+function showCustomPathPrompt() {
+  // Obtener los textos de los botones y mensajes del atributo data-i18n del body
+  const createText = document.body.getAttribute('data-i18n-btn-create') || 'Crear';
+  const cancelText = document.body.getAttribute('data-i18n-btn-cancel') || 'Cancelar';
+  const createI18nFolderText = document.body.getAttribute('data-i18n-create-i18n-folder-title') || 'Crear carpeta i18n';
+  const enterPathText = document.body.getAttribute('data-i18n-enter-path') || 'Ingrese la ruta relativa donde desea crear la carpeta i18n (ej: frontend)';
+  const invalidPathText = document.body.getAttribute('data-i18n-invalid-path') || 'La ruta contiene caracteres inválidos';
+  
+  Swal.fire({
+    title: createI18nFolderText,
+    text: enterPathText,
+    input: 'text',
+    inputPlaceholder: 'frontend',
+    showCancelButton: true,
+    confirmButtonText: createText,
+    cancelButtonText: cancelText,
+    background: 'var(--vscode-editor-background)',
+    color: 'var(--vscode-editor-foreground)',
+    confirmButtonColor: 'var(--vscode-button-background)',
+    cancelButtonColor: '#dc3545',
+    inputValidator: (value) => {
+      // Validar que la ruta no contenga caracteres inválidos
+      if (/[<>:"|?*]/.test(value)) {
+        return invalidPathText;
+      }
+    }
+  }).then((result) => {
+    if (result.isConfirmed && result.value) {
+      // Crear en la ruta personalizada
+      vscode.postMessage({
+        command: 'createI18nDirectory',
+        customPath: result.value
+      });
+    } else if (result.isConfirmed) {
+      // Si no se ingresó una ruta, crear en la raíz
+      vscode.postMessage({
+        command: 'createI18nDirectory'
+      });
+    } else if (result.dismiss === Swal.DismissReason.cancel) {
+      // Si se canceló, cerrar el editor
+      vscode.postMessage({
+        command: 'closeEditor'
+      });
+    }
+  });
+}
+
+// Función para mostrar mensaje cuando no hay carpetas de trabajo
+function showNoWorkspaceFoldersMessage() {
+  // Obtener los textos de los botones y mensajes del atributo data-i18n del body
+  const understoodText = document.body.getAttribute('data-i18n-btn-understood') || 'Entendido';
+  const noWorkspaceFoldersText = document.body.getAttribute('data-i18n-no-workspace-folders') || 'No hay carpetas de trabajo';
+  const createI18nToStartText = document.body.getAttribute('data-i18n-create-i18n-to-start') || 'Por favor, cree una carpeta i18n para comenzar.';
+  
+  Swal.fire({
+    title: noWorkspaceFoldersText,
+    text: createI18nToStartText,
+    icon: 'info',
+    confirmButtonText: understoodText,
+    background: 'var(--vscode-editor-background)',
+    color: 'var(--vscode-editor-foreground)',
+    confirmButtonColor: 'var(--vscode-button-background)'
   });
 }
 

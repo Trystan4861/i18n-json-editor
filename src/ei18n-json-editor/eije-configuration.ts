@@ -4,6 +4,8 @@ import * as _path from 'path';
 import { EIJEFolder } from './models/eije-folder';
 import { TranslationServiceEnum } from './services/eije-translation-service';
 import { EIJEFileSystem } from './services/eije-filesystem';
+import { I18nService } from '../i18n/i18n-service';
+import { NotificationService } from './services/notification-service';
 
 export class EIJEConfiguration {
     // Cache para configuración en memoria
@@ -28,18 +30,32 @@ export class EIJEConfiguration {
     // Ruta del archivo de configuración dentro de .vscode
     private static getConfigPath(workspaceFolder: vscode.WorkspaceFolder): string {
         try {
+            console.log('Getting config path for workspace folder:', workspaceFolder.uri.fsPath);
+            
             // Asegurar que el directorio .vscode existe
             const vscodePath = _path.join(workspaceFolder.uri.fsPath, '.vscode');
+            console.log('VS Code path:', vscodePath);
+            
             if (!EIJEFileSystem.existsSync(vscodePath)) {
+                console.log('Creating .vscode directory');
                 EIJEFileSystem.mkdirSync(vscodePath, { recursive: true });
             }
             
             const configPath = _path.join(vscodePath, '.ei18n-editor-config.json');
+            console.log('Config path:', configPath);
             
             // Si el archivo no existe, crearlo con configuración por defecto SOLO UNA VEZ
-            if (!EIJEFileSystem.existsSync(configPath) && !this._configFileCreated) {
-                this.createDefaultConfigFile(configPath);
-                this._configFileCreated = true;
+            if (!EIJEFileSystem.existsSync(configPath)) {
+                console.log('Config file does not exist');
+                if (!this._configFileCreated) {
+                    console.log('Creating default config file');
+                    this.createDefaultConfigFile(configPath);
+                    this._configFileCreated = true;
+                } else {
+                    console.log('Config file already created in this session, skipping creation');
+                }
+            } else {
+                console.log('Config file already exists');
             }
             
             return configPath;
@@ -51,13 +67,55 @@ export class EIJEConfiguration {
     
     private static createDefaultConfigFile(configPath: string): void {
         try {
+            console.log('Creating default config file at:', configPath);
+            
+            // Verificar si estamos en modo desarrollo o producción
+            const isDevelopment = process.env.NODE_ENV === 'development';
+            console.log('Environment:', isDevelopment ? 'development' : 'production');
+            
             // Buscar directorios i18n en el proyecto
+            console.log('Searching for i18n directories...');
             const workspaceFolders = this.findI18nDirectories();
+            
+            console.log(`Found ${workspaceFolders.length} i18n directories:`, workspaceFolders);
+            
+            // Si no se encontraron carpetas, intentar buscar manualmente la carpeta src/i18n
+            if (workspaceFolders.length === 0) {
+                console.log('No i18n directories found, trying manual detection...');
+                
+                // Obtener la ruta raíz del proyecto
+                const rootPath = vscode.workspace.rootPath || 
+                    (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 
+                        ? vscode.workspace.workspaceFolders[0].uri.fsPath : '');
+                
+                if (rootPath) {
+                    console.log('Root path:', rootPath);
+                    
+                    // Verificar si existe la carpeta src/i18n
+                    const srcI18nPath = _path.join(rootPath, 'src', 'i18n');
+                    console.log('Checking src/i18n path:', srcI18nPath);
+                    
+                    if (EIJEFileSystem.existsSync(srcI18nPath)) {
+                        console.log('src/i18n directory exists, adding to workspaceFolders');
+                        workspaceFolders.push({
+                            name: 'src',
+                            path: 'src/i18n'
+                        });
+                    } else {
+                        console.log('src/i18n directory does not exist');
+                    }
+                } else {
+                    console.log('No root path found');
+                }
+            }
             
             // Determinar la carpeta de trabajo predeterminada
             let defaultWorkspaceFolder = "";
             if (workspaceFolders.length > 0) {
                 defaultWorkspaceFolder = workspaceFolders[0].name;
+                console.log('Default workspace folder:', defaultWorkspaceFolder);
+            } else {
+                console.log('No default workspace folder set');
             }
             
             const defaultConfig = {
@@ -71,16 +129,20 @@ export class EIJEConfiguration {
                 workspaceFolders: workspaceFolders,
                 defaultWorkspaceFolder: defaultWorkspaceFolder,
                 translationService: "Coming soon",
-                translationServiceApiKey: "Coming soon",
-                visibleColumns: [],
-                hiddenColumns: []
+                translationServiceApiKey: "Coming soon"
+                // Las columnas visibles/ocultas ahora se manejan a nivel de cada carpeta de trabajo
             };
             
+            console.log('Writing config file with:', defaultConfig);
             EIJEFileSystem.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2));
+            console.log('Config file written successfully');
             
             // Si no se encontraron directorios i18n, mostrar un mensaje al usuario
             if (workspaceFolders.length === 0) {
+                console.log('No i18n directories found, showing prompt to create one');
                 this.showCreateI18nDirectoryPrompt();
+            } else {
+                console.log(`Found ${workspaceFolders.length} i18n directories, no need to show prompt`);
             }
         } catch (error) {
             console.error('Error creating default config file:', error);
@@ -97,19 +159,116 @@ export class EIJEConfiguration {
         try {
             // Obtener todas las carpetas del espacio de trabajo
             const vscodeWorkspaceFolders = vscode.workspace.workspaceFolders;
-            if (!vscodeWorkspaceFolders || vscodeWorkspaceFolders.length === 0) {
-                return workspaceFolders;
+            console.log('Workspace folders:', vscodeWorkspaceFolders);
+            
+            // Forzar la detección de la carpeta src/i18n independientemente del espacio de trabajo
+            // Esto es una solución temporal para asegurar que se detecte la carpeta
+            const rootPath = vscode.workspace.rootPath || (vscodeWorkspaceFolders && vscodeWorkspaceFolders.length > 0 ? vscodeWorkspaceFolders[0].uri.fsPath : '');
+            console.log('Root path:', rootPath);
+            
+            if (rootPath) {
+                // Verificar si existe la carpeta src/i18n en la raíz del proyecto
+                const srcI18nPath = _path.join(rootPath, 'src', 'i18n');
+                console.log('Checking src/i18n path:', srcI18nPath);
+                
+                if (EIJEFileSystem.existsSync(srcI18nPath)) {
+                    console.log('src/i18n directory exists');
+                    try {
+                        const stats = EIJEFileSystem.statSync(srcI18nPath);
+                        if (stats.isDirectory()) {
+                            // Verificar si hay archivos JSON
+                            const i18nFiles = EIJEFileSystem.readdirSync(srcI18nPath);
+                            console.log('Files in src/i18n:', i18nFiles);
+                            const hasJsonFiles = i18nFiles.some(file => file.endsWith('.json'));
+                            
+                            if (hasJsonFiles) {
+                                console.log('Found src/i18n directory with JSON files');
+                                workspaceFolders.push({
+                                    name: 'src',
+                                    path: 'src/i18n'
+                                });
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error checking src/i18n directory:', error);
+                    }
+                } else {
+                    console.log('src/i18n directory does not exist');
+                }
+                
+                // Intentar buscar cualquier carpeta i18n en el proyecto
+                console.log('Searching for any i18n folder in the project');
+                this.findAnyI18nFolder(rootPath, workspaceFolders);
             }
             
-            // Para cada carpeta del espacio de trabajo, buscar directorios i18n
-            for (const folder of vscodeWorkspaceFolders) {
-                this.findI18nDirectoriesInFolder(folder.uri.fsPath, "", workspaceFolders);
+            // Continuar con la búsqueda normal si hay carpetas de espacio de trabajo
+            if (vscodeWorkspaceFolders && vscodeWorkspaceFolders.length > 0) {
+                console.log(`Searching for i18n directories in ${vscodeWorkspaceFolders.length} workspace folders`);
+                
+                // Para cada carpeta del espacio de trabajo, buscar directorios i18n
+                for (const folder of vscodeWorkspaceFolders) {
+                    console.log(`Searching in workspace folder: ${folder.uri.fsPath}`);
+                    this.findI18nDirectoriesInFolder(folder.uri.fsPath, "", workspaceFolders);
+                }
+            } else {
+                console.log('No workspace folders found in vscode.workspace.workspaceFolders');
             }
+            
+            console.log(`Found ${workspaceFolders.length} i18n directories:`, workspaceFolders);
         } catch (error) {
             console.error('Error finding i18n directories:', error);
         }
         
         return workspaceFolders;
+    }
+    
+    /**
+     * Busca cualquier carpeta i18n en el proyecto
+     * @param rootPath Ruta raíz del proyecto
+     * @param result Array donde se almacenarán los resultados
+     */
+    private static findAnyI18nFolder(rootPath: string, result: Array<{name: string, path: string}>): void {
+        try {
+            // Verificar si la carpeta i18n existe directamente en la raíz
+            const i18nPath = _path.join(rootPath, 'i18n');
+            if (EIJEFileSystem.existsSync(i18nPath) && EIJEFileSystem.statSync(i18nPath).isDirectory()) {
+                const i18nFiles = EIJEFileSystem.readdirSync(i18nPath);
+                const hasJsonFiles = i18nFiles.some(file => file.endsWith('.json'));
+                
+                if (hasJsonFiles) {
+                    console.log('Found i18n directory in root with JSON files');
+                    result.push({
+                        name: '/',
+                        path: 'i18n'
+                    });
+                    return;
+                }
+            }
+            
+            // Buscar en carpetas comunes
+            const commonFolders = ['src', 'app', 'public', 'assets', 'locales'];
+            for (const folder of commonFolders) {
+                const folderPath = _path.join(rootPath, folder);
+                if (EIJEFileSystem.existsSync(folderPath) && EIJEFileSystem.statSync(folderPath).isDirectory()) {
+                    // Verificar si hay una carpeta i18n dentro
+                    const i18nPath = _path.join(folderPath, 'i18n');
+                    if (EIJEFileSystem.existsSync(i18nPath) && EIJEFileSystem.statSync(i18nPath).isDirectory()) {
+                        const i18nFiles = EIJEFileSystem.readdirSync(i18nPath);
+                        const hasJsonFiles = i18nFiles.some(file => file.endsWith('.json'));
+                        
+                        if (hasJsonFiles) {
+                            console.log(`Found i18n directory in ${folder} with JSON files`);
+                            result.push({
+                                name: folder,
+                                path: `${folder}/i18n`
+                            });
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error in findAnyI18nFolder:', error);
+        }
     }
     
     /**
@@ -156,10 +315,43 @@ export class EIJEConfiguration {
                         const displayPath = relativePath ? relativePath : "/";
                         // Usar ruta relativa en lugar de absoluta
                         const relativei18nPath = relativePath ? `${relativePath}/i18n` : "i18n";
-                        result.push({
-                            name: displayPath,
-                            path: relativei18nPath
-                        });
+                        
+                        // Verificar si esta carpeta ya está en los resultados para evitar duplicados
+                        const exists = result.some(folder => folder.path === relativei18nPath);
+                        if (!exists) {
+                            result.push({
+                                name: displayPath,
+                                path: relativei18nPath
+                            });
+                            console.log(`Found i18n directory: ${relativei18nPath}`);
+                        }
+                    }
+                }
+            }
+            
+            // También verificar si el directorio actual se llama "i18n"
+            if (_path.basename(currentPath) === "i18n") {
+                const stats = EIJEFileSystem.statSync(currentPath);
+                
+                if (stats.isDirectory()) {
+                    // Verificar si hay archivos JSON en el directorio i18n
+                    const i18nFiles = EIJEFileSystem.readdirSync(currentPath);
+                    const hasJsonFiles = i18nFiles.some(file => file.endsWith('.json'));
+                    
+                    if (hasJsonFiles) {
+                        // Crear un nombre descriptivo para la carpeta
+                        const parentPath = _path.dirname(relativePath);
+                        const displayPath = parentPath && parentPath !== "." ? parentPath : "/";
+                        
+                        // Usar ruta relativa en lugar de absoluta
+                        const exists = result.some(folder => folder.path === relativePath);
+                        if (!exists) {
+                            result.push({
+                                name: displayPath,
+                                path: relativePath
+                            });
+                            console.log(`Found i18n directory (direct): ${relativePath}`);
+                        }
                     }
                 }
             }
@@ -173,11 +365,17 @@ export class EIJEConfiguration {
                     }
                     
                     const itemPath = _path.join(currentPath, item);
-                    const stats = EIJEFileSystem.statSync(itemPath);
                     
-                    if (stats.isDirectory()) {
-                        const newRelativePath = relativePath ? _path.join(relativePath, item) : item;
-                        this.findI18nDirectoriesInFolder(basePath, newRelativePath, result);
+                    try {
+                        const stats = EIJEFileSystem.statSync(itemPath);
+                        
+                        if (stats.isDirectory()) {
+                            const newRelativePath = relativePath ? _path.join(relativePath, item) : item;
+                            this.findI18nDirectoriesInFolder(basePath, newRelativePath, result);
+                        }
+                    } catch (error) {
+                        // Ignorar errores al acceder a directorios específicos
+                        console.error(`Error accessing directory ${itemPath}:`, error);
                     }
                 }
             }
@@ -187,31 +385,198 @@ export class EIJEConfiguration {
     }
     
     /**
-     * Muestra un mensaje al usuario preguntando si desea crear un directorio i18n
+     * Busca todas las carpetas i18n en el proyecto
+     * @param rootPath Ruta raíz del proyecto
+     * @returns Array de objetos con información de las carpetas i18n encontradas
      */
-    private static showCreateI18nDirectoryPrompt(): void {
-        // Utilizamos vscode.window.showInformationMessage para mostrar un mensaje con botones
-        vscode.window.showInformationMessage(
-            'No se encontraron directorios i18n en el proyecto. ¿Desea crear uno?',
-            'Sí', 'No'
-        ).then(selection => {
-            if (selection === 'Sí') {
-                this.createI18nDirectory();
-            }
-        });
+    private static findAllI18nFolders(rootPath: string): EIJEFolder[] {
+        console.log('Finding all i18n folders in:', rootPath);
+        const result: EIJEFolder[] = [];
+        
+        try {
+            // Buscar recursivamente en todas las carpetas
+            this.findI18nFoldersRecursive(rootPath, '', result);
+            
+            console.log(`Found ${result.length} i18n folders:`, result);
+        } catch (error) {
+            console.error('Error finding i18n folders:', error);
+        }
+        
+        return result;
     }
     
     /**
-     * Crea un directorio i18n en la raíz del proyecto
+     * Busca recursivamente carpetas i18n en el proyecto
+     * @param basePath Ruta base
+     * @param relativePath Ruta relativa
+     * @param result Array donde se almacenarán los resultados
      */
-    private static createI18nDirectory(): void {
+    private static findI18nFoldersRecursive(basePath: string, relativePath: string, result: EIJEFolder[]): void {
+        try {
+            const currentPath = relativePath ? _path.join(basePath, relativePath) : basePath;
+            
+            // Verificar si el directorio actual es una carpeta i18n
+            if (_path.basename(currentPath) === 'i18n') {
+                try {
+                    // Verificar si hay archivos JSON en la carpeta
+                    const files = EIJEFileSystem.readdirSync(currentPath);
+                    const hasJsonFiles = files.some(file => file.endsWith('.json'));
+                    
+                    if (hasJsonFiles) {
+                        // Determinar el nombre de la carpeta
+                        const parentDir = _path.dirname(relativePath);
+                        const displayName = parentDir && parentDir !== '.' ? parentDir : '/';
+                        
+                        // Verificar si esta carpeta ya está en los resultados
+                        const exists = result.some(folder => folder.path === relativePath);
+                        if (!exists) {
+                            result.push({
+                                name: displayName,
+                                path: relativePath
+                            });
+                            console.log(`Found i18n folder: ${relativePath}`);
+                        }
+                        
+                        // No seguir buscando en esta rama
+                        return;
+                    }
+                } catch (error) {
+                    console.error(`Error checking i18n folder ${currentPath}:`, error);
+                }
+            }
+            
+            // Buscar carpetas i18n en el directorio actual
+            try {
+                const items = EIJEFileSystem.readdirSync(currentPath);
+                
+                // Verificar si hay una carpeta i18n en el directorio actual
+                if (items.includes('i18n')) {
+                    const i18nPath = _path.join(currentPath, 'i18n');
+                    
+                    try {
+                        const stats = EIJEFileSystem.statSync(i18nPath);
+                        
+                        if (stats.isDirectory()) {
+                            // Verificar si hay archivos JSON en la carpeta
+                            const files = EIJEFileSystem.readdirSync(i18nPath);
+                            const hasJsonFiles = files.some(file => file.endsWith('.json'));
+                            
+                            if (hasJsonFiles) {
+                                // Determinar el nombre de la carpeta
+                                const displayName = relativePath || '/';
+                                const relativei18nPath = relativePath ? `${relativePath}/i18n` : 'i18n';
+                                
+                                // Verificar si esta carpeta ya está en los resultados
+                                const exists = result.some(folder => folder.path === relativei18nPath);
+                                if (!exists) {
+                                    result.push({
+                                        name: displayName,
+                                        path: relativei18nPath
+                                    });
+                                    console.log(`Found i18n folder: ${relativei18nPath}`);
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error(`Error checking i18n folder ${i18nPath}:`, error);
+                    }
+                }
+                
+                // Buscar en subdirectorios (limitar la profundidad para evitar búsquedas muy largas)
+                if (!relativePath || relativePath.split(_path.sep).length < 3) {
+                    for (const item of items) {
+                        // Ignorar directorios ocultos y node_modules
+                        if (item.startsWith('.') || item === 'node_modules') {
+                            continue;
+                        }
+                        
+                        const itemPath = _path.join(currentPath, item);
+                        
+                        try {
+                            const stats = EIJEFileSystem.statSync(itemPath);
+                            
+                            if (stats.isDirectory()) {
+                                const newRelativePath = relativePath ? _path.join(relativePath, item) : item;
+                                this.findI18nFoldersRecursive(basePath, newRelativePath, result);
+                            }
+                        } catch (error) {
+                            // Ignorar errores al acceder a directorios específicos
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(`Error reading directory ${currentPath}:`, error);
+            }
+        } catch (error) {
+            console.error(`Error in findI18nFoldersRecursive for ${relativePath}:`, error);
+        }
+    }
+    
+    /**
+     * Muestra un mensaje al usuario preguntando si desea crear un directorio i18n
+     * @param panel Panel del webview para enviar el mensaje SweetAlert2
+     */
+    public static showCreateI18nDirectoryPrompt(panel?: vscode.WebviewPanel): void {
+        // Obtener los textos del servicio de i18n
+        const i18n = I18nService.getInstance();
+        const title = i18n.t('ui.messages.noI18nFoldersFound');
+        const text = i18n.t('ui.messages.createI18nFolder');
+        
+        if (panel) {
+            // Si tenemos un panel webview, usamos SweetAlert2
+            panel.webview.postMessage({
+                command: 'showCreateI18nPrompt',
+                title: title,
+                text: text
+            });
+        } else {
+            // Si no hay panel webview, usamos el diálogo nativo de VS Code
+            vscode.window.showInformationMessage(
+                `${title}. ${text}`,
+                i18n.t('ui.buttons.yes', 'Sí'), 
+                i18n.t('ui.buttons.no', 'No')
+            ).then(selection => {
+                if (selection === i18n.t('ui.buttons.yes', 'Sí')) {
+                    this.createI18nDirectory();
+                }
+            });
+        }
+    }
+    
+    /**
+     * Crea un directorio i18n en la ruta especificada o en la raíz del proyecto
+     * @param customPath Ruta personalizada relativa a la raíz del proyecto (opcional)
+     * @returns La ruta relativa del directorio i18n creado, o null si no se creó
+     */
+    public static createI18nDirectory(customPath?: string): string | null {
         try {
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             if (!workspaceFolder) {
-                return;
+                return null;
             }
             
-            const i18nPath = _path.join(workspaceFolder.uri.fsPath, 'i18n');
+            // Determinar la ruta donde se creará el directorio i18n
+            let i18nParentPath = workspaceFolder.uri.fsPath;
+            let relativePath = '';
+            
+            if (customPath) {
+                // Eliminar "i18n" del final si está presente
+                const cleanPath = customPath.endsWith('/i18n') || customPath.endsWith('\\i18n') 
+                    ? customPath.slice(0, -5) 
+                    : customPath;
+                
+                relativePath = cleanPath;
+                i18nParentPath = _path.join(workspaceFolder.uri.fsPath, cleanPath);
+                
+                // Crear directorios intermedios si no existen
+                if (!EIJEFileSystem.existsSync(i18nParentPath)) {
+                    EIJEFileSystem.mkdirSync(i18nParentPath, { recursive: true });
+                }
+            }
+            
+            // Ruta completa al directorio i18n
+            const i18nPath = _path.join(i18nParentPath, 'i18n');
+            const relativei18nPath = relativePath ? `${relativePath}/i18n` : 'i18n';
             
             // Crear el directorio i18n si no existe
             if (!EIJEFileSystem.existsSync(i18nPath)) {
@@ -226,22 +591,27 @@ export class EIJEConfiguration {
                 }, null, 2));
                 
                 // Actualizar el archivo de configuración para incluir el nuevo directorio
-                this.updateConfigWithNewI18nDirectory(i18nPath);
+                this.updateConfigWithNewI18nDirectory(relativei18nPath, relativePath || '/');
                 
-                // Mostrar mensaje de éxito
-                vscode.window.showInformationMessage('Directorio i18n creado con éxito.');
+                // No mostramos mensaje aquí, lo mostrará el manager con Flashy
+                
+                return relativei18nPath;
             }
+            
+            return null;
         } catch (error) {
             console.error('Error creating i18n directory:', error);
             vscode.window.showErrorMessage('Error al crear el directorio i18n.');
+            return null;
         }
     }
     
     /**
      * Actualiza el archivo de configuración para incluir el nuevo directorio i18n
-     * @param i18nPath Ruta del directorio i18n creado
+     * @param i18nPath Ruta relativa al directorio i18n
+     * @param displayName Nombre a mostrar para la carpeta (por defecto "/")
      */
-    private static updateConfigWithNewI18nDirectory(i18nPath: string): void {
+    private static updateConfigWithNewI18nDirectory(i18nPath: string, displayName: string = "/"): void {
         try {
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             if (!workspaceFolder) {
@@ -263,13 +633,34 @@ export class EIJEConfiguration {
             
             // Agregar el nuevo directorio a workspaceFolders
             config.workspaceFolders = config.workspaceFolders || [];
-            config.workspaceFolders.push({
-                name: "/",
-                path: i18nPath
-            });
             
-            // Establecer como directorio predeterminado
-            config.defaultWorkspaceFolder = "/";
+            // Verificar si ya existe una carpeta con el mismo nombre o ruta
+            const existingFolderIndex = config.workspaceFolders.findIndex((f: any) => 
+                f.name === displayName || f.path === i18nPath
+            );
+            
+            if (existingFolderIndex >= 0) {
+                // Actualizar la carpeta existente
+                config.workspaceFolders[existingFolderIndex] = {
+                    name: displayName,
+                    path: i18nPath,
+                    visibleColumns: config.workspaceFolders[existingFolderIndex].visibleColumns || [],
+                    hiddenColumns: config.workspaceFolders[existingFolderIndex].hiddenColumns || []
+                };
+            } else {
+                // Agregar nueva carpeta
+                config.workspaceFolders.push({
+                    name: displayName,
+                    path: i18nPath,
+                    visibleColumns: [],
+                    hiddenColumns: []
+                });
+            }
+            
+            // Establecer como directorio predeterminado si no hay uno configurado
+            if (!config.defaultWorkspaceFolder) {
+                config.defaultWorkspaceFolder = displayName;
+            }
             
             // Guardar la configuración actualizada
             EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
@@ -897,6 +1288,46 @@ export class EIJEConfiguration {
             console.error('Error updating workspace folder config:', e);
         }
     }
+    
+    static async saveWorkspaceFolders(folders: Array<{name: string, path: string}>): Promise<void> {
+        if (this.isWebEnvironment()) {
+            // En entorno web, usar configuración local de archivo
+            try {
+                const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+                if (workspaceFolder) {
+                    const configPath = await this.getConfigPathAsync(workspaceFolder);
+                    let config: any = {};
+                    
+                    if (await EIJEFileSystem.exists(configPath)) {
+                        const configContent = await EIJEFileSystem.readFile(configPath);
+                        config = JSON.parse(configContent.toString());
+                    }
+                    
+                    // Actualizar las carpetas de trabajo
+                    config.workspaceFolders = folders;
+                    
+                    // Guardar la configuración actualizada
+                    await EIJEFileSystem.writeFile(configPath, JSON.stringify(config, null, 2));
+                    
+                    // Actualizar el caché
+                    this._configCache['config_workspaceFolders'] = folders;
+                }
+            } catch (e) {
+                console.error('Error saving workspace folders:', e);
+            }
+        } else {
+            // En entorno de escritorio, usar configuración de VS Code
+            try {
+                const config = vscode.workspace.getConfiguration();
+                await config.update('i18nJsonEditor.workspaceFolders', folders, vscode.ConfigurationTarget.Global);
+                
+                // Actualizar el caché
+                this._configCache['config_workspaceFolders'] = folders;
+            } catch (e) {
+                console.error('Error saving workspace folders:', e);
+            }
+        }
+    }
 
     static async saveDefaultWorkspaceFolder(folderName: string): Promise<void> {
         if (this.isWebEnvironment()) {
@@ -955,13 +1386,72 @@ export class EIJEConfiguration {
     }
 
     static get WORKSPACE_FOLDERS(): EIJEFolder[] {
+        console.log('Getting WORKSPACE_FOLDERS');
+        
+        // Obtener carpetas de la configuración
         const folders = this.getConfigValue<EIJEFolder[]>('workspaceFolders', 'i18nJsonEditor.workspaceFolders', []);
+        console.log('Folders from config:', folders);
+        
         let workspaceFolder: vscode.WorkspaceFolder | undefined = vscode.workspace.workspaceFolders?.[0];
+        console.log('Workspace folder:', workspaceFolder?.uri.fsPath);
 
         if (!workspaceFolder) {
+            console.log('No workspace folder found, returning empty array');
             return [];
         }
 
+        // Si no hay carpetas en la configuración, buscar carpetas i18n en el proyecto
+        if (!folders || folders.length === 0) {
+            console.log('No folders in config, searching for i18n directories');
+            
+            // Buscar todas las carpetas i18n en el proyecto
+            const foundFolders = this.findAllI18nFolders(workspaceFolder.uri.fsPath);
+            console.log('Found i18n folders:', foundFolders);
+            
+            if (foundFolders.length > 0) {
+                // Actualizar la configuración con las carpetas encontradas
+                const configPath = this.getConfigPath(workspaceFolder);
+                if (configPath && EIJEFileSystem.existsSync(configPath)) {
+                    try {
+                        const configContent = EIJEFileSystem.readFileSync(configPath);
+                        if (configContent) {
+                            const config = JSON.parse(configContent);
+                            
+                            // Agregar las carpetas encontradas a la configuración
+                            config.workspaceFolders = config.workspaceFolders || [];
+                            
+                            for (const folder of foundFolders) {
+                                config.workspaceFolders.push({
+                                    name: folder.name,
+                                    path: folder.path,
+                                    visibleColumns: [],
+                                    hiddenColumns: []
+                                });
+                            }
+                            
+                            // Establecer la primera carpeta como predeterminada
+                            if (!config.defaultWorkspaceFolder && foundFolders.length > 0) {
+                                config.defaultWorkspaceFolder = foundFolders[0].name;
+                            }
+                            
+                            // Guardar la configuración actualizada
+                            EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                            console.log('Updated config with found i18n folders');
+                            
+                            // Limpiar la caché de configuración
+                            this.clearConfigCache();
+                        }
+                    } catch (error) {
+                        console.error('Error updating config with found i18n folders:', error);
+                    }
+                }
+                
+                // Devolver las carpetas encontradas
+                return foundFolders;
+            }
+        }
+
+        // Verificar las carpetas de la configuración
         const _folders: EIJEFolder[] = [];
         folders?.forEach(d => {
             // Verificar si la ruta es absoluta o relativa
@@ -970,18 +1460,25 @@ export class EIJEConfiguration {
             if (isAbsolutePath) {
                 // Si es una ruta absoluta, verificar que exista
                 if (EIJEFileSystem.existsSync(d.path)) {
+                    console.log(`Folder exists (absolute path): ${d.path}`);
                     _folders.push({ name: d.name, path: d.path });
+                } else {
+                    console.log(`Folder does not exist (absolute path): ${d.path}`);
                 }
             } else {
                 // Si es una ruta relativa, verificar que exista la ruta absoluta correspondiente
                 const absolutePath = _path.join(workspaceFolder.uri.fsPath, d.path);
                 if (EIJEFileSystem.existsSync(absolutePath)) {
+                    console.log(`Folder exists (relative path): ${d.path} -> ${absolutePath}`);
                     // Mantener la ruta relativa en la configuración
                     _folders.push({ name: d.name, path: d.path });
+                } else {
+                    console.log(`Folder does not exist (relative path): ${d.path} -> ${absolutePath}`);
                 }
             }
         });
 
+        console.log('Returning folders:', _folders);
         return _folders !== undefined ? _folders : [];
     }
 
