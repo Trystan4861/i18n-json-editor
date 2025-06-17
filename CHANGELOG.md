@@ -27,49 +27,64 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [v1.0.3]
 
 ### Added
-- Menú contextual para columnas de idioma con opciones avanzadas
-- Función para ordenar traducciones alfabéticamente (ascendente/descendente) por idioma
-- Opción para ocultar columnas de idioma directamente desde el encabezado
-- Función para eliminar archivos de idioma con confirmación doble
+- Context menu for language columns with advanced options
+-  Function to sort translations alphabetically (ascending/descending) by language
+- Option to hide language columns directly from the header
+- Function to delete language files with double confirmation
 
 ### Changed
-- Mejorado el sistema de gestión de visibilidad de columnas
-- Optimizado el manejo de la configuración para evitar problemas de caché
+- Improved column visibility management system
+- Optimized configuration handling to avoid cache issues
 
 ### Fixed
-- Corregidos problemas con la actualización de la interfaz al cambiar la visibilidad de columnas
-- Mejorado el manejo de errores en operaciones de archivo
+- Fixed issues with UI updates when changing column visibility
+- Improved error handling in file operations
 
 ## [v1.0.2]
 
 ### Changed
-- Reemplazados modales personalizados por SweetAlert2 para diálogos de confirmación
-- Mejorada la experiencia de usuario en diálogos de selección múltiple
-- Añadidos estilos personalizados para integrar SweetAlert2 con el tema de VSCode
+- Replaced custom modals with SweetAlert2 for confirmation dialogs
+- Improved user experience in multi-selection dialogs
+- Added custom styles to integrate SweetAlert2 with the VSCode theme
 
 ## [v1.0.1]
 
 ### Added
-- Soporte para múltiples carpetas de trabajo
-- Selector de carpetas de trabajo en la interfaz
-- Control de cambios sin guardar al cambiar entre carpetas
+- Support for multiple workspaces
+- Workspace folder selector in the interface
+- Unsaved changes control when switching between folders
 
 ### Fixed
-- Reemplazados diálogos modales nativos por personalizados para evitar restricciones del sandbox
-- Unificado el sistema de notificaciones para evitar mensajes duplicados
-- Corregido el manejo de confirmaciones al descartar cambios
+- Replaced native modal dialogs with custom ones to avoid sandbox restrictions
+- Unified notification system to avoid duplicate messages
+- Fixed confirmation handling when discarding changes
 
 ## [v1.0.0]
 
 ### Added
-- Botón lateral para abrir el editor de traducciones
-- Función para encontrar las siguientes traducciones faltantes
-- Opción para añadir un nuevo idioma
-- Soporte para idiomas RTL (derecha a izquierda)
-- Función para mostrar/ocultar idiomas en la interfaz del editor
-- Interfaz de traducción para el propio editor
-- Botones de recarga para actualizar el contenido
-- Advertencia de cambios no guardados
+- Side button to open the translation editor
+- Function to find the next missing translations
+- Option to add a new language
+- Support for RTL (right-to-left) languages
+- Function to show/hide languages in the editor interface
+- Translation interface for the editor itself
+- Reload buttons to refresh content
+- Unsaved changes warning
+
+### Changed
+
+- Code refactoring to improve structure
+- Modifications in package.json
+- Configuration moved to the .vscode folder
+
+### Fixed
+- Fixed the side button
+- Only one instance of the editor can be open at a time
+- Fix to keep previously hidden languages removed
+- Error message correction
+- Fix to clear the search bar
+- UI issues fixed
+- Fixed the status bar button
 
 ### Changed
 - Refactorización del código para mejorar la estructura
