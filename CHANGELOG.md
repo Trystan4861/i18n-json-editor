@@ -4,6 +4,12 @@ All notable changes to the "ei18n-json-editor" extension will be documented in t
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [v1.0.4]
+
+### Fixed
+- Corregido el error "No hay ningún proveedor de datos registrado que pueda proporcionar datos de la vista" que ocurría en la extensión compilada
+- Mejorado el registro del TreeDataProvider para garantizar compatibilidad entre desarrollo y producción
+
 ## [v1.0.3]
 
 ### Added

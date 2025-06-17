@@ -45,8 +45,15 @@ export async function activate(context: vscode.ExtensionContext) {
         }
     }
     
+    // Registrar explícitamente el TreeDataProvider primero
+    const treeDataProvider = new SimpleTreeDataProvider();
+    context.subscriptions.push(
+        vscode.window.registerTreeDataProvider('trystan4861-eije-view', treeDataProvider)
+    );
+    
+    // Luego crear la vista usando el mismo TreeDataProvider
     const treeView = vscode.window.createTreeView('trystan4861-eije-view', { 
-        treeDataProvider: new SimpleTreeDataProvider(),
+        treeDataProvider: treeDataProvider,
         showCollapseAll: false
     });
     
