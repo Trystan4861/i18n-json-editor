@@ -1409,6 +1409,10 @@ export class EIJEConfiguration {
             console.log('Found i18n folders:', foundFolders);
             
             if (foundFolders.length > 0) {
+                // Normalizar las carpetas encontradas (eliminar duplicados y normalizar rutas)
+                const normalizedFolders = this.normalizeI18nFolders(foundFolders);
+                console.log('Normalized i18n folders:', normalizedFolders);
+                
                 // Actualizar la configuración con las carpetas encontradas
                 const configPath = this.getConfigPath(workspaceFolder);
                 if (configPath && EIJEFileSystem.existsSync(configPath)) {
@@ -1418,9 +1422,9 @@ export class EIJEConfiguration {
                             const config = JSON.parse(configContent);
                             
                             // Agregar las carpetas encontradas a la configuración
-                            config.workspaceFolders = config.workspaceFolders || [];
+                            config.workspaceFolders = [];
                             
-                            for (const folder of foundFolders) {
+                            for (const folder of normalizedFolders) {
                                 config.workspaceFolders.push({
                                     name: folder.name,
                                     path: folder.path,
@@ -1430,8 +1434,8 @@ export class EIJEConfiguration {
                             }
                             
                             // Establecer la primera carpeta como predeterminada
-                            if (!config.defaultWorkspaceFolder && foundFolders.length > 0) {
-                                config.defaultWorkspaceFolder = foundFolders[0].name;
+                            if (!config.defaultWorkspaceFolder && normalizedFolders.length > 0) {
+                                config.defaultWorkspaceFolder = normalizedFolders[0].name;
                             }
                             
                             // Guardar la configuración actualizada
@@ -1446,40 +1450,107 @@ export class EIJEConfiguration {
                     }
                 }
                 
-                // Devolver las carpetas encontradas
-                return foundFolders;
+                // Devolver las carpetas encontradas normalizadas
+                return normalizedFolders;
             }
         }
 
         // Verificar las carpetas de la configuración
         const _folders: EIJEFolder[] = [];
-        folders?.forEach(d => {
-            // Verificar si la ruta es absoluta o relativa
-            const isAbsolutePath = d.path.includes(':') || d.path.startsWith('/');
+        
+        // Normalizar las carpetas de la configuración
+        if (folders && folders.length > 0) {
+            // Primero, normalizar las rutas (convertir todas las barras invertidas a barras normales)
+            const normalizedFolders = folders.map(folder => ({
+                ...folder,
+                path: folder.path.replace(/\\/g, '/')
+            }));
             
-            if (isAbsolutePath) {
-                // Si es una ruta absoluta, verificar que exista
-                if (EIJEFileSystem.existsSync(d.path)) {
-                    console.log(`Folder exists (absolute path): ${d.path}`);
-                    _folders.push({ name: d.name, path: d.path });
+            // Eliminar duplicados basados en la ruta normalizada
+            const uniqueFolders = this.removeDuplicateFolders(normalizedFolders);
+            
+            // Verificar que las carpetas existan
+            for (const folder of uniqueFolders) {
+                // Verificar si la ruta es absoluta o relativa
+                const isAbsolutePath = folder.path.includes(':') || folder.path.startsWith('/');
+                
+                if (isAbsolutePath) {
+                    // Si es una ruta absoluta, verificar que exista
+                    if (EIJEFileSystem.existsSync(folder.path)) {
+                        console.log(`Folder exists (absolute path): ${folder.path}`);
+                        _folders.push(folder);
+                    } else {
+                        console.log(`Folder does not exist (absolute path): ${folder.path}`);
+                    }
                 } else {
-                    console.log(`Folder does not exist (absolute path): ${d.path}`);
-                }
-            } else {
-                // Si es una ruta relativa, verificar que exista la ruta absoluta correspondiente
-                const absolutePath = _path.join(workspaceFolder.uri.fsPath, d.path);
-                if (EIJEFileSystem.existsSync(absolutePath)) {
-                    console.log(`Folder exists (relative path): ${d.path} -> ${absolutePath}`);
-                    // Mantener la ruta relativa en la configuración
-                    _folders.push({ name: d.name, path: d.path });
-                } else {
-                    console.log(`Folder does not exist (relative path): ${d.path} -> ${absolutePath}`);
+                    // Si es una ruta relativa, verificar que exista la ruta absoluta correspondiente
+                    const absolutePath = _path.join(workspaceFolder.uri.fsPath, folder.path);
+                    if (EIJEFileSystem.existsSync(absolutePath)) {
+                        console.log(`Folder exists (relative path): ${folder.path} -> ${absolutePath}`);
+                        // Mantener la ruta relativa en la configuración
+                        _folders.push(folder);
+                    } else {
+                        console.log(`Folder does not exist (relative path): ${folder.path} -> ${absolutePath}`);
+                    }
                 }
             }
-        });
+        }
 
         console.log('Returning folders:', _folders);
-        return _folders !== undefined ? _folders : [];
+        return _folders;
+    }
+    
+    /**
+     * Normaliza las carpetas i18n encontradas
+     * @param folders Carpetas i18n encontradas
+     * @returns Carpetas i18n normalizadas
+     */
+    private static normalizeI18nFolders(folders: EIJEFolder[]): EIJEFolder[] {
+        if (!folders || folders.length === 0) {
+            return [];
+        }
+        
+        // Normalizar las rutas (convertir todas las barras invertidas a barras normales)
+        const normalizedFolders = folders.map(folder => ({
+            name: folder.name,
+            path: folder.path.replace(/\\/g, '/')
+        }));
+        
+        // Eliminar duplicados
+        return this.removeDuplicateFolders(normalizedFolders);
+    }
+    
+    /**
+     * Elimina carpetas duplicadas basadas en la ruta
+     * @param folders Carpetas a procesar
+     * @returns Carpetas sin duplicados
+     */
+    private static removeDuplicateFolders(folders: EIJEFolder[]): EIJEFolder[] {
+        const uniquePaths = new Map<string, EIJEFolder>();
+        
+        // Usar un Map para mantener solo una entrada por ruta
+        for (const folder of folders) {
+            const normalizedPath = folder.path.toLowerCase();
+            
+            // Si la carpeta ya existe y tiene configuración adicional, preservarla
+            if (uniquePaths.has(normalizedPath)) {
+                const existingFolder = uniquePaths.get(normalizedPath)!;
+                
+                // Preservar visibleColumns y hiddenColumns si existen
+                if (folder.visibleColumns && !existingFolder.visibleColumns) {
+                    existingFolder.visibleColumns = folder.visibleColumns;
+                }
+                
+                if (folder.hiddenColumns && !existingFolder.hiddenColumns) {
+                    existingFolder.hiddenColumns = folder.hiddenColumns;
+                }
+            } else {
+                // Si la carpeta no existe, agregarla
+                uniquePaths.set(normalizedPath, { ...folder });
+            }
+        }
+        
+        return Array.from(uniquePaths.values());
     }
 
     // Método para inicializar configuración de forma asíncrona en entorno web
