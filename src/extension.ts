@@ -27,50 +27,16 @@ export async function activate(context: vscode.ExtensionContext) {
         myStatusBarItem.show();
     }
 
-    // Al hacer clic en el icono de la barra de actividad, queremos que se abra directamente el editor
-    // Mantenemos un TreeDataProvider mínimo para mostrar algo en la vista
-    class SimpleTreeDataProvider implements vscode.TreeDataProvider<string> {
-        private _onDidChangeTreeData: vscode.EventEmitter<string | undefined | null | void> = new vscode.EventEmitter<string | undefined | null | void>();
-        readonly onDidChangeTreeData: vscode.Event<string | undefined | null | void> = this._onDidChangeTreeData.event;
-        
-        getTreeItem(element: string): vscode.TreeItem {
-            return new vscode.TreeItem(element, vscode.TreeItemCollapsibleState.None);
-        }
-        
-        getChildren(element?: string): Thenable<string[]> {
-            if (element) {
-                return Promise.resolve([]);
-            }
-            return Promise.resolve([i18n.t('extension.openingEditor')]);
-        }
-    }
-    
-    // Registrar explícitamente el TreeDataProvider primero
-    const treeDataProvider = new SimpleTreeDataProvider();
-    context.subscriptions.push(
-        vscode.window.registerTreeDataProvider('trystan4861-eije-view', treeDataProvider)
-    );
-    
-    // Luego crear la vista usando el mismo TreeDataProvider
-    const treeView = vscode.window.createTreeView('trystan4861-eije-view', { 
-        treeDataProvider: treeDataProvider,
-        showCollapseAll: false
+    // Registrar un comando para abrir el editor directamente desde la barra de actividad
+    const openFromActivityBarCommand = vscode.commands.registerCommand('ei18n-json-editor.openFromActivityBar', () => {
+        vscode.commands.executeCommand('ei18n-json-editor').then(() => {
+            // Opcionalmente, ocultar la vista después de abrir el editor
+            vscode.commands.executeCommand('workbench.action.toggleSidebarVisibility');
+        });
     });
     
-    // Cuando la vista se vuelve visible, automáticamente abrir el editor
-    treeView.onDidChangeVisibility(e => {
-        if (e.visible) {
-            // Pequeño retraso para asegurar que todo esté listo
-            setTimeout(() => {
-                vscode.commands.executeCommand('ei18n-json-editor').then(() => {
-                    // Opcionalmente, ocultar la vista después de abrir el editor
-                    vscode.commands.executeCommand('workbench.action.toggleSidebarVisibility');
-                });
-            }, 100);
-        }
-    });
+    context.subscriptions.push(openFromActivityBarCommand);
     
-    context.subscriptions.push(treeView);
-    
+    // Registrar el proveedor del editor
     context.subscriptions.push(EIJEEditorProvider.register(context));
 }

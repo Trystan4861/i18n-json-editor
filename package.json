@@ -38,6 +38,11 @@
                 "command": "ei18n-json-editor",
                 "title": "Enhanced i18n json editor",
                 "icon": "media/images/ei18n_logo.svg"
+            },
+            {
+                "command": "ei18n-json-editor.openFromActivityBar",
+                "title": "Open Enhanced i18n json editor",
+                "icon": "media/images/ei18n_logo.svg"
             }
         ],
         "menus": {
@@ -51,6 +56,17 @@
             "commandPalette": [
                 {
                     "command": "ei18n-json-editor"
+                },
+                {
+                    "command": "ei18n-json-editor.openFromActivityBar",
+                    "when": "false"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "ei18n-json-editor",
+                    "group": "navigation",
+                    "when": "view == trystan4861-eije"
                 }
             ]
         },
@@ -64,14 +80,11 @@
             ]
         },
         "views": {
-            "trystan4861-eije": [
-                {
-                    "id": "trystan4861-eije-view",
-                    "name": "Enhanced i18n.json Editor",
-                    "icon": "media/images/ei18n_logo-black.svg"
-                }
-            ]
+            "trystan4861-eije": []
         },
+        "activationEvents": [
+            "onView:trystan4861-eije"
+        ],
 
         "configuration": {
             "title": "Enhanced i18n json editor",
