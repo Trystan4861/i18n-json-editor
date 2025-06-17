@@ -12,6 +12,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Fixed issue where existing i18n folders were not being detected properly
 - Added detailed logging for better troubleshooting of folder detection issues
 - Optimized workspace folder configuration to automatically include found i18n directories
+- Fixed issue with duplicate i18n folders appearing in configuration
+- Normalized path formats to ensure consistent use of forward slashes
+- Preserved folder configuration when removing duplicates
 
 ## [v1.0.4]
 
