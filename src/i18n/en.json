@@ -51,10 +51,15 @@
       "chage_view_mode": "Change view mode",
       "error_translations": "There are some translation errors",
       "select_workspace_folder": "Select workspace folder",
-      "discard_changes": "Discard changes"
+      "discard_changes": "Discard changes",
+      "configure_extension": "Configure extension"
     },
     "pagination": {
-      "itemsPerPage": "Items per page"
+      "itemsPerPage": "Items per page",
+      "firstPage": "First page",
+      "previousPage": "Previous",
+      "nextPage": "Next",
+      "lastPage": "Last page"
     },
     "messages": {
       "saved": "i18n files saved",
@@ -83,7 +88,8 @@
       "i18nFolderCreated": "i18n directory created successfully",
       "i18nFolderCreationError": "Error creating i18n directory",
       "noWorkspaceFolders": "No workspace folders configured",
-      "createI18nToStart": "Please create an i18n folder to start"
+      "createI18nToStart": "Please create an i18n folder to start",
+      "configurationUpdated": "Configuration updated: {setting} = {value}"
     },
     "placeholders": {
       "key": "Key...",

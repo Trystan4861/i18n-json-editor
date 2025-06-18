@@ -31,12 +31,10 @@ export class EIJEDataRenderService {
         }
         render += '<nav class="mt-3">';
         render += '<ul class="pagination justify-content-center">';
-        render += `<li class="page-item ${page.pageNumber <= 1 ? 'disabled' : ''}"><a class="page-link" href="#" onclick="navigate(1)">|<</a></li>`;
-        render += `<li class="page-item ${page.pageNumber - 1 < 1 ? 'disabled' : ''}"><a class="page-link" href="#" onclick="navigate(${page.pageNumber - 1})"><</a></li>`;
-        render += `<li class="page-item ${page.pageNumber + 1 > page.totalPages ? 'disabled' : ''}"><a class="page-link" href="#" onclick="navigate(${
-            page.pageNumber + 1
-        })">></a></li>`;
-        render += `<li class="page-item ${page.pageNumber >= page.totalPages ? 'disabled' : ''}"><a class="page-link" href="#" onclick="navigate(${page.totalPages})">>|</a></li>`;
+        render += `<li title="${I18nService.getInstance().t('ui.pagination.firstPage')}" class="page-item ${page.pageNumber <= 1 ? 'disabled' : ''}"><a class="page-link" href="#" onclick="navigate(1)">|<</a></li>`;
+        render += `<li title="${I18nService.getInstance().t('ui.pagination.previousPage')}" class="page-item ${page.pageNumber - 1 < 1 ? 'disabled' : ''}"><a class="page-link" href="#" onclick="navigate(${page.pageNumber - 1})"><</a></li>`;
+        render += `<li title="${I18nService.getInstance().t('ui.pagination.nextPage')}" class="page-item ${page.pageNumber + 1 > page.totalPages ? 'disabled' : ''}"><a class="page-link" href="#" onclick="navigate(${page.pageNumber + 1})">></a></li>`;
+        render += `<li title="${I18nService.getInstance().t('ui.pagination.lastPage')}" class="page-item ${page.pageNumber >= page.totalPages ? 'disabled' : ''}"><a class="page-link" href="#" onclick="navigate(${page.totalPages})">>|</a></li>`;
         render += '</ul>';
         render += '</nav>';
         render += '</div>';
@@ -156,7 +154,7 @@ export class EIJEDataRenderService {
         
         render += '<table class="table table-borderless">';
         render += '<tr>';
-        render += '<th></th>';
+        render += '<th><button type="button" class="btn btn-vscode" onclick="configureExtension()" title="' + I18nService.getInstance().t('ui.labels.configure_extension') + '"><i class="fa-duotone fa-solid fa-gears"></i></button></th>';
         if (showFolder) {
             render += this._getTableHeader(I18nService.getInstance().t('ui.labels.folder'), sort);
         }
@@ -293,11 +291,14 @@ export class EIJEDataRenderService {
                         <div class="col-1 p-0 align-content-center div-remove">
                             <button type="button" class="btn p-0 px-1" onclick="remove(${selectTranslation.id})"><i class="error-vscode fa-duotone fa-regular fa-circle-minus"></i></button>
                         </div>
-                        <div class="col-11 p-0">
+                        <div class="col-10 p-0">
                             <input id="input-key-${selectTranslation.id}" class="form-control ${
                 selectTranslation.valid ? '' : 'is-invalid'
             }" type="text" placeholder="${I18nService.getInstance().t('ui.placeholders.key')}" value="${selectTranslation.key}" oninput="updateInput(this,${selectTranslation.id});" onchange="updateInput(this,${selectTranslation.id});" />
                             <div id="input-key-${selectTranslation.id}-feedback" class="invalid-feedback error-vscode">${selectTranslation.error}</div>
+                        </div>
+                        <div class="col-1 p-0 align-content-center">
+                            <button type="button" class="btn btn-vscode" onclick="configureExtension()" title="${I18nService.getInstance().t('ui.labels.configure_extension')}"><i class="fa-duotone fa-solid fa-gears"></i></button>
                         </div>
                     </div>
                 </div>`;

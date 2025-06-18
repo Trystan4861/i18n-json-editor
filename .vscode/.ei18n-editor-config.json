@@ -15,7 +15,9 @@
     {
       "name": "out",
       "path": "out/i18n",
-      "visibleColumns": [],
+      "visibleColumns": [
+        "es"
+      ],
       "hiddenColumns": []
     },
     {
@@ -23,6 +25,14 @@
       "path": "src/i18n",
       "visibleColumns": [
         "es"
+      ],
+      "hiddenColumns": []
+    },
+    {
+      "name": "public",
+      "path": "public/i18n",
+      "visibleColumns": [
+        "en"
       ],
       "hiddenColumns": []
     }

@@ -58,7 +58,27 @@ export class EIJEFileSystem {
             return fs.statSync(path);
         } catch (error) {
             console.error('Error getting file stats:', error);
-            throw error;
+            // En lugar de propagar el error, devolvemos un objeto Stats falso
+            // que indica que no es un directorio
+            return {
+                isDirectory: () => false,
+                isFile: () => false,
+                isSymbolicLink: () => false,
+                size: 0,
+                mtime: new Date(),
+                atime: new Date(),
+                ctime: new Date(),
+                birthtime: new Date(),
+                mode: 0,
+                uid: 0,
+                gid: 0,
+                dev: 0,
+                ino: 0,
+                nlink: 0,
+                rdev: 0,
+                blksize: 0,
+                blocks: 0
+            } as fs.Stats;
         }
     }
 

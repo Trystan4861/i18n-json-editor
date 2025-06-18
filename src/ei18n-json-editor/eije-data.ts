@@ -818,7 +818,10 @@ export class EIJEData {
         }
         
         // Si no se permiten traducciones vacías, validar que no haya ninguna
-        if (translation.valid && !EIJEConfiguration.ALLOW_EMPTY_TRANSLATIONS) {
+        // Obtener el valor actual de la configuración para asegurar que usamos el valor más reciente
+        const allowEmptyTranslations = EIJEConfiguration.ALLOW_EMPTY_TRANSLATIONS;
+        
+        if (translation.valid && !allowEmptyTranslations) {
             // Comprobar si hay algún idioma con traducción vacía
             for (const language of this._languages) {
                 if (language !== 'key' && 

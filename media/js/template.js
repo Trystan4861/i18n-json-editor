@@ -19,9 +19,7 @@ var currentWorkspaceFolder = ''; // Variable para rastrear la carpeta de trabajo
     if (saveButton) {
       saveButton.disabled = true;
     }
-    tippy('[title]',{
-      content: (reference) => reference.getAttribute('title'),      
-    });
+    initTooltips();
     
     // Cerrar el menú contextual al hacer clic en cualquier parte de la página
     document.addEventListener('click', function(event) {
@@ -42,6 +40,8 @@ var currentWorkspaceFolder = ''; // Variable para rastrear la carpeta de trabajo
         document.getElementById("content-view").innerHTML = message.render;
         // Actualizar el contador de traducciones pendientes después de renderizar
         checkEmptyTranslations();
+        // Reinicializar tooltips después de actualizar el contenido
+        initTooltips();
         break;
       case "emptyTranslationsFound":
         // Actualizar la información de traducciones vacías
@@ -846,7 +846,7 @@ function hideLanguageColumn() {
  * Muestra un diálogo de confirmación para eliminar un idioma
  */
 function confirmDeleteLanguage() {
-  if (!contextMenuLanguage) return;
+  if (!contextMenuLanguage) {return;}
   
   // Primera confirmación
   Swal.fire({
@@ -990,6 +990,32 @@ function showNoWorkspaceFoldersMessage() {
     background: 'var(--vscode-editor-background)',
     color: 'var(--vscode-editor-foreground)',
     confirmButtonColor: 'var(--vscode-button-background)'
+  });
+}
+
+// Función para configurar la extensión
+function configureExtension() {
+  // Esta función será implementada posteriormente
+  // Por ahora, solo enviamos un mensaje al backend
+  vscode.postMessage({
+    command: 'configureExtension'
+  });
+}
+
+// Función para inicializar los tooltips
+function initTooltips() {
+  // Destruir tooltips existentes para evitar duplicados
+  const elements = document.querySelectorAll('[title]');
+  elements.forEach(el => {
+    if (el._tippy) {
+      el._tippy.destroy();
+    }
+  });
+  
+  // Inicializar tooltips en todos los elementos con atributo title
+  tippy('[title]', {
+    content: (reference) => reference.getAttribute('title'),
+    placement: 'bottom', // Colocar todos los tooltips debajo de los elementos
   });
 }
 
