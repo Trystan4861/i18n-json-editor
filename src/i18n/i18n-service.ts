@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { EIJEFileSystem } from '../ei18n-json-editor/services/eije-filesystem';
 import { translations } from './translations';
+import { EnvironmentUtils } from '../utils/environment-utils';
 
 export class I18nService {
     private static instance: I18nService;
@@ -21,10 +22,6 @@ export class I18nService {
         return I18nService.instance;
     }
 
-    private isWebEnvironment(): boolean {
-        // Siempre retornamos false ya que solo funcionará en escritorio
-        return false;
-    }
 
     private async loadTranslations(): Promise<void> {
         try {
@@ -47,7 +44,6 @@ export class I18nService {
                         const content = await EIJEFileSystem.readFile(filePath);
                         this.translations[lang] = JSON.parse(content);
                         loaded = true;
-                        console.log(`Loaded translation file ${file} from out/i18n`);
                     }
                 } catch (error) {
                     console.error(`Failed to load translation file ${file} from out/i18n:`, error);
@@ -64,7 +60,6 @@ export class I18nService {
                         if (await EIJEFileSystem.exists(filePath)) {
                             const content = await EIJEFileSystem.readFile(filePath);
                             this.translations[lang] = JSON.parse(content);
-                            console.log(`Loaded translation file ${file} from src/i18n`);
                         }
                     } catch (error) {
                         console.error(`Failed to load translation file ${file} from src/i18n:`, error);
@@ -74,7 +69,6 @@ export class I18nService {
             
             // Si no se cargó nada, usar traducciones embebidas
             if (Object.keys(this.translations).length === 0) {
-                console.log('No translation files found, using embedded translations');
                 this.translations = translations;
             }
             

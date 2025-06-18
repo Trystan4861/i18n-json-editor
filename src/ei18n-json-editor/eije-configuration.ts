@@ -6,56 +6,61 @@ import { TranslationServiceEnum } from './services/eije-translation-service';
 import { EIJEFileSystem } from './services/eije-filesystem';
 import { I18nService } from '../i18n/i18n-service';
 import { NotificationService } from './services/notification-service';
+import { EnvironmentUtils } from '../utils/environment-utils';
+
+/**
+ * Opciones para la búsqueda de carpetas i18n
+ */
+interface I18nFolderSearchOptions {
+    /** Buscar en carpetas comunes predefinidas (src, app, public, etc.) */
+    searchCommonFolders?: boolean;
+    /** Buscar específicamente en src/i18n */
+    checkSrcI18n?: boolean;
+    /** Buscar en todas las carpetas del workspace */
+    searchWorkspaceFolders?: boolean;
+    /** Profundidad máxima de búsqueda recursiva */
+    maxDepth?: number;
+    /** Directorios a ignorar durante la búsqueda */
+    ignoreDirs?: string[];
+    /** Tipo de resultado (simple o folder) */
+    resultType?: 'simple' | 'folder';
+    /** Ruta base para la búsqueda (si no se especifica, se usa la raíz del workspace) */
+    basePath?: string;
+    /** Ruta relativa dentro de la ruta base (para búsquedas específicas) */
+    relativePath?: string;
+    /** Verificar si el directorio actual es una carpeta i18n */
+    checkCurrentDir?: boolean;
+    /** Resultado donde se almacenarán las carpetas encontradas (para acumular resultados) */
+    result?: Array<{name: string, path: string}> | EIJEFolder[];
+}
 
 export class EIJEConfiguration {
-    // Cache para configuración en memoria
     private static _configCache: { [key: string]: any } = {};
-    
-    // Ya no necesitamos detectar el entorno web
-    
-    // Control para evitar creación repetitiva de archivo de configuración
     private static _configFileCreated: boolean = false;
     
-    // Limpiar caché de configuración (solo para configuraciones específicas)
     static clearConfigCache(specificKey?: string): void {
         if (specificKey) {
             delete this._configCache[`config_${specificKey}`];
         } else {
             this._configCache = {};
         }
-        // NO limpiar el caché de detección de entorno web para evitar re-detección
-        // NO resetear _configFileCreated para evitar recreación
     }
     
-    // Ruta del archivo de configuración dentro de .vscode
     private static getConfigPath(workspaceFolder: vscode.WorkspaceFolder): string {
         try {
-            console.log('Getting config path for workspace folder:', workspaceFolder.uri.fsPath);
-            
-            // Asegurar que el directorio .vscode existe
             const vscodePath = _path.join(workspaceFolder.uri.fsPath, '.vscode');
-            console.log('VS Code path:', vscodePath);
             
             if (!EIJEFileSystem.existsSync(vscodePath)) {
-                console.log('Creating .vscode directory');
                 EIJEFileSystem.mkdirSync(vscodePath, { recursive: true });
             }
             
             const configPath = _path.join(vscodePath, '.ei18n-editor-config.json');
-            console.log('Config path:', configPath);
             
-            // Si el archivo no existe, crearlo con configuración por defecto SOLO UNA VEZ
             if (!EIJEFileSystem.existsSync(configPath)) {
-                console.log('Config file does not exist');
                 if (!this._configFileCreated) {
-                    console.log('Creating default config file');
                     this.createDefaultConfigFile(configPath);
                     this._configFileCreated = true;
-                } else {
-                    console.log('Config file already created in this session, skipping creation');
                 }
-            } else {
-                console.log('Config file already exists');
             }
             
             return configPath;
@@ -67,55 +72,41 @@ export class EIJEConfiguration {
     
     private static createDefaultConfigFile(configPath: string): void {
         try {
-            console.log('Creating default config file at:', configPath);
-            
-            // Verificar si estamos en modo desarrollo o producción
             const isDevelopment = process.env.NODE_ENV === 'development';
-            console.log('Environment:', isDevelopment ? 'development' : 'production');
             
-            // Buscar directorios i18n en el proyecto
-            console.log('Searching for i18n directories...');
-            const workspaceFolders = this.findI18nDirectories();
+            const workspaceFolders = this.findI18nFolders({
+                searchCommonFolders: true,
+                checkSrcI18n: true,
+                searchWorkspaceFolders: true,
+                maxDepth: 3
+            }) as Array<{name: string, path: string}>;
             
-            console.log(`Found ${workspaceFolders.length} i18n directories:`, workspaceFolders);
-            
-            // Si no se encontraron carpetas, intentar buscar manualmente la carpeta src/i18n
             if (workspaceFolders.length === 0) {
-                console.log('No i18n directories found, trying manual detection...');
-                
-                // Obtener la ruta raíz del proyecto
                 const rootPath = vscode.workspace.rootPath || 
                     (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 
                         ? vscode.workspace.workspaceFolders[0].uri.fsPath : '');
                 
                 if (rootPath) {
-                    console.log('Root path:', rootPath);
+                    const deepSearchResults = this.findI18nFolders({
+                        basePath: rootPath,
+                        searchCommonFolders: true,
+                        checkSrcI18n: true,
+                        searchWorkspaceFolders: false,
+                        maxDepth: 5,
+                        ignoreDirs: ['.git', 'node_modules', '.vscode', 'dist', 'build', 'out', 'coverage']
+                    }) as Array<{name: string, path: string}>;
                     
-                    // Verificar si existe la carpeta src/i18n
-                    const srcI18nPath = _path.join(rootPath, 'src', 'i18n');
-                    console.log('Checking src/i18n path:', srcI18nPath);
-                    
-                    if (EIJEFileSystem.existsSync(srcI18nPath)) {
-                        console.log('src/i18n directory exists, adding to workspaceFolders');
-                        workspaceFolders.push({
-                            name: 'src',
-                            path: 'src/i18n'
+                    if (deepSearchResults.length > 0) {
+                        deepSearchResults.forEach(result => {
+                            workspaceFolders.push(result);
                         });
-                    } else {
-                        console.log('src/i18n directory does not exist');
                     }
-                } else {
-                    console.log('No root path found');
                 }
             }
             
-            // Determinar la carpeta de trabajo predeterminada
             let defaultWorkspaceFolder = "";
             if (workspaceFolders.length > 0) {
                 defaultWorkspaceFolder = workspaceFolders[0].name;
-                console.log('Default workspace folder:', defaultWorkspaceFolder);
-            } else {
-                console.log('No default workspace folder set');
             }
             
             const defaultConfig = {
@@ -130,22 +121,286 @@ export class EIJEConfiguration {
                 defaultWorkspaceFolder: defaultWorkspaceFolder,
                 translationService: "Coming soon",
                 translationServiceApiKey: "Coming soon"
-                // Las columnas visibles/ocultas ahora se manejan a nivel de cada carpeta de trabajo
             };
             
-            console.log('Writing config file with:', defaultConfig);
             EIJEFileSystem.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2));
-            console.log('Config file written successfully');
             
-            // Si no se encontraron directorios i18n, mostrar un mensaje al usuario
             if (workspaceFolders.length === 0) {
-                console.log('No i18n directories found, showing prompt to create one');
                 this.showCreateI18nDirectoryPrompt();
-            } else {
-                console.log(`Found ${workspaceFolders.length} i18n directories, no need to show prompt`);
             }
         } catch (error) {
             console.error('Error creating default config file:', error);
+        }
+    }
+    
+
+
+    /**
+     * Método unificado para buscar carpetas i18n con opciones configurables
+     * @param options Opciones de búsqueda
+     * @returns Array de objetos con información de los directorios i18n encontrados
+     */
+    /**
+     * Cache para almacenar resultados de búsquedas previas de carpetas i18n
+     * Clave: combinación de parámetros de búsqueda, Valor: resultados encontrados
+     */
+    private static i18nFoldersCache: Map<string, Array<{name: string, path: string}>> = new Map();
+    
+    /**
+     * Método unificado para buscar carpetas i18n con opciones configurables y caché
+     * @param options Opciones de búsqueda
+     * @returns Array de objetos con información de los directorios i18n encontrados
+     */
+    private static findI18nFolders(options: I18nFolderSearchOptions = {}): Array<{name: string, path: string}> | EIJEFolder[] {
+        // Valores por defecto
+        const defaultOptions: I18nFolderSearchOptions = {
+            searchCommonFolders: true,
+            checkSrcI18n: true,
+            searchWorkspaceFolders: true,
+            maxDepth: 3,
+            ignoreDirs: ['.git', 'node_modules', '.vscode', 'dist', 'build', 'out', 'coverage'],
+            resultType: 'simple',
+            checkCurrentDir: false
+        };
+        
+        // Combinar opciones por defecto con las proporcionadas
+        const opts = { ...defaultOptions, ...options };
+        
+        // Si se proporciona un resultado existente, no usar caché
+        if (opts.result) {
+            return this.findI18nFoldersInternal(opts);
+        }
+        
+        // Generar una clave única para esta combinación de opciones
+        const cacheKey = JSON.stringify({
+            basePath: opts.basePath || 'default',
+            relativePath: opts.relativePath || '',
+            searchCommonFolders: opts.searchCommonFolders,
+            checkSrcI18n: opts.checkSrcI18n,
+            searchWorkspaceFolders: opts.searchWorkspaceFolders,
+            maxDepth: opts.maxDepth,
+            resultType: opts.resultType
+        });
+        
+        // Verificar si tenemos resultados en caché para estas opciones
+        if (this.i18nFoldersCache.has(cacheKey)) {
+            const cachedResult = this.i18nFoldersCache.get(cacheKey) || [];
+            
+            // Convertir el resultado al tipo solicitado si es necesario
+            if (opts.resultType === 'folder') {
+                return cachedResult.map(item => ({
+                    name: item.name,
+                    path: item.path
+                })) as EIJEFolder[];
+            }
+            
+            return [...cachedResult]; // Devolver una copia para evitar modificaciones accidentales
+        }
+        
+        // Si no está en caché, realizar la búsqueda
+        const result = this.findI18nFoldersInternal(opts);
+        
+        // Almacenar en caché solo si no es un resultado proporcionado externamente
+        if (!opts.result && Array.isArray(result)) {
+            this.i18nFoldersCache.set(cacheKey, [...result]);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Implementación interna del método findI18nFolders sin caché
+     * @param opts Opciones de búsqueda
+     * @returns Array de objetos con información de los directorios i18n encontrados
+     */
+    private static findI18nFoldersInternal(opts: I18nFolderSearchOptions): Array<{name: string, path: string}> | EIJEFolder[] {
+        // Resultado unificado (usar el proporcionado o crear uno nuevo)
+        const result: Array<{name: string, path: string}> = opts.result as Array<{name: string, path: string}> || [];
+        
+        try {
+            // Obtener todas las carpetas del espacio de trabajo
+            const vscodeWorkspaceFolders = vscode.workspace.workspaceFolders;
+            
+            // Determinar la ruta base
+            let basePath = opts.basePath;
+            if (!basePath) {
+                basePath = vscode.workspace.rootPath || 
+                    (vscodeWorkspaceFolders && vscodeWorkspaceFolders.length > 0 ? 
+                    vscodeWorkspaceFolders[0].uri.fsPath : '');
+            }
+            
+            // Si se proporciona una ruta relativa, construir la ruta completa
+            const currentPath = opts.relativePath ? 
+                _path.join(basePath, opts.relativePath) : basePath;
+            
+            // Verificar si el directorio actual es una carpeta i18n
+            if (opts.checkCurrentDir && _path.basename(currentPath) === 'i18n') {
+                this.checkI18nDirectory(basePath, opts.relativePath || '', result);
+            }
+            
+            if (basePath) {
+                // Verificar src/i18n si está habilitada la opción (caso común)
+                if (opts.checkSrcI18n) {
+                    this.checkSpecificI18nPath(basePath, 'src', 'i18n', result);
+                }
+                
+                // Buscar en carpetas comunes si está habilitada la opción
+                if (opts.searchCommonFolders) {
+                    this.searchCommonI18nFolders(basePath, result);
+                }
+                
+                // Si se proporciona una ruta relativa, buscar en esa ubicación específica
+                if (opts.relativePath) {
+                    // Optimización: Primero verificar si la ruta contiene 'i18n' antes de buscar recursivamente
+                    if (opts.relativePath.includes('i18n')) {
+                        this.searchI18nFoldersRecursive(
+                            basePath, 
+                            opts.relativePath, 
+                            result, 
+                            opts.maxDepth,
+                            opts.ignoreDirs
+                        );
+                    }
+                }
+            }
+            
+            // Buscar en todas las carpetas del workspace si está habilitada la opción
+            if (opts.searchWorkspaceFolders && vscodeWorkspaceFolders && vscodeWorkspaceFolders.length > 0) {
+                // Optimización: Limitar la profundidad de búsqueda en carpetas del workspace
+                const workspaceMaxDepth = Math.min(opts.maxDepth, 3);
+                
+                for (const folder of vscodeWorkspaceFolders) {
+                    // Optimización: Primero buscar en ubicaciones comunes antes de hacer búsqueda recursiva
+                    if (opts.checkSrcI18n) {
+                        this.checkSpecificI18nPath(folder.uri.fsPath, 'src', 'i18n', result);
+                    }
+                    
+                    if (opts.searchCommonFolders) {
+                        this.searchCommonI18nFolders(folder.uri.fsPath, result);
+                    }
+                    
+                    // Búsqueda recursiva con profundidad limitada
+                    this.searchI18nFoldersRecursive(
+                        folder.uri.fsPath, 
+                        "", 
+                        result, 
+                        workspaceMaxDepth,
+                        opts.ignoreDirs
+                    );
+                }
+            }
+        } catch (error) {
+            console.error('Error finding i18n directories:', error);
+        }
+        
+        // Convertir el resultado al tipo solicitado si es necesario
+        if (opts.resultType === 'folder') {
+            return result.map(item => ({
+                name: item.name,
+                path: item.path
+            })) as EIJEFolder[];
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Verifica si un directorio es una carpeta i18n válida (contiene archivos JSON)
+     * @param basePath Ruta base
+     * @param relativePath Ruta relativa
+     * @param result Array donde se almacenarán los resultados
+     * @returns true si es una carpeta i18n válida, false en caso contrario
+     */
+    private static checkI18nDirectory(
+        basePath: string, 
+        relativePath: string, 
+        result: Array<{name: string, path: string}>
+    ): boolean {
+        try {
+            const currentPath = relativePath ? _path.join(basePath, relativePath) : basePath;
+            
+            // Verificar si es un directorio
+            const stats = EIJEFileSystem.statSync(currentPath);
+            if (!stats.isDirectory()) {
+                return false;
+            }
+            
+            // Verificar si hay archivos JSON
+            const files = EIJEFileSystem.readdirSync(currentPath);
+            const hasJsonFiles = files.some(file => file.endsWith('.json'));
+            
+            if (hasJsonFiles) {
+                // Determinar el nombre de la carpeta
+                const parentDir = relativePath ? _path.dirname(relativePath) : '';
+                const displayName = parentDir && parentDir !== '.' ? parentDir : '/';
+                
+                // Verificar si esta carpeta ya está en los resultados para evitar duplicados
+                const exists = result.some(folder => folder.path === relativePath);
+                if (!exists) {
+                    result.push({
+                        name: displayName,
+                        path: relativePath
+                    });
+                }
+                return true;
+            }
+        } catch (error) {
+            console.error(`Error checking i18n directory ${relativePath}:`, error);
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Verifica si existe una carpeta i18n en una ruta específica
+     * @param rootPath Ruta raíz
+     * @param parentDir Directorio padre (ej: 'src')
+     * @param i18nDirName Nombre del directorio i18n (normalmente 'i18n')
+     * @param result Array donde se almacenarán los resultados
+     */
+    private static checkSpecificI18nPath(
+        rootPath: string, 
+        parentDir: string, 
+        i18nDirName: string, 
+        result: Array<{name: string, path: string}>
+    ): void {
+        // Construir la ruta relativa
+        const relativePath = parentDir ? `${parentDir}/${i18nDirName}` : i18nDirName;
+        
+        // Usar el método unificado con opciones específicas
+        this.findI18nFolders({
+            basePath: rootPath,
+            relativePath: relativePath,
+            searchCommonFolders: false,
+            checkSrcI18n: false,
+            searchWorkspaceFolders: false,
+            checkCurrentDir: true,
+            result: result
+        });
+    }
+    
+    /**
+     * Busca carpetas i18n en ubicaciones comunes del proyecto
+     * @param rootPath Ruta raíz del proyecto
+     * @param result Array donde se almacenarán los resultados
+     */
+    private static searchCommonI18nFolders(rootPath: string, result: Array<{name: string, path: string}>): void {
+        try {
+            const commonFolders = ['src', 'app', 'public', 'assets', 'locales'];
+            for (const folder of commonFolders) {
+                // Usar el método unificado para cada carpeta común
+                this.findI18nFolders({
+                    basePath: rootPath,
+                    relativePath: folder + '/i18n',
+                    searchCommonFolders: false,
+                    checkSrcI18n: false,
+                    searchWorkspaceFolders: false,
+                    checkCurrentDir: true,
+                    result: result
+                });
+            }
+        } catch (error) {
+            console.error('Error in searchCommonI18nFolders:', error);
         }
     }
     
@@ -154,72 +409,12 @@ export class EIJEConfiguration {
      * @returns Array de objetos con información de los directorios i18n encontrados
      */
     private static findI18nDirectories(): Array<{name: string, path: string}> {
-        const workspaceFolders: Array<{name: string, path: string}> = [];
-        
-        try {
-            // Obtener todas las carpetas del espacio de trabajo
-            const vscodeWorkspaceFolders = vscode.workspace.workspaceFolders;
-            console.log('Workspace folders:', vscodeWorkspaceFolders);
-            
-            // Forzar la detección de la carpeta src/i18n independientemente del espacio de trabajo
-            // Esto es una solución temporal para asegurar que se detecte la carpeta
-            const rootPath = vscode.workspace.rootPath || (vscodeWorkspaceFolders && vscodeWorkspaceFolders.length > 0 ? vscodeWorkspaceFolders[0].uri.fsPath : '');
-            console.log('Root path:', rootPath);
-            
-            if (rootPath) {
-                // Verificar si existe la carpeta src/i18n en la raíz del proyecto
-                const srcI18nPath = _path.join(rootPath, 'src', 'i18n');
-                console.log('Checking src/i18n path:', srcI18nPath);
-                
-                if (EIJEFileSystem.existsSync(srcI18nPath)) {
-                    console.log('src/i18n directory exists');
-                    try {
-                        const stats = EIJEFileSystem.statSync(srcI18nPath);
-                        if (stats.isDirectory()) {
-                            // Verificar si hay archivos JSON
-                            const i18nFiles = EIJEFileSystem.readdirSync(srcI18nPath);
-                            console.log('Files in src/i18n:', i18nFiles);
-                            const hasJsonFiles = i18nFiles.some(file => file.endsWith('.json'));
-                            
-                            if (hasJsonFiles) {
-                                console.log('Found src/i18n directory with JSON files');
-                                workspaceFolders.push({
-                                    name: 'src',
-                                    path: 'src/i18n'
-                                });
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Error checking src/i18n directory:', error);
-                    }
-                } else {
-                    console.log('src/i18n directory does not exist');
-                }
-                
-                // Intentar buscar cualquier carpeta i18n en el proyecto
-                console.log('Searching for any i18n folder in the project');
-                this.findAnyI18nFolder(rootPath, workspaceFolders);
-            }
-            
-            // Continuar con la búsqueda normal si hay carpetas de espacio de trabajo
-            if (vscodeWorkspaceFolders && vscodeWorkspaceFolders.length > 0) {
-                console.log(`Searching for i18n directories in ${vscodeWorkspaceFolders.length} workspace folders`);
-                
-                // Para cada carpeta del espacio de trabajo, buscar directorios i18n
-                for (const folder of vscodeWorkspaceFolders) {
-                    console.log(`Searching in workspace folder: ${folder.uri.fsPath}`);
-                    this.findI18nDirectoriesInFolder(folder.uri.fsPath, "", workspaceFolders);
-                }
-            } else {
-                console.log('No workspace folders found in vscode.workspace.workspaceFolders');
-            }
-            
-            console.log(`Found ${workspaceFolders.length} i18n directories:`, workspaceFolders);
-        } catch (error) {
-            console.error('Error finding i18n directories:', error);
-        }
-        
-        return workspaceFolders;
+        // Usar el método unificado con las opciones por defecto
+        return this.findI18nFolders({
+            searchCommonFolders: true,
+            checkSrcI18n: true,
+            searchWorkspaceFolders: true
+        }) as Array<{name: string, path: string}>;
     }
     
     /**
@@ -228,47 +423,15 @@ export class EIJEConfiguration {
      * @param result Array donde se almacenarán los resultados
      */
     private static findAnyI18nFolder(rootPath: string, result: Array<{name: string, path: string}>): void {
-        try {
-            // Verificar si la carpeta i18n existe directamente en la raíz
-            const i18nPath = _path.join(rootPath, 'i18n');
-            if (EIJEFileSystem.existsSync(i18nPath) && EIJEFileSystem.statSync(i18nPath).isDirectory()) {
-                const i18nFiles = EIJEFileSystem.readdirSync(i18nPath);
-                const hasJsonFiles = i18nFiles.some(file => file.endsWith('.json'));
-                
-                if (hasJsonFiles) {
-                    console.log('Found i18n directory in root with JSON files');
-                    result.push({
-                        name: '/',
-                        path: 'i18n'
-                    });
-                    return;
-                }
-            }
-            
-            // Buscar en carpetas comunes
-            const commonFolders = ['src', 'app', 'public', 'assets', 'locales'];
-            for (const folder of commonFolders) {
-                const folderPath = _path.join(rootPath, folder);
-                if (EIJEFileSystem.existsSync(folderPath) && EIJEFileSystem.statSync(folderPath).isDirectory()) {
-                    // Verificar si hay una carpeta i18n dentro
-                    const i18nPath = _path.join(folderPath, 'i18n');
-                    if (EIJEFileSystem.existsSync(i18nPath) && EIJEFileSystem.statSync(i18nPath).isDirectory()) {
-                        const i18nFiles = EIJEFileSystem.readdirSync(i18nPath);
-                        const hasJsonFiles = i18nFiles.some(file => file.endsWith('.json'));
-                        
-                        if (hasJsonFiles) {
-                            console.log(`Found i18n directory in ${folder} with JSON files`);
-                            result.push({
-                                name: folder,
-                                path: `${folder}/i18n`
-                            });
-                        }
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Error in findAnyI18nFolder:', error);
-        }
+        // Usar el método unificado con opciones específicas
+        this.findI18nFolders({
+            basePath: rootPath,
+            searchCommonFolders: true,
+            checkSrcI18n: false,
+            searchWorkspaceFolders: false,
+            result: result,
+            checkCurrentDir: true
+        });
     }
     
     /**
@@ -294,94 +457,48 @@ export class EIJEConfiguration {
      * @param basePath Ruta base de la carpeta
      * @param relativePath Ruta relativa dentro de la carpeta base
      * @param result Array donde se almacenarán los resultados
+     * @param maxDepth Profundidad máxima de búsqueda
+     * @param ignoreDirs Directorios a ignorar
+     */
+    private static searchI18nFoldersRecursive(
+        basePath: string, 
+        relativePath: string, 
+        result: Array<{name: string, path: string}>,
+        maxDepth: number = 3,
+        ignoreDirs: string[] = ['.git', 'node_modules', '.vscode', 'dist', 'build']
+    ): void {
+        // Usar el método unificado con opciones específicas
+        this.findI18nFolders({
+            basePath: basePath,
+            relativePath: relativePath,
+            searchCommonFolders: false,
+            checkSrcI18n: false,
+            searchWorkspaceFolders: false,
+            maxDepth: maxDepth,
+            ignoreDirs: ignoreDirs,
+            checkCurrentDir: true,
+            result: result
+        });
+    }
+    
+    /**
+     * Método de compatibilidad para mantener el API existente
+     * @param basePath Ruta base de la carpeta
+     * @param relativePath Ruta relativa dentro de la carpeta base
+     * @param result Array donde se almacenarán los resultados
      */
     private static findI18nDirectoriesInFolder(basePath: string, relativePath: string, result: Array<{name: string, path: string}>): void {
-        try {
-            const currentPath = _path.join(basePath, relativePath);
-            const items = EIJEFileSystem.readdirSync(currentPath);
-            
-            // Verificar si hay un directorio i18n en la ruta actual
-            if (items.includes("i18n")) {
-                const i18nPath = _path.join(currentPath, "i18n");
-                const stats = EIJEFileSystem.statSync(i18nPath);
-                
-                if (stats.isDirectory()) {
-                    // Verificar si hay archivos JSON en el directorio i18n
-                    const i18nFiles = EIJEFileSystem.readdirSync(i18nPath);
-                    const hasJsonFiles = i18nFiles.some(file => file.endsWith('.json'));
-                    
-                    if (hasJsonFiles) {
-                        // Crear un nombre descriptivo para la carpeta
-                        const displayPath = relativePath ? relativePath : "/";
-                        // Usar ruta relativa en lugar de absoluta
-                        const relativei18nPath = relativePath ? `${relativePath}/i18n` : "i18n";
-                        
-                        // Verificar si esta carpeta ya está en los resultados para evitar duplicados
-                        const exists = result.some(folder => folder.path === relativei18nPath);
-                        if (!exists) {
-                            result.push({
-                                name: displayPath,
-                                path: relativei18nPath
-                            });
-                            console.log(`Found i18n directory: ${relativei18nPath}`);
-                        }
-                    }
-                }
-            }
-            
-            // También verificar si el directorio actual se llama "i18n"
-            if (_path.basename(currentPath) === "i18n") {
-                const stats = EIJEFileSystem.statSync(currentPath);
-                
-                if (stats.isDirectory()) {
-                    // Verificar si hay archivos JSON en el directorio i18n
-                    const i18nFiles = EIJEFileSystem.readdirSync(currentPath);
-                    const hasJsonFiles = i18nFiles.some(file => file.endsWith('.json'));
-                    
-                    if (hasJsonFiles) {
-                        // Crear un nombre descriptivo para la carpeta
-                        const parentPath = _path.dirname(relativePath);
-                        const displayPath = parentPath && parentPath !== "." ? parentPath : "/";
-                        
-                        // Usar ruta relativa en lugar de absoluta
-                        const exists = result.some(folder => folder.path === relativePath);
-                        if (!exists) {
-                            result.push({
-                                name: displayPath,
-                                path: relativePath
-                            });
-                            console.log(`Found i18n directory (direct): ${relativePath}`);
-                        }
-                    }
-                }
-            }
-            
-            // Buscar en subdirectorios (hasta 3 niveles de profundidad para evitar búsquedas muy largas)
-            if (relativePath.split(_path.sep).length < 3) {
-                for (const item of items) {
-                    // Ignorar directorios ocultos y node_modules
-                    if (item.startsWith('.') || item === 'node_modules') {
-                        continue;
-                    }
-                    
-                    const itemPath = _path.join(currentPath, item);
-                    
-                    try {
-                        const stats = EIJEFileSystem.statSync(itemPath);
-                        
-                        if (stats.isDirectory()) {
-                            const newRelativePath = relativePath ? _path.join(relativePath, item) : item;
-                            this.findI18nDirectoriesInFolder(basePath, newRelativePath, result);
-                        }
-                    } catch (error) {
-                        // Ignorar errores al acceder a directorios específicos
-                        console.error(`Error accessing directory ${itemPath}:`, error);
-                    }
-                }
-            }
-        } catch (error) {
-            console.error(`Error searching in directory ${relativePath}:`, error);
-        }
+        // Usar el método unificado con opciones específicas
+        this.findI18nFolders({
+            basePath: basePath,
+            relativePath: relativePath,
+            searchCommonFolders: false,
+            checkSrcI18n: false,
+            searchWorkspaceFolders: false,
+            maxDepth: 3,
+            ignoreDirs: ['.git', 'node_modules', '.vscode', 'dist', 'build'],
+            result: result
+        });
     }
     
     /**
@@ -390,106 +507,82 @@ export class EIJEConfiguration {
      * @returns Array de objetos con información de las carpetas i18n encontradas
      */
     private static findAllI18nFolders(rootPath: string): EIJEFolder[] {
-        console.log('Finding all i18n folders in:', rootPath);
-        const result: EIJEFolder[] = [];
-        
-        try {
-            // Buscar recursivamente en todas las carpetas
-            this.findI18nFoldersRecursive(rootPath, '', result);
-            
-            console.log(`Found ${result.length} i18n folders:`, result);
-        } catch (error) {
-            console.error('Error finding i18n folders:', error);
-        }
-        
-        return result;
+        // Usar el método unificado con opciones específicas
+        return this.findI18nFolders({
+            basePath: rootPath,
+            searchCommonFolders: true,
+            checkSrcI18n: true,
+            searchWorkspaceFolders: false,
+            maxDepth: 4,
+            ignoreDirs: ['.git', 'node_modules', '.vscode', 'dist', 'build'],
+            resultType: 'folder'
+        }) as EIJEFolder[];
     }
     
     /**
-     * Busca recursivamente carpetas i18n en el proyecto
+     * Busca recursivamente carpetas i18n en el proyecto con optimizaciones de rendimiento
      * @param basePath Ruta base
      * @param relativePath Ruta relativa
      * @param result Array donde se almacenarán los resultados
+     * @param maxDepth Profundidad máxima de búsqueda
+     * @param ignoreDirs Directorios a ignorar
      */
-    private static findI18nFoldersRecursive(basePath: string, relativePath: string, result: EIJEFolder[]): void {
+    private static findI18nFoldersRecursive(
+        basePath: string, 
+        relativePath: string, 
+        result: Array<{name: string, path: string}> | EIJEFolder[],
+        maxDepth: number = 3,
+        ignoreDirs: string[] = ['.git', 'node_modules', '.vscode', 'dist', 'build', 'out', 'coverage']
+    ): void {
+        // Control de profundidad para evitar búsquedas excesivas
+        const depth = relativePath.split(_path.sep).filter(Boolean).length;
+        if (depth > maxDepth) {
+            return;
+        }
+        
         try {
             const currentPath = relativePath ? _path.join(basePath, relativePath) : basePath;
             
             // Verificar si el directorio actual es una carpeta i18n
             if (_path.basename(currentPath) === 'i18n') {
-                try {
-                    // Verificar si hay archivos JSON en la carpeta
-                    const files = EIJEFileSystem.readdirSync(currentPath);
-                    const hasJsonFiles = files.some(file => file.endsWith('.json'));
-                    
-                    if (hasJsonFiles) {
-                        // Determinar el nombre de la carpeta
-                        const parentDir = _path.dirname(relativePath);
-                        const displayName = parentDir && parentDir !== '.' ? parentDir : '/';
-                        
-                        // Verificar si esta carpeta ya está en los resultados
-                        const exists = result.some(folder => folder.path === relativePath);
-                        if (!exists) {
-                            result.push({
-                                name: displayName,
-                                path: relativePath
-                            });
-                            console.log(`Found i18n folder: ${relativePath}`);
-                        }
-                        
-                        // No seguir buscando en esta rama
-                        return;
-                    }
-                } catch (error) {
-                    console.error(`Error checking i18n folder ${currentPath}:`, error);
-                }
+                this.checkI18nDirectory(basePath, relativePath, result as Array<{name: string, path: string}>);
+                // No seguir buscando en esta rama si ya es una carpeta i18n
+                return;
             }
             
-            // Buscar carpetas i18n en el directorio actual
             try {
+                // Leer el contenido del directorio
                 const items = EIJEFileSystem.readdirSync(currentPath);
                 
-                // Verificar si hay una carpeta i18n en el directorio actual
+                if (!items || items.length === 0) {
+                    return;
+                }
+                
+                // Optimización: Primero buscar si hay un directorio 'i18n' directamente
                 if (items.includes('i18n')) {
+                    const newRelativePath = relativePath ? _path.join(relativePath, 'i18n') : 'i18n';
                     const i18nPath = _path.join(currentPath, 'i18n');
                     
                     try {
                         const stats = EIJEFileSystem.statSync(i18nPath);
-                        
                         if (stats.isDirectory()) {
-                            // Verificar si hay archivos JSON en la carpeta
-                            const files = EIJEFileSystem.readdirSync(i18nPath);
-                            const hasJsonFiles = files.some(file => file.endsWith('.json'));
-                            
-                            if (hasJsonFiles) {
-                                // Determinar el nombre de la carpeta
-                                const displayName = relativePath || '/';
-                                const relativei18nPath = relativePath ? `${relativePath}/i18n` : 'i18n';
-                                
-                                // Verificar si esta carpeta ya está en los resultados
-                                const exists = result.some(folder => folder.path === relativei18nPath);
-                                if (!exists) {
-                                    result.push({
-                                        name: displayName,
-                                        path: relativei18nPath
-                                    });
-                                    console.log(`Found i18n folder: ${relativei18nPath}`);
-                                }
-                            }
+                            this.checkI18nDirectory(basePath, newRelativePath, result as Array<{name: string, path: string}>);
                         }
                     } catch (error) {
-                        console.error(`Error checking i18n folder ${i18nPath}:`, error);
+                        // Ignorar errores al acceder al directorio i18n
                     }
                 }
                 
-                // Buscar en subdirectorios (limitar la profundidad para evitar búsquedas muy largas)
-                if (!relativePath || relativePath.split(_path.sep).length < 3) {
-                    for (const item of items) {
-                        // Ignorar directorios ocultos y node_modules
-                        if (item.startsWith('.') || item === 'node_modules') {
-                            continue;
-                        }
-                        
+                // Procesar otros subdirectorios solo si no hemos alcanzado la profundidad máxima
+                if (depth < maxDepth) {
+                    // Filtrar directorios a procesar
+                    const dirsToProcess = items.filter(item => 
+                        !item.startsWith('.') && 
+                        !ignoreDirs.includes(item) && 
+                        !item.includes('.') // Heurística simple para evitar archivos
+                    );
+                    
+                    for (const item of dirsToProcess) {
                         const itemPath = _path.join(currentPath, item);
                         
                         try {
@@ -497,7 +590,15 @@ export class EIJEConfiguration {
                             
                             if (stats.isDirectory()) {
                                 const newRelativePath = relativePath ? _path.join(relativePath, item) : item;
-                                this.findI18nFoldersRecursive(basePath, newRelativePath, result);
+                                
+                                // Llamada recursiva directa en lugar de usar findI18nFolders para evitar sobrecarga
+                                this.findI18nFoldersRecursive(
+                                    basePath,
+                                    newRelativePath,
+                                    result,
+                                    maxDepth,
+                                    ignoreDirs
+                                );
                             }
                         } catch (error) {
                             // Ignorar errores al acceder a directorios específicos
@@ -505,10 +606,10 @@ export class EIJEConfiguration {
                     }
                 }
             } catch (error) {
-                console.error(`Error reading directory ${currentPath}:`, error);
+                // Ignorar errores de lectura de directorios para continuar con la búsqueda
             }
         } catch (error) {
-            console.error(`Error in findI18nFoldersRecursive for ${relativePath}:`, error);
+            // Ignorar errores generales para continuar con la búsqueda
         }
     }
     
@@ -681,10 +782,7 @@ export class EIJEConfiguration {
         return _path.join(vscodePath, '.ei18n-editor-config.json');
     }
 
-    private static isWebEnvironment(): boolean {
-        // Siempre retornamos false ya que solo funcionará en escritorio
-        return false;
-    }
+
     // Lista de códigos de idioma RTL (Right-to-Left)
     public static readonly RTL_LANGUAGES = [
         'ar', // Árabe
@@ -716,19 +814,18 @@ export class EIJEConfiguration {
         const cacheKey = `config_${configName}`;
         
         // Verificar caché primero
-        if (this._configCache[cacheKey] !== undefined) {
-            return this._configCache[cacheKey];
+        const cachedValue = this.getConfigFromCache<T>(cacheKey);
+        if (cachedValue !== undefined) {
+            return cachedValue;
         }
         
-        let value: T = defaultValue;
+        let value: T;
         
-        const isWeb = this.isWebEnvironment();
+        const isWeb = EnvironmentUtils.isWebEnvironment();
         
         if (isWeb) {
-            // En entorno web, intentar leer archivo local usando métodos asíncronos
-            // pero como este método es síncrono, usar configuración global como fallback
-            const globalValue = vscode.workspace.getConfiguration().get<T>(globalSettingName);
-            value = globalValue !== undefined ? globalValue : defaultValue;
+            // En entorno web, usar configuración global y cargar archivo en background
+            value = this.getConfigFromGlobalSettings<T>(globalSettingName, defaultValue);
             
             // Intentar cargar configuración local de forma asíncrona en background
             this.loadConfigFromFileAsync(configName).then(fileValue => {
@@ -739,46 +836,68 @@ export class EIJEConfiguration {
                 // Ignorar errores silenciosamente
             });
         } else {
-            try {
-                // Primero intentar leer del archivo de configuración local
-                const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-                if (workspaceFolder) {
-                    const configPath = this.getConfigPath(workspaceFolder);
-                    
-                    if (configPath && EIJEFileSystem.existsSync(configPath)) {
-                        const configContent = EIJEFileSystem.readFileSync(configPath);
-                        if (configContent) {
-                            const config = JSON.parse(configContent);
-                            
-                            if (config[configName] !== undefined) {
-                                value = config[configName] as T;
-                            } else {
-                                // Si no está en el archivo local, usar configuración global
-                                const globalValue = vscode.workspace.getConfiguration().get<T>(globalSettingName);
-                                value = globalValue !== undefined ? globalValue : defaultValue;
-                            }
-                        } else {
-                            // Si el archivo está vacío, usar configuración global
-                            const globalValue = vscode.workspace.getConfiguration().get<T>(globalSettingName);
-                            value = globalValue !== undefined ? globalValue : defaultValue;
-                        }
-                    } else {
-                        // Si no hay archivo local, usar configuración global
-                        const globalValue = vscode.workspace.getConfiguration().get<T>(globalSettingName);
-                        value = globalValue !== undefined ? globalValue : defaultValue;
-                    }
-                }
-            } catch (e) {
-                console.error(`Error loading ${configName} from config file:`, e);
-                // En caso de error, usar configuración global
-                const globalValue = vscode.workspace.getConfiguration().get<T>(globalSettingName);
-                value = globalValue !== undefined ? globalValue : defaultValue;
-            }
+            // En entorno de escritorio, intentar leer del archivo primero
+            value = this.getConfigFromFile<T>(configName, globalSettingName, defaultValue);
         }
         
         // Guardar en caché
         this._configCache[cacheKey] = value;
         return value;
+    }
+    
+    /**
+     * Obtiene un valor de configuración desde la caché
+     * @param cacheKey Clave de caché a buscar
+     * @returns El valor en caché o undefined si no existe
+     */
+    private static getConfigFromCache<T>(cacheKey: string): T | undefined {
+        return this._configCache[cacheKey];
+    }
+    
+    /**
+     * Obtiene un valor de configuración desde el archivo local
+     * @param configName Nombre de la configuración en el archivo
+     * @param globalSettingName Nombre de la configuración en la configuración global
+     * @param defaultValue Valor por defecto si no se encuentra
+     * @returns El valor de configuración
+     */
+    private static getConfigFromFile<T>(configName: string, globalSettingName: string, defaultValue: T): T {
+        try {
+            // Primero intentar leer del archivo de configuración local
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (workspaceFolder) {
+                const configPath = this.getConfigPath(workspaceFolder);
+                
+                if (configPath && EIJEFileSystem.existsSync(configPath)) {
+                    const configContent = EIJEFileSystem.readFileSync(configPath);
+                    if (configContent) {
+                        const config = JSON.parse(configContent);
+                        
+                        if (config[configName] !== undefined) {
+                            return config[configName] as T;
+                        }
+                    }
+                }
+            }
+            
+            // Si no se encuentra en el archivo, usar configuración global
+            return this.getConfigFromGlobalSettings<T>(globalSettingName, defaultValue);
+        } catch (e) {
+            console.error(`Error loading ${configName} from config file:`, e);
+            // En caso de error, usar configuración global
+            return this.getConfigFromGlobalSettings<T>(globalSettingName, defaultValue);
+        }
+    }
+    
+    /**
+     * Obtiene un valor de configuración desde la configuración global de VS Code
+     * @param globalSettingName Nombre de la configuración en la configuración global
+     * @param defaultValue Valor por defecto si no se encuentra
+     * @returns El valor de configuración
+     */
+    private static getConfigFromGlobalSettings<T>(globalSettingName: string, defaultValue: T): T {
+        const globalValue = vscode.workspace.getConfiguration().get<T>(globalSettingName);
+        return globalValue !== undefined ? globalValue : defaultValue;
     }
 
     // Método auxiliar para cargar configuración de archivo de forma asíncrona
@@ -799,36 +918,6 @@ export class EIJEConfiguration {
             console.error(`Error loading ${configName} from config file async:`, e);
         }
         return undefined;
-    }
-
-    // Versión asíncrona para entorno web
-    private static async getConfigValueAsync<T>(configName: string, globalSettingName: string, defaultValue: T): Promise<T> {
-        if (this.isWebEnvironment()) {
-            // En entorno web, solo usar configuración global
-            const value = vscode.workspace.getConfiguration().get<T>(globalSettingName);
-            return value !== undefined ? value : defaultValue;
-        }
-
-        try {
-            // Primero intentar leer del archivo de configuración local
-            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-            if (workspaceFolder) {
-                const configPath = await this.getConfigPathAsync(workspaceFolder);
-                if (await EIJEFileSystem.exists(configPath)) {
-                    const configContent = await EIJEFileSystem.readFile(configPath);
-                    const config = JSON.parse(configContent);
-                    if (config[configName] !== undefined) {
-                        return config[configName] as T;
-                    }
-                }
-            }
-        } catch (e) {
-            console.error(`Error loading ${configName} from config file:`, e);
-        }
-        
-        // Si no se encuentra en el archivo local, usar la configuración global
-        const value = vscode.workspace.getConfiguration().get<T>(globalSettingName);
-        return value !== undefined ? value : defaultValue;
     }
 
     static get FORCE_KEY_UPPERCASE(): boolean {
@@ -920,32 +1009,61 @@ export class EIJEConfiguration {
         }
     }
     
+    // Guarda la configuración en el archivo local
+    private static saveConfigToFile(configPath: string, config: any): void {
+        try {
+            EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
+        } catch (error) {
+            console.error('Error writing configuration file:', error);
+            throw error;
+        }
+    }
+
+    // Actualiza la configuración de una carpeta de trabajo específica en el objeto de configuración local
+    private static updateLocalWorkspaceFolderConfig(config: any): void {
+        // Asegurarse de que workspaceFolders existe
+        config.workspaceFolders = config.workspaceFolders || [];
+        
+        if (config.workspaceFolders.length > 0) {
+            // Obtener la carpeta de trabajo actual
+            const currentWorkspaceFolder = this.DEFAULT_WORKSPACE_FOLDER;
+            
+            // Guardar configuraciones específicas por carpeta si hay una carpeta seleccionada
+            if (currentWorkspaceFolder) {
+                // Buscar la carpeta actual en la configuración
+                const folderIndex = config.workspaceFolders.findIndex((f: any) => f.name === currentWorkspaceFolder);
+                
+                if (folderIndex >= 0) {
+                    // Si se encontró la carpeta, actualizar su configuración
+                    config.workspaceFolders[folderIndex].visibleColumns = this.VISIBLE_COLUMNS;
+                    config.workspaceFolders[folderIndex].hiddenColumns = this.HIDDEN_COLUMNS;
+                }
+            }
+        } else {
+            // Si no hay carpetas de trabajo configuradas, usar configuración global
+            config.visibleColumns = this.VISIBLE_COLUMNS;
+            config.hiddenColumns = this.HIDDEN_COLUMNS;
+        }
+    }
+
+    // Elimina configuraciones antiguas o redundantes
+    private static cleanupLegacyConfig(config: any): void {
+        if (config.workspaceFolders && config.workspaceFolders.length > 0) {
+            // Eliminar las configuraciones globales si hay carpetas de trabajo
+            delete config.visibleColumns;
+            delete config.hiddenColumns;
+            
+            // Eliminar también las configuraciones específicas por carpeta en el nivel raíz
+            Object.keys(config).forEach(key => {
+                if (key.startsWith('visibleColumns_') || key.startsWith('hiddenColumns_')) {
+                    delete config[key];
+                }
+            });
+        }
+    }
+
     // Guarda toda la configuración en el archivo local
     static saveFullConfiguration(): void {
-        if (this.isWebEnvironment()) {
-            // En entorno web, intentar guardar en archivo local usando métodos asíncronos
-            this.saveFullConfigurationAsync().catch(() => {
-                // Si falla, usar configuración global como fallback
-                const config = vscode.workspace.getConfiguration();
-                
-                Promise.all([
-                    config.update('i18nJsonEditor.forceKeyUPPERCASE', this.FORCE_KEY_UPPERCASE, vscode.ConfigurationTarget.Global),
-                    config.update('i18nJsonEditor.jsonSpace', this.JSON_SPACE, vscode.ConfigurationTarget.Global),
-                    config.update('i18nJsonEditor.keySeparator', this.KEY_SEPARATOR, vscode.ConfigurationTarget.Global),
-                    config.update('i18nJsonEditor.lineEnding', this.LINE_ENDING, vscode.ConfigurationTarget.Global),
-                    config.update('i18nJsonEditor.supportedFolders', this.SUPPORTED_FOLDERS, vscode.ConfigurationTarget.Global),
-                    config.update('i18nJsonEditor.translationService', this.TRANSLATION_SERVICE, vscode.ConfigurationTarget.Global),
-                    config.update('i18nJsonEditor.translationServiceApiKey', this.TRANSLATION_SERVICE_API_KEY, vscode.ConfigurationTarget.Global),
-                    config.update('i18nJsonEditor.allowEmptyTranslations', this.ALLOW_EMPTY_TRANSLATIONS, vscode.ConfigurationTarget.Global),
-                    config.update('i18nJsonEditor.defaultLanguage', this.DEFAULT_LANGUAGE, vscode.ConfigurationTarget.Global),
-                    config.update('i18nJsonEditor.visibleColumns', this.VISIBLE_COLUMNS, vscode.ConfigurationTarget.Global),
-                    config.update('i18nJsonEditor.hiddenColumns', this.HIDDEN_COLUMNS, vscode.ConfigurationTarget.Global)
-                ]).catch(error => {
-                    console.error('Error saving web configuration:', error);
-                });
-            });
-            return;
-        }
         
         try {
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
@@ -971,391 +1089,137 @@ export class EIJEConfiguration {
                 config.defaultLanguage = this.DEFAULT_LANGUAGE;
                 config.defaultWorkspaceFolder = this.DEFAULT_WORKSPACE_FOLDER;
                 
-                // Asegurarse de que workspaceFolders existe
-                config.workspaceFolders = config.workspaceFolders || [];
+                // Limpiar configuraciones antiguas
+                this.cleanupLegacyConfig(config);
                 
-                // Si hay carpetas de trabajo configuradas, eliminar las configuraciones globales
-                if (config.workspaceFolders.length > 0) {
-                    // Eliminar las configuraciones globales si hay carpetas de trabajo
-                    delete config.visibleColumns;
-                    delete config.hiddenColumns;
-                    
-                    // Eliminar también las configuraciones específicas por carpeta en el nivel raíz
-                    Object.keys(config).forEach(key => {
-                        if (key.startsWith('visibleColumns_') || key.startsWith('hiddenColumns_')) {
-                            delete config[key];
-                        }
-                    });
-                    
-                    // Obtener la carpeta de trabajo actual
-                    const currentWorkspaceFolder = this.DEFAULT_WORKSPACE_FOLDER;
-                    
-                    // Guardar configuraciones específicas por carpeta si hay una carpeta seleccionada
-                    if (currentWorkspaceFolder) {
-                        // Buscar la carpeta actual en la configuración
-                        const folderIndex = config.workspaceFolders.findIndex((f: any) => f.name === currentWorkspaceFolder);
-                        
-                        if (folderIndex >= 0) {
-                            // Si se encontró la carpeta, actualizar su configuración
-                            config.workspaceFolders[folderIndex].visibleColumns = this.VISIBLE_COLUMNS;
-                            config.workspaceFolders[folderIndex].hiddenColumns = this.HIDDEN_COLUMNS;
-                        }
-                    }
-                } else {
-                    // Si no hay carpetas de trabajo configuradas, usar configuración global
-                    config.visibleColumns = this.VISIBLE_COLUMNS;
-                    config.hiddenColumns = this.HIDDEN_COLUMNS;
-                }
+                // Actualizar configuración de carpeta de trabajo en el objeto local
+                this.updateLocalWorkspaceFolderConfig(config);
                 
-                // Save config
-                EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                // Guardar configuración en archivo
+                this.saveConfigToFile(configPath, config);
             }
         } catch (e) {
             console.error('Error saving configuration:', e);
         }
     }
 
-    // Versión asíncrona para entorno web
-    static async saveFullConfigurationAsync(): Promise<void> {
+
+    
+    /**
+     * Método genérico para guardar la configuración de columnas (visibles u ocultas)
+     * @param columnType Tipo de columnas ('visibleColumns' o 'hiddenColumns')
+     * @param columns Array de columnas a guardar
+     */
+    static async saveColumnConfig(columnType: 'visibleColumns' | 'hiddenColumns', columns: string[]): Promise<void> {
+        // Obtener la carpeta de trabajo actual
+        const currentWorkspaceFolder = this.DEFAULT_WORKSPACE_FOLDER;
+        
+        // Limpiar caché para asegurar que se lea la configuración más reciente
+        this.clearConfigCache(columnType);
+        
+        // Nota: Se ha eliminado el código para entorno web ya que isWebEnvironment() siempre devuelve false
+        
         try {
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             if (workspaceFolder) {
-                const configPath = await this.getConfigPathAsync(workspaceFolder);
-                let config: any = {};
-                
-                // Load existing config if it exists
-                if (await EIJEFileSystem.exists(configPath)) {
-                    const configContent = await EIJEFileSystem.readFile(configPath);
-                    if (configContent) {
-                        config = JSON.parse(configContent);
-                    }
-                }
-                
-                // Update all configuration values
-                config.forceKeyUPPERCASE = this.FORCE_KEY_UPPERCASE;
-                config.jsonSpace = this.JSON_SPACE;
-                config.keySeparator = this.KEY_SEPARATOR;
-                config.lineEnding = this.LINE_ENDING;
-                config.supportedFolders = this.SUPPORTED_FOLDERS;
-                config.translationService = this.TRANSLATION_SERVICE;
-                config.translationServiceApiKey = this.TRANSLATION_SERVICE_API_KEY;
-                config.allowEmptyTranslations = this.ALLOW_EMPTY_TRANSLATIONS;
-                config.defaultLanguage = this.DEFAULT_LANGUAGE;
-                config.defaultWorkspaceFolder = this.DEFAULT_WORKSPACE_FOLDER;
-                
-                // Asegurarse de que workspaceFolders existe
-                config.workspaceFolders = config.workspaceFolders || [];
-                
-                // Si hay carpetas de trabajo configuradas, eliminar las configuraciones globales
-                if (config.workspaceFolders.length > 0) {
-                    // Eliminar las configuraciones globales si hay carpetas de trabajo
-                    delete config.visibleColumns;
-                    delete config.hiddenColumns;
+                const configPath = this.getConfigPath(workspaceFolder);
+                if (configPath) {
+                    let config: any = {};
                     
-                    // Eliminar también las configuraciones específicas por carpeta en el nivel raíz
-                    Object.keys(config).forEach(key => {
-                        if (key.startsWith('visibleColumns_') || key.startsWith('hiddenColumns_')) {
-                            delete config[key];
+                    if (EIJEFileSystem.existsSync(configPath)) {
+                        const configContent = EIJEFileSystem.readFileSync(configPath);
+                        try {
+                            config = JSON.parse(configContent);
+                        } catch (parseError) {
+                            console.error('Error parsing config file:', parseError);
+                            // Si hay error al parsear, usar un objeto vacío
+                            config = {};
                         }
-                    });
+                    }
                     
-                    // Obtener la carpeta de trabajo actual
-                    const currentWorkspaceFolder = this.DEFAULT_WORKSPACE_FOLDER;
-                    
-                    // Guardar configuraciones específicas por carpeta si hay una carpeta seleccionada
                     if (currentWorkspaceFolder) {
+                        // Si hay una carpeta de trabajo actual, actualizar la configuración de workspaceFolders
+                        config.workspaceFolders = config.workspaceFolders || [];
+                        
                         // Buscar la carpeta actual en la configuración
                         const folderIndex = config.workspaceFolders.findIndex((f: any) => f.name === currentWorkspaceFolder);
                         
                         if (folderIndex >= 0) {
                             // Si se encontró la carpeta, actualizar su configuración
-                            config.workspaceFolders[folderIndex].visibleColumns = this.VISIBLE_COLUMNS;
-                            config.workspaceFolders[folderIndex].hiddenColumns = this.HIDDEN_COLUMNS;
+                            config.workspaceFolders[folderIndex][columnType] = columns;
+                        } else {
+                            // Si no se encontró la carpeta, agregarla
+                            const newFolder: any = {
+                                name: currentWorkspaceFolder
+                            };
+                            newFolder[columnType] = columns;
+                            config.workspaceFolders.push(newFolder);
                         }
+                        
+                        // Si hay carpetas de trabajo configuradas, eliminar la configuración global
+                        if (config.workspaceFolders.length > 0) {
+                            delete config[columnType];
+                        }
+                    } else {
+                        // Si no hay carpeta de trabajo actual, actualizar la configuración global
+                        config[columnType] = columns;
                     }
-                } else {
-                    // Si no hay carpetas de trabajo configuradas, usar configuración global
-                    config.visibleColumns = this.VISIBLE_COLUMNS;
-                    config.hiddenColumns = this.HIDDEN_COLUMNS;
+                    
+                    // Guardar la configuración
+                    EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
+                    
+                    // Actualizar el caché inmediatamente
+                    if (currentWorkspaceFolder) {
+                        // Actualizar el caché de workspaceFolders
+                        this._configCache['config_workspaceFolders'] = config.workspaceFolders;
+                    } else {
+                        // Actualizar el caché del tipo de columna específico
+                        this._configCache[`config_${columnType}`] = columns;
+                    }
                 }
-                
-                // Save config
-                await EIJEFileSystem.writeFile(configPath, JSON.stringify(config, null, 2));
             }
         } catch (e) {
-            console.error('Error saving configuration async:', e);
-            throw e; // Re-throw para que el catch en saveFullConfiguration funcione
+            console.error(`Error saving ${columnType}:`, e);
+            throw e; // Propagar el error para manejarlo en el llamador
         }
     }
     
+    /**
+     * Guarda la configuración de columnas ocultas
+     * @param columns Array de columnas ocultas
+     */
     static async saveHiddenColumns(columns: string[]): Promise<void> {
-        // Obtener la carpeta de trabajo actual
-        const currentWorkspaceFolder = this.DEFAULT_WORKSPACE_FOLDER;
-        
-        // Limpiar caché para asegurar que se lea la configuración más reciente
-        this.clearConfigCache('hiddenColumns');
-        
-        if (this.isWebEnvironment()) {
-            // En entorno web, usar configuración global de VS Code
-            if (currentWorkspaceFolder) {
-                // Si hay una carpeta de trabajo actual, actualizar la configuración de workspaceFolders
-                await this.updateWorkspaceFolderConfig(currentWorkspaceFolder, { hiddenColumns: columns });
-            } else {
-                // Si no hay carpeta de trabajo actual, actualizar la configuración global
-                const config = vscode.workspace.getConfiguration();
-                await config.update('i18nJsonEditor.hiddenColumns', columns, vscode.ConfigurationTarget.Global);
-                // También actualizar el caché inmediatamente
-                this._configCache['config_hiddenColumns'] = columns;
-            }
-            return;
-        }
-        
-        try {
-            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-            if (workspaceFolder) {
-                const configPath = this.getConfigPath(workspaceFolder);
-                if (configPath) {
-                    let config: any = {};
-                    
-                    if (EIJEFileSystem.existsSync(configPath)) {
-                        const configContent = EIJEFileSystem.readFileSync(configPath);
-                        try {
-                            config = JSON.parse(configContent);
-                        } catch (parseError) {
-                            console.error('Error parsing config file:', parseError);
-                            // Si hay error al parsear, usar un objeto vacío
-                            config = {};
-                        }
-                    }
-                    
-                    if (currentWorkspaceFolder) {
-                        // Si hay una carpeta de trabajo actual, actualizar la configuración de workspaceFolders
-                        config.workspaceFolders = config.workspaceFolders || [];
-                        
-                        // Buscar la carpeta actual en la configuración
-                        const folderIndex = config.workspaceFolders.findIndex((f: any) => f.name === currentWorkspaceFolder);
-                        
-                        if (folderIndex >= 0) {
-                            // Si se encontró la carpeta, actualizar su configuración
-                            config.workspaceFolders[folderIndex].hiddenColumns = columns;
-                        } else {
-                            // Si no se encontró la carpeta, agregarla
-                            config.workspaceFolders.push({
-                                name: currentWorkspaceFolder,
-                                hiddenColumns: columns
-                            });
-                        }
-                        
-                        // Si hay carpetas de trabajo configuradas, eliminar la configuración global
-                        if (config.workspaceFolders.length > 0) {
-                            delete config.hiddenColumns;
-                        }
-                    } else {
-                        // Si no hay carpeta de trabajo actual, actualizar la configuración global
-                        config.hiddenColumns = columns;
-                    }
-                    
-                    // Guardar la configuración
-                    EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
-                    
-                    // Actualizar el caché inmediatamente
-                    if (currentWorkspaceFolder) {
-                        // Actualizar el caché de workspaceFolders
-                        this._configCache['config_workspaceFolders'] = config.workspaceFolders;
-                    } else {
-                        // Actualizar el caché de hiddenColumns
-                        this._configCache['config_hiddenColumns'] = columns;
-                    }
-                }
-            }
-        } catch (e) {
-            console.error('Error saving hidden columns:', e);
-            throw e; // Propagar el error para manejarlo en el llamador
-        }
+        return this.saveColumnConfig('hiddenColumns', columns);
     }
     
+    /**
+     * Guarda la configuración de columnas visibles
+     * @param columns Array de columnas visibles
+     */
     static async saveVisibleColumns(columns: string[]): Promise<void> {
-        // Obtener la carpeta de trabajo actual
-        const currentWorkspaceFolder = this.DEFAULT_WORKSPACE_FOLDER;
-        
-        // Limpiar caché para asegurar que se lea la configuración más reciente
-        this.clearConfigCache('visibleColumns');
-        
-        if (this.isWebEnvironment()) {
-            // En entorno web, usar configuración global de VS Code
-            if (currentWorkspaceFolder) {
-                // Si hay una carpeta de trabajo actual, actualizar la configuración de workspaceFolders
-                await this.updateWorkspaceFolderConfig(currentWorkspaceFolder, { visibleColumns: columns });
-            } else {
-                // Si no hay carpeta de trabajo actual, actualizar la configuración global
-                const config = vscode.workspace.getConfiguration();
-                await config.update('i18nJsonEditor.visibleColumns', columns, vscode.ConfigurationTarget.Global);
-                // También actualizar el caché inmediatamente
-                this._configCache['config_visibleColumns'] = columns;
-            }
-            return;
-        }
-        
-        try {
-            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-            if (workspaceFolder) {
-                const configPath = this.getConfigPath(workspaceFolder);
-                if (configPath) {
-                    let config: any = {};
-                    
-                    if (EIJEFileSystem.existsSync(configPath)) {
-                        const configContent = EIJEFileSystem.readFileSync(configPath);
-                        try {
-                            config = JSON.parse(configContent);
-                        } catch (parseError) {
-                            console.error('Error parsing config file:', parseError);
-                            // Si hay error al parsear, usar un objeto vacío
-                            config = {};
-                        }
-                    }
-                    
-                    if (currentWorkspaceFolder) {
-                        // Si hay una carpeta de trabajo actual, actualizar la configuración de workspaceFolders
-                        config.workspaceFolders = config.workspaceFolders || [];
-                        
-                        // Buscar la carpeta actual en la configuración
-                        const folderIndex = config.workspaceFolders.findIndex((f: any) => f.name === currentWorkspaceFolder);
-                        
-                        if (folderIndex >= 0) {
-                            // Si se encontró la carpeta, actualizar su configuración
-                            config.workspaceFolders[folderIndex].visibleColumns = columns;
-                        } else {
-                            // Si no se encontró la carpeta, agregarla
-                            config.workspaceFolders.push({
-                                name: currentWorkspaceFolder,
-                                visibleColumns: columns
-                            });
-                        }
-                        
-                        // Si hay carpetas de trabajo configuradas, eliminar la configuración global
-                        if (config.workspaceFolders.length > 0) {
-                            delete config.visibleColumns;
-                        }
-                    } else {
-                        // Si no hay carpeta de trabajo actual, actualizar la configuración global
-                        config.visibleColumns = columns;
-                    }
-                    
-                    // Guardar la configuración
-                    EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
-                    
-                    // Actualizar el caché inmediatamente
-                    if (currentWorkspaceFolder) {
-                        // Actualizar el caché de workspaceFolders
-                        this._configCache['config_workspaceFolders'] = config.workspaceFolders;
-                    } else {
-                        // Actualizar el caché de visibleColumns
-                        this._configCache['config_visibleColumns'] = columns;
-                    }
-                }
-            }
-        } catch (e) {
-            console.error('Error saving visible columns:', e);
-            throw e; // Propagar el error para manejarlo en el llamador
-        }
+        return this.saveColumnConfig('visibleColumns', columns);
     }
     
-    // Método auxiliar para actualizar la configuración de una carpeta de trabajo específica
-    private static async updateWorkspaceFolderConfig(folderName: string, configUpdate: any): Promise<void> {
-        try {
-            // Obtener la configuración actual
-            const config = vscode.workspace.getConfiguration();
-            const workspaceFolders = await config.get<any[]>('i18nJsonEditor.workspaceFolders') || [];
-            
-            // Buscar la carpeta en la configuración
-            const folderIndex = workspaceFolders.findIndex((f: any) => f.name === folderName);
-            
-            if (folderIndex >= 0) {
-                // Si se encontró la carpeta, actualizar su configuración
-                const updatedFolders = [...workspaceFolders];
-                updatedFolders[folderIndex] = {
-                    ...updatedFolders[folderIndex],
-                    ...configUpdate
-                };
-                
-                // Guardar la configuración actualizada
-                await config.update('i18nJsonEditor.workspaceFolders', updatedFolders, vscode.ConfigurationTarget.Global);
-                
-                // Actualizar el caché
-                this._configCache['config_workspaceFolders'] = updatedFolders;
-            }
-        } catch (e) {
-            console.error('Error updating workspace folder config:', e);
-        }
-    }
+    // Nota: Se ha eliminado el método updateWorkspaceFolderConfigAsync ya que era código muerto
+    // debido a que isWebEnvironment() siempre devuelve false
     
     static async saveWorkspaceFolders(folders: Array<{name: string, path: string}>): Promise<void> {
-        if (this.isWebEnvironment()) {
-            // En entorno web, usar configuración local de archivo
-            try {
-                const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-                if (workspaceFolder) {
-                    const configPath = await this.getConfigPathAsync(workspaceFolder);
-                    let config: any = {};
-                    
-                    if (await EIJEFileSystem.exists(configPath)) {
-                        const configContent = await EIJEFileSystem.readFile(configPath);
-                        config = JSON.parse(configContent.toString());
-                    }
-                    
-                    // Actualizar las carpetas de trabajo
-                    config.workspaceFolders = folders;
-                    
-                    // Guardar la configuración actualizada
-                    await EIJEFileSystem.writeFile(configPath, JSON.stringify(config, null, 2));
-                    
-                    // Actualizar el caché
-                    this._configCache['config_workspaceFolders'] = folders;
-                }
-            } catch (e) {
-                console.error('Error saving workspace folders:', e);
-            }
-        } else {
-            // En entorno de escritorio, usar configuración de VS Code
-            try {
-                const config = vscode.workspace.getConfiguration();
-                await config.update('i18nJsonEditor.workspaceFolders', folders, vscode.ConfigurationTarget.Global);
-                
-                // Actualizar el caché
-                this._configCache['config_workspaceFolders'] = folders;
-            } catch (e) {
-                console.error('Error saving workspace folders:', e);
-            }
+        // Nota: Se ha eliminado el bloque condicional para entorno web ya que isWebEnvironment() siempre devuelve false
+        
+        // En entorno de escritorio, usar configuración de VS Code
+        try {
+            const config = vscode.workspace.getConfiguration();
+            await config.update('i18nJsonEditor.workspaceFolders', folders, vscode.ConfigurationTarget.Global);
+            
+            // Actualizar el caché
+            this._configCache['config_workspaceFolders'] = folders;
+        } catch (e) {
+            console.error('Error saving workspace folders:', e);
         }
     }
 
     static async saveDefaultWorkspaceFolder(folderName: string): Promise<void> {
-        if (this.isWebEnvironment()) {
-            // En entorno web, usar configuración local de archivo
-            try {
-                const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-                if (workspaceFolder) {
-                    const configPath = await this.getConfigPathAsync(workspaceFolder);
-                    let config: any = {};
-                    
-                    if (await EIJEFileSystem.exists(configPath)) {
-                        const configContent = await EIJEFileSystem.readFile(configPath);
-                        if (configContent) {
-                            config = JSON.parse(configContent);
-                        }
-                    }
-                    
-                    config.defaultWorkspaceFolder = folderName;
-                    await EIJEFileSystem.writeFile(configPath, JSON.stringify(config, null, 2));
-                    
-                    // Actualizar el caché inmediatamente
-                    this._configCache['config_defaultWorkspaceFolder'] = folderName;
-                }
-            } catch (e) {
-                console.error('Error saving default workspace folder in web environment:', e);
-            }
-            return;
-        }
+        // Nota: Se ha eliminado el bloque condicional para entorno web ya que isWebEnvironment() siempre devuelve false
         
         try {
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
@@ -1386,32 +1250,23 @@ export class EIJEConfiguration {
     }
 
     static get WORKSPACE_FOLDERS(): EIJEFolder[] {
-        console.log('Getting WORKSPACE_FOLDERS');
-        
         // Obtener carpetas de la configuración
         const folders = this.getConfigValue<EIJEFolder[]>('workspaceFolders', 'i18nJsonEditor.workspaceFolders', []);
-        console.log('Folders from config:', folders);
         
         let workspaceFolder: vscode.WorkspaceFolder | undefined = vscode.workspace.workspaceFolders?.[0];
-        console.log('Workspace folder:', workspaceFolder?.uri.fsPath);
 
         if (!workspaceFolder) {
-            console.log('No workspace folder found, returning empty array');
             return [];
         }
 
         // Si no hay carpetas en la configuración, buscar carpetas i18n en el proyecto
         if (!folders || folders.length === 0) {
-            console.log('No folders in config, searching for i18n directories');
-            
             // Buscar todas las carpetas i18n en el proyecto
             const foundFolders = this.findAllI18nFolders(workspaceFolder.uri.fsPath);
-            console.log('Found i18n folders:', foundFolders);
             
             if (foundFolders.length > 0) {
                 // Normalizar las carpetas encontradas (eliminar duplicados y normalizar rutas)
                 const normalizedFolders = this.normalizeI18nFolders(foundFolders);
-                console.log('Normalized i18n folders:', normalizedFolders);
                 
                 // Actualizar la configuración con las carpetas encontradas
                 const configPath = this.getConfigPath(workspaceFolder);
@@ -1440,7 +1295,6 @@ export class EIJEConfiguration {
                             
                             // Guardar la configuración actualizada
                             EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
-                            console.log('Updated config with found i18n folders');
                             
                             // Limpiar la caché de configuración
                             this.clearConfigCache();
@@ -1477,26 +1331,19 @@ export class EIJEConfiguration {
                 if (isAbsolutePath) {
                     // Si es una ruta absoluta, verificar que exista
                     if (EIJEFileSystem.existsSync(folder.path)) {
-                        console.log(`Folder exists (absolute path): ${folder.path}`);
                         _folders.push(folder);
-                    } else {
-                        console.log(`Folder does not exist (absolute path): ${folder.path}`);
                     }
                 } else {
                     // Si es una ruta relativa, verificar que exista la ruta absoluta correspondiente
                     const absolutePath = _path.join(workspaceFolder.uri.fsPath, folder.path);
                     if (EIJEFileSystem.existsSync(absolutePath)) {
-                        console.log(`Folder exists (relative path): ${folder.path} -> ${absolutePath}`);
                         // Mantener la ruta relativa en la configuración
                         _folders.push(folder);
-                    } else {
-                        console.log(`Folder does not exist (relative path): ${folder.path} -> ${absolutePath}`);
                     }
                 }
             }
         }
 
-        console.log('Returning folders:', _folders);
         return _folders;
     }
     
@@ -1553,56 +1400,10 @@ export class EIJEConfiguration {
         return Array.from(uniquePaths.values());
     }
 
-    // Método para inicializar configuración de forma asíncrona en entorno web
+    // Método simplificado para inicializar configuración
     static async initializeConfigurationAsync(): Promise<void> {
-        if (this.isWebEnvironment()) {
-            try {
-                // Intentar cargar configuración del archivo local
-                const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-                if (workspaceFolder) {
-                    const configPath = await this.getConfigPathAsync(workspaceFolder);
-                    
-                    // Crear directorio .vscode si no existe
-                    const vscodePath = _path.join(workspaceFolder.uri.fsPath, '.vscode');
-                    if (!(await EIJEFileSystem.exists(vscodePath))) {
-                        await EIJEFileSystem.mkdir(vscodePath);
-                    }
-                    
-                    // Si el archivo no existe, crearlo con configuración por defecto
-                    if (!(await EIJEFileSystem.exists(configPath))) {
-                        const defaultConfig = {
-                            allowEmptyTranslations: false,
-                            defaultLanguage: "en",
-                            forceKeyUPPERCASE: true,
-                            jsonSpace: 2,
-                            keySeparator: ".",
-                            lineEnding: "\n",
-                            supportedFolders: ["i18n"],
-                            workspaceFolders: [],
-                            defaultWorkspaceFolder: "",
-                            translationService: "Coming soon",
-                            translationServiceApiKey: "Coming soon",
-                            visibleColumns: [],
-                            hiddenColumns: []
-                        };
-                        
-                        await EIJEFileSystem.writeFile(configPath, JSON.stringify(defaultConfig, null, 2));
-                    }
-                    
-                    // Cargar configuración del archivo
-                    const configContent = await EIJEFileSystem.readFile(configPath);
-                    if (configContent) {
-                        const config = JSON.parse(configContent);
-                        
-                        // Actualizar caché con valores del archivo
-                        Object.keys(config).forEach(key => {
-                            this._configCache[`config_${key}`] = config[key];
-                        });
-                    }
-                }
-            } catch (error) {
-                console.error('Error initializing configuration async:', error);
-            }
-        }
+        // Este método se mantiene para compatibilidad con código existente
+        // pero ya no contiene lógica específica para entorno web
+        // ya que isWebEnvironment() siempre devuelve false
     }
 }

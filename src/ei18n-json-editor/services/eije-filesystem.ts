@@ -5,6 +5,7 @@
 
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import { promises as fsPromises } from 'fs';
 
 export class EIJEFileSystem {
 
@@ -61,9 +62,10 @@ export class EIJEFileSystem {
         }
     }
 
+    // Métodos asíncronos que utilizan realmente fs.promises
     static async readFile(filePath: string): Promise<string> {
         try {
-            return fs.readFileSync(filePath, 'utf8');
+            return await fsPromises.readFile(filePath, 'utf8');
         } catch (error) {
             console.error('Error reading file:', error);
             return '';
@@ -72,7 +74,7 @@ export class EIJEFileSystem {
 
     static async writeFile(filePath: string, content: string): Promise<void> {
         try {
-            fs.writeFileSync(filePath, content, 'utf8');
+            await fsPromises.writeFile(filePath, content, 'utf8');
         } catch (error) {
             console.error('Error writing file:', error);
         }
@@ -80,16 +82,16 @@ export class EIJEFileSystem {
 
     static async exists(filePath: string): Promise<boolean> {
         try {
-            return fs.existsSync(filePath);
+            await fsPromises.access(filePath);
+            return true;
         } catch (error) {
-            console.error('Error checking file existence:', error);
             return false;
         }
     }
 
     static async readdir(dirPath: string): Promise<string[]> {
         try {
-            return fs.readdirSync(dirPath);
+            return await fsPromises.readdir(dirPath);
         } catch (error) {
             console.error('Error reading directory:', error);
             return [];
@@ -98,8 +100,9 @@ export class EIJEFileSystem {
 
     static async mkdir(dirPath: string): Promise<void> {
         try {
-            if (!fs.existsSync(dirPath)) {
-                fs.mkdirSync(dirPath, { recursive: true });
+            const exists = await EIJEFileSystem.exists(dirPath);
+            if (!exists) {
+                await fsPromises.mkdir(dirPath, { recursive: true });
             }
         } catch (error) {
             console.error('Error creating directory:', error);
@@ -112,8 +115,9 @@ export class EIJEFileSystem {
      */
     static async deleteFile(filePath: string): Promise<void> {
         try {
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
+            const exists = await EIJEFileSystem.exists(filePath);
+            if (exists) {
+                await fsPromises.unlink(filePath);
             }
         } catch (error) {
             console.error('Error deleting file:', error);

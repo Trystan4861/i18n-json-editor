@@ -611,7 +611,7 @@ export class EIJEManager {
                 await EIJEConfiguration.saveVisibleColumns(visibleColumns);
                 await EIJEConfiguration.saveHiddenColumns(hiddenColumns);
                 
-                console.log('Cleaned up deleted languages from visibility configuration');
+
             }
             
             // Limpiar también todas las configuraciones de carpetas de trabajo
@@ -633,7 +633,6 @@ export class EIJEManager {
                         if (config.visibleColumns.length !== originalGlobalVisibleCount) {
                             // Guardar la configuración actualizada
                             EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
-                            console.log('Cleaned up deleted languages from global visibility configuration');
                         }
                     }
                     
@@ -646,7 +645,6 @@ export class EIJEManager {
                         if (config.hiddenColumns.length !== originalGlobalHiddenCount) {
                             // Guardar la configuración actualizada
                             EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
-                            console.log('Cleaned up deleted languages from global visibility configuration');
                         }
                     }
                     
@@ -684,7 +682,6 @@ export class EIJEManager {
                         // Si se actualizó alguna configuración, guardar el archivo
                         if (configUpdated) {
                             EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
-                            console.log('Cleaned up deleted languages from workspace folders configuration');
                         }
                     }
                     
@@ -700,7 +697,6 @@ export class EIJEManager {
                     // Si se eliminaron configuraciones en el nivel raíz, guardar el archivo
                     if (rootConfigUpdated) {
                         EIJEFileSystem.writeFileSync(configPath, JSON.stringify(config, null, 2));
-                        console.log('Removed legacy workspace-specific configurations from root level');
                     }
                 }
             }
@@ -1057,8 +1053,6 @@ export class EIJEManager {
         const workspaceFolders = EIJEConfiguration.WORKSPACE_FOLDERS;
         
         if (workspaceFolders.length === 0) {
-            console.log('No workspace folders found, showing prompt to create one');
-            
             // Mostrar diálogo para crear una carpeta i18n
             // Usamos setTimeout para asegurarnos de que el panel esté completamente inicializado
             setTimeout(() => {
@@ -1144,7 +1138,6 @@ export class EIJEManager {
                     validFolders.push(folder);
                 } else {
                     // Si no existe, marcar que la configuración ha cambiado
-                    console.log(`Workspace folder not found: ${folder.path} (${absolutePath})`);
                     configChanged = true;
                 }
             } catch (error) {
@@ -1251,10 +1244,7 @@ export class EIJEManager {
     private initializeWorkspaceFolderSelector(currentFolder?: string): void {
         const workspaceFolders = EIJEConfiguration.WORKSPACE_FOLDERS;
         
-        console.log('Initializing workspace folder selector:', { workspaceFolders, currentFolder, folderPath: this.folderPath });
-        
         if (workspaceFolders.length === 0) {
-            console.log('No workspace folders found');
             return;
         }
         
@@ -1283,8 +1273,6 @@ export class EIJEManager {
                 // Si no hay carpeta por defecto, no seleccionar ninguna automáticamente
             }
         }
-        
-        console.log('Sending initWorkspaceFolders message:', { folders: workspaceFolders, currentFolder: activeFolder });
         
         // Enviar datos al frontend con un pequeño delay para asegurar que el webview esté listo
         setTimeout(() => {
