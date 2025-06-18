@@ -11,9 +11,20 @@
   "allowEmptyTranslations": false,
   "defaultLanguage": "en",
   "defaultWorkspaceFolder": "src",
-  "workspaceFolders": [],
-  "visibleColumns": [
-    "es"
-  ],
-  "hiddenColumns": []
+  "workspaceFolders": [
+    {
+      "name": "out",
+      "path": "out/i18n",
+      "visibleColumns": [],
+      "hiddenColumns": []
+    },
+    {
+      "name": "src",
+      "path": "src/i18n",
+      "visibleColumns": [
+        "es"
+      ],
+      "hiddenColumns": []
+    }
+  ]
 }

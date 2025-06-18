@@ -112,7 +112,6 @@ var currentWorkspaceFolder = ''; // Variable para rastrear la carpeta de trabajo
         
       case "initWorkspaceFolders":
         // Inicializar el desplegable de carpetas de trabajo
-        console.log('Received initWorkspaceFolders message:', message);
         initializeWorkspaceFolderSelector(message.folders, message.currentFolder);
         break;
         
@@ -288,8 +287,6 @@ function add() {
 }
 
 function initializeWorkspaceFolderSelector(folders, currentFolder) {
-  console.log('initializeWorkspaceFolderSelector called with:', { folders, currentFolder });
-  
   const selector = document.getElementById('workspace-folder-selector');
   if (!selector) {
     console.error('workspace-folder-selector not found in DOM');
@@ -313,7 +310,6 @@ function initializeWorkspaceFolderSelector(folders, currentFolder) {
   selector.appendChild(placeholderOption);
   
   if (!folders || folders.length === 0) {
-    console.log('No folders provided or empty folders array');
     // Ocultar el selector si no hay carpetas configuradas
     selector.style.display = 'none';
     return;
@@ -339,8 +335,6 @@ function initializeWorkspaceFolderSelector(folders, currentFolder) {
   
   // Mostrar el selector siempre que haya carpetas (incluso si es solo una para mostrar cuál está activa)
   selector.style.display = 'block';
-  
-  console.log('Workspace folder selector initialized with', folders.length, 'folders. Current:', currentFolder);
 }
 
 function switchWorkspaceFolder(el) {
@@ -775,9 +769,7 @@ function showFlashyNotification(message, type, duration) {
   if (typeof window.flashy === 'function') {
     window.flashy(message, options);
   } else {
-    // Fallback si Flashy no está disponible
-    console.warn('Flashy no está disponible, usando console.log como fallback');
-    console.log(`[${type.toUpperCase()}] ${message}`);
+    // Fallback si Flashy no está disponible - no hacer nada
   }
 }
 
@@ -928,7 +920,6 @@ function showCreateI18nPrompt(title, text) {
       showCustomPathPrompt();
     } else {
       // Cancelar - cerrar el editor
-      console.log('Operación cancelada por el usuario');
       vscode.postMessage({
         command: 'closeEditor'
       });

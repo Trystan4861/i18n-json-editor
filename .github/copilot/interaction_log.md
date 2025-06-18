@@ -1,5 +1,85 @@
 # Registro de Interacciones - ei18n-json-editor
 
+## 2025-06-13 16:00 - [trystan4861] - [Adición de tareas de limpieza de código]
+
+**Tipo de petición:** Mejora de código
+
+**Problema reportado:**
+Necesidad de identificar y eliminar elementos innecesarios en el código como console.logs y comentarios obsoletos que no aportan valor.
+
+**Solución implementada:**
+Adición de nuevas tareas en el archivo `refactor.yml`:
+
+1. **Eliminación de console.logs innecesarios**:
+   - Nueva tarea para identificar y eliminar logs de depuración en todo el código
+   - Propuesta de implementar un sistema de logging centralizado con niveles configurables
+
+2. **Limpieza de comentarios obsoletos**:
+   - Tarea para eliminar comentarios redundantes o que no aportan valor
+   - Enfoque en mejorar la legibilidad del código
+
+3. **Identificación de código redundante**:
+   - Nueva sección para detectar y eliminar código duplicado no identificado previamente
+   - Propuesta de extraer funcionalidades comunes a métodos auxiliares
+
+**Archivos modificados:**
+- `refactor.yml` - Adición de nuevas tareas de refactorización
+- `.github/copilot/project_activity_log.md` - Registro de la actividad
+- `.github/copilot/interaction_log.md` - Actualización del registro de interacciones
+
+**Estado:** Completado - Tareas agregadas para implementación futura
+
+## 2025-06-13 15:30 - [trystan4861] - [Optimización de rendimiento]
+
+**Tipo de petición:** Optimización
+
+**Problema reportado:**
+1. Método `findNextEmptyTranslation()` recorre todas las traducciones múltiples veces, lo que podría ser ineficiente con conjuntos de datos grandes
+2. Método `findI18nFolders()` realiza búsquedas recursivas profundas que podrían ser costosas en proyectos grandes
+
+**Solución implementada:**
+
+1. **Optimización de findNextEmptyTranslation()**:
+   - Precálculo de idiomas a comprobar (excluyendo ocultos)
+   - Creación de un mapa de páginas para traducciones
+   - Búsqueda optimizada por rangos de índices
+   - Eliminación de recorridos múltiples del conjunto de datos
+
+2. **Optimización de findI18nFolders()**:
+   - Implementación de sistema de caché para evitar búsquedas repetidas
+   - Control de profundidad para limitar búsquedas excesivas
+   - Optimización de la búsqueda recursiva
+   - Filtrado temprano de archivos y directorios ignorados
+   - Búsqueda prioritaria de carpetas i18n antes de búsqueda recursiva
+
+**Archivos modificados:**
+- `src/ei18n-json-editor/eije-data.ts` - Optimización de findNextEmptyTranslation()
+- `src/ei18n-json-editor/eije-configuration.ts` - Implementación de caché y optimización de búsqueda
+- `refactor.yml` - Actualización del estado de las tareas a "done"
+
+**Estado:** Completado
+
+# Registro de Interacciones - ei18n-json-editor
+
+## 2025-06-12 10:00 - [trystan4861] - [Refactorización de métodos asíncronos]
+
+**Tipo de petición:** Refactorización
+
+**Problema reportado:**
+Métodos asíncronos como readFile(), writeFile(), etc. en la clase EIJEFileSystem en realidad utilizan operaciones síncronas internamente, lo que podría causar bloqueos en la interfaz de usuario durante operaciones de E/S intensivas.
+
+**Solución implementada:**
+- Importado el módulo `promises` de `fs` para utilizar las versiones asíncronas de las funciones
+- Modificados los métodos `readFile()`, `writeFile()`, `exists()`, `readdir()`, `mkdir()` y `deleteFile()` para utilizar `await` con las funciones de `fs.promises`
+- Actualizado el método `exists()` para utilizar `fsPromises.access()` en lugar de `fs.existsSync()`
+- Mantenidos los métodos síncronos originales para compatibilidad con el código existente
+
+**Archivos modificados:**
+- `/src/ei18n-json-editor/services/eije-filesystem.ts` - Implementación de métodos asíncronos reales
+- `/refactor.yml` - Actualización del estado de la tarea a "done"
+
+**Estado:** Completado
+
 ## 2025-01-27 21:45 - [trystan4861] - [Corrección de problemas críticos]
 
 **Tipo de petición:** Corrección de errores
