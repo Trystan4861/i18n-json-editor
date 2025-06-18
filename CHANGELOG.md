@@ -11,6 +11,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Mejorada la estructura de métodos para evitar duplicación
 - Optimizado el manejo de traducciones vacías
 - Simplificada la lógica de carga de archivos
+- Eliminado archivo translations.ts obsoleto y modificado i18n-service para usar solo archivos JSON
 
 ### Fixed
 - Corregido problema de duplicación en el método de filtrado de traducciones
