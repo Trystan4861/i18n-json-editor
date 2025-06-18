@@ -1,8 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { EIJEFileSystem } from '../ei18n-json-editor/services/eije-filesystem';
-import { translations } from './translations';
-import { EnvironmentUtils } from '../utils/environment-utils';
 
 export class I18nService {
     private static instance: I18nService;
@@ -67,16 +65,23 @@ export class I18nService {
                 }
             }
             
-            // Si no se cargó nada, usar traducciones embebidas
+            // Si no se cargó nada, crear un objeto vacío con estructura básica
             if (Object.keys(this.translations).length === 0) {
-                this.translations = translations;
+                this.translations = {
+                    en: { extension: {}, ui: {} },
+                    es: { extension: {}, ui: {} }
+                };
+                console.warn('No translation files found. Using empty translations.');
             }
             
             this.isLoaded = true;
         } catch (error) {
             console.error('Failed to load translations:', error);
-            // Fallback a traducciones embebidas
-            this.translations = translations;
+            // Fallback a objeto vacío con estructura básica
+            this.translations = {
+                en: { extension: {}, ui: {} },
+                es: { extension: {}, ui: {} }
+            };
             this.isLoaded = true;
         }
     }
@@ -101,29 +106,10 @@ export class I18nService {
 
     public t(key: string, ...args: any[]): string {
         try {
-            // Si las traducciones no están cargadas, usar fallback
+            // Si las traducciones no están cargadas o no existe el idioma actual, devolver la clave
             if (!this.isLoaded || !this.translations[this.currentLanguage]) {
-                // Intentar usar traducciones embebidas como fallback
-                const fallbackTranslations = translations[this.currentLanguage as keyof typeof translations] || translations.en;
-                const keyParts = key.split('.');
-                let value: any = fallbackTranslations;
-                
-                for (const part of keyParts) {
-                    value = value?.[part];
-                    if (value === undefined) {
-                        return key; // Return the key if the translation is not found
-                    }
-                }
-                
-                // Replace {0}, {1}, etc. with the corresponding arguments
-                if (args.length > 0 && typeof value === 'string') {
-                    return value.replace(/{(\d+)}/g, (match, index) => {
-                        const argIndex = parseInt(index, 10);
-                        return argIndex < args.length ? args[argIndex] : match;
-                    });
-                }
-                
-                return typeof value === 'string' ? value : key;
+                console.warn(`Translation not available for language ${this.currentLanguage}. Using key as fallback.`);
+                return key;
             }
 
             const keyParts = key.split('.');
