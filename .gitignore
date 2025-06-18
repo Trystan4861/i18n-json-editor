@@ -11,3 +11,4 @@ dist/**
 .vscode/.ei18n-editor-config.json
 *.bak
 todo.yml
+_src
