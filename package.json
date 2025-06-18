@@ -11,7 +11,7 @@
     },
     "description": "Easily edit your i18n json files, inspired in the vscode i18n json editor by Thibault Vanderseypen",
     "icon": "media/images/ei18n_logo.png",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "engines": {
         "vscode": "^1.30.0"
     },
