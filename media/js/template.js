@@ -19,9 +19,7 @@ var currentWorkspaceFolder = ''; // Variable para rastrear la carpeta de trabajo
     if (saveButton) {
       saveButton.disabled = true;
     }
-    tippy('[title]',{
-      content: (reference) => reference.getAttribute('title'),      
-    });
+    initTooltips();
     
     // Cerrar el menú contextual al hacer clic en cualquier parte de la página
     document.addEventListener('click', function(event) {
@@ -42,6 +40,8 @@ var currentWorkspaceFolder = ''; // Variable para rastrear la carpeta de trabajo
         document.getElementById("content-view").innerHTML = message.render;
         // Actualizar el contador de traducciones pendientes después de renderizar
         checkEmptyTranslations();
+        // Reinicializar tooltips después de actualizar el contenido
+        initTooltips();
         break;
       case "emptyTranslationsFound":
         // Actualizar la información de traducciones vacías
@@ -112,7 +112,6 @@ var currentWorkspaceFolder = ''; // Variable para rastrear la carpeta de trabajo
         
       case "initWorkspaceFolders":
         // Inicializar el desplegable de carpetas de trabajo
-        console.log('Received initWorkspaceFolders message:', message);
         initializeWorkspaceFolderSelector(message.folders, message.currentFolder);
         break;
         
@@ -288,8 +287,6 @@ function add() {
 }
 
 function initializeWorkspaceFolderSelector(folders, currentFolder) {
-  console.log('initializeWorkspaceFolderSelector called with:', { folders, currentFolder });
-  
   const selector = document.getElementById('workspace-folder-selector');
   if (!selector) {
     console.error('workspace-folder-selector not found in DOM');
@@ -313,7 +310,6 @@ function initializeWorkspaceFolderSelector(folders, currentFolder) {
   selector.appendChild(placeholderOption);
   
   if (!folders || folders.length === 0) {
-    console.log('No folders provided or empty folders array');
     // Ocultar el selector si no hay carpetas configuradas
     selector.style.display = 'none';
     return;
@@ -339,8 +335,6 @@ function initializeWorkspaceFolderSelector(folders, currentFolder) {
   
   // Mostrar el selector siempre que haya carpetas (incluso si es solo una para mostrar cuál está activa)
   selector.style.display = 'block';
-  
-  console.log('Workspace folder selector initialized with', folders.length, 'folders. Current:', currentFolder);
 }
 
 function switchWorkspaceFolder(el) {
@@ -775,9 +769,7 @@ function showFlashyNotification(message, type, duration) {
   if (typeof window.flashy === 'function') {
     window.flashy(message, options);
   } else {
-    // Fallback si Flashy no está disponible
-    console.warn('Flashy no está disponible, usando console.log como fallback');
-    console.log(`[${type.toUpperCase()}] ${message}`);
+    // Fallback si Flashy no está disponible - no hacer nada
   }
 }
 
@@ -854,7 +846,7 @@ function hideLanguageColumn() {
  * Muestra un diálogo de confirmación para eliminar un idioma
  */
 function confirmDeleteLanguage() {
-  if (!contextMenuLanguage) return;
+  if (!contextMenuLanguage) {return;}
   
   // Primera confirmación
   Swal.fire({
@@ -928,7 +920,6 @@ function showCreateI18nPrompt(title, text) {
       showCustomPathPrompt();
     } else {
       // Cancelar - cerrar el editor
-      console.log('Operación cancelada por el usuario');
       vscode.postMessage({
         command: 'closeEditor'
       });
@@ -999,6 +990,32 @@ function showNoWorkspaceFoldersMessage() {
     background: 'var(--vscode-editor-background)',
     color: 'var(--vscode-editor-foreground)',
     confirmButtonColor: 'var(--vscode-button-background)'
+  });
+}
+
+// Función para configurar la extensión
+function configureExtension() {
+  // Esta función será implementada posteriormente
+  // Por ahora, solo enviamos un mensaje al backend
+  vscode.postMessage({
+    command: 'configureExtension'
+  });
+}
+
+// Función para inicializar los tooltips
+function initTooltips() {
+  // Destruir tooltips existentes para evitar duplicados
+  const elements = document.querySelectorAll('[title]');
+  elements.forEach(el => {
+    if (el._tippy) {
+      el._tippy.destroy();
+    }
+  });
+  
+  // Inicializar tooltips en todos los elementos con atributo title
+  tippy('[title]', {
+    content: (reference) => reference.getAttribute('title'),
+    placement: 'bottom', // Colocar todos los tooltips debajo de los elementos
   });
 }
 

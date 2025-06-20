@@ -51,10 +51,15 @@
       "chage_view_mode": "Cambiar modo de vista",
       "error_translations": "Hay algunos errores de traducción",
       "select_workspace_folder": "Seleccione carpeta de trabajo",
-      "discard_changes": "Descartar cambios"
+      "discard_changes": "Descartar cambios",
+      "configure_extension": "Configurar extensión"
     },
     "pagination": {
-      "itemsPerPage": "Elementos por página"
+      "itemsPerPage": "Elementos por página",
+      "firstPage": "Primera página",
+      "previousPage": "Anterior",
+      "nextPage": "Siguiente",
+      "lastPage": "Última página"
     },
     "messages": {
       "saved": "Archivos i18n guardados",
@@ -83,7 +88,8 @@
       "i18nFolderCreated": "Directorio i18n creado con éxito",
       "i18nFolderCreationError": "Error al crear el directorio i18n",
       "noWorkspaceFolders": "No hay carpetas de trabajo configuradas",
-      "createI18nToStart": "Por favor, cree una carpeta i18n para comenzar"
+      "createI18nToStart": "Por favor, cree una carpeta i18n para comenzar",
+      "configurationUpdated": "Configuración actualizada: {setting} = {value}"
     },
     "placeholders": {
       "key": "Clave...",

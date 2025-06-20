@@ -24,8 +24,7 @@ export async function activate(context: vscode.ExtensionContext) {
             i18n.setLanguage('en');
         }
         
-        // Log successful initialization
-        console.log('Enhanced i18n JSON Editor: i18n service initialized successfully');
+        // i18n service initialized successfully
     } catch (error) {
         console.error('Enhanced i18n JSON Editor: Error initializing i18n service', error);
         // Ensure i18n is initialized even if there's an error

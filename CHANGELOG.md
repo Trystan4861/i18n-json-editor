@@ -4,6 +4,20 @@ All notable changes to the "ei18n-json-editor" extension will be documented in t
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [v1.0.6]
+
+### Changed
+- Refactorizado código redundante en varios archivos
+- Mejorada la estructura de métodos para evitar duplicación
+- Optimizado el manejo de traducciones vacías
+- Simplificada la lógica de carga de archivos
+- Eliminado archivo translations.ts obsoleto y modificado i18n-service para usar solo archivos JSON
+
+### Fixed
+- Corregido problema de duplicación en el método de filtrado de traducciones
+- Mejorado el rendimiento en la búsqueda de traducciones vacías
+- Unificada la validación de traducciones vacías
+
 ## [v1.0.5]
 
 ### Fixed

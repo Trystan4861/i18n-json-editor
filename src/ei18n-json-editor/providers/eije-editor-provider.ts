@@ -6,16 +6,12 @@ import { EIJEConfiguration } from '../eije-configuration';
 import { EIJEManager } from '../eije-manager';
 import { I18nService } from '../../i18n/i18n-service';
 import { NotificationService } from '../services/notification-service';
+import { EnvironmentUtils } from '../../utils/environment-utils';
 
 export class EIJEEditorProvider {
     // Referencia estática para rastrear el panel activo
     private static currentPanel: vscode.WebviewPanel | undefined;
     private static currentManager: EIJEManager | undefined;
-
-    private static isWebEnvironment(): boolean {
-        // Siempre retornamos false ya que solo funcionará en escritorio
-        return false;
-    }
 
     public static register(context: vscode.ExtensionContext): vscode.Disposable {
         const i18n = I18nService.getInstance(context);
@@ -35,7 +31,7 @@ export class EIJEEditorProvider {
                     let folderBaseName: string;
                     let relativePath: string;
                     
-                    if (this.isWebEnvironment()) {
+                    if (EnvironmentUtils.isWebEnvironment()) {
                         // En entorno web, manejar las rutas manualmente
                         const normalizedFolderPath = folderPath.replace(/\\/g, '/');
                         const normalizedRootPath = rootPath.replace(/\\/g, '/');
@@ -87,16 +83,14 @@ export class EIJEEditorProvider {
             
             for (const workspaceFolder of vscode.workspace.workspaceFolders) {
                 const rootPath = workspaceFolder.uri.fsPath;
-                console.log('DEBUG ASYNC: Workspace root path:', rootPath);
                 
                 for (const supportedFolder of EIJEConfiguration.SUPPORTED_FOLDERS) {
-                    console.log('DEBUG ASYNC: Checking supported folder:', supportedFolder);
                     
                     // Verificar por nombre de carpeta - usar lógica más robusta para entorno web
                     let folderBaseName: string;
                     let relativePath: string;
                     
-                    if (this.isWebEnvironment()) {
+                    if (EnvironmentUtils.isWebEnvironment()) {
                         // En entorno web, manejar las rutas manualmente
                         const normalizedFolderPath = folderPath.replace(/\\/g, '/');
                         const normalizedRootPath = rootPath.replace(/\\/g, '/');
@@ -117,15 +111,10 @@ export class EIJEEditorProvider {
                         relativePath = _path.relative(rootPath, folderPath);
                     }
                     
-                    console.log('DEBUG ASYNC: Folder basename:', folderBaseName);
-                    console.log('DEBUG ASYNC: Relative path from workspace:', relativePath);
-                    
                     if (folderBaseName === supportedFolder) {
                         // Verificar que la carpeta realmente existe
                         const exists = await EIJEFileSystem.exists(folderPath);
-                        console.log('DEBUG ASYNC: Folder exists:', exists);
                         if (exists) {
-                            console.log('DEBUG ASYNC: Match found by basename!');
                             return true;
                         }
                     }
@@ -133,9 +122,7 @@ export class EIJEEditorProvider {
                     // Si la ruta relativa es exactamente el nombre de la carpeta soportada
                     if (relativePath === supportedFolder) {
                         const exists = await EIJEFileSystem.exists(folderPath);
-                        console.log('DEBUG ASYNC: Folder exists (relative):', exists);
                         if (exists) {
-                            console.log('DEBUG ASYNC: Match found by relative path!');
                             return true;
                         }
                     }
@@ -144,23 +131,17 @@ export class EIJEEditorProvider {
                     if (supportedFolder.includes('/') || supportedFolder.includes('\\')) {
                         const cleanPath = supportedFolder.replace(/^\.?[\/\\]/, ''); // Remover ./ o / inicial
                         const expectedPath = _path.join(rootPath, cleanPath);
-                        console.log('DEBUG ASYNC: Expected path:', expectedPath);
-                        console.log('DEBUG ASYNC: Resolved folder path:', _path.resolve(folderPath));
-                        console.log('DEBUG ASYNC: Resolved expected path:', _path.resolve(expectedPath));
                         
                         if (_path.resolve(folderPath) === _path.resolve(expectedPath)) {
                             // Verificar que la carpeta realmente existe
                             const exists = await EIJEFileSystem.exists(folderPath);
-                            console.log('DEBUG ASYNC: Folder exists (full path):', exists);
                             if (exists) {
-                                console.log('DEBUG ASYNC: Match found by full path!');
                                 return true;
                             }
                         }
                     }
                 }
             }
-            console.log('DEBUG ASYNC: No match found');
             return false;
         };
         
