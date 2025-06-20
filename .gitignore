@@ -12,3 +12,4 @@ dist/**
 *.bak
 todo.yml
 _src
+vsix
