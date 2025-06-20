@@ -13,3 +13,4 @@ dist/**
 todo.yml
 _src
 vsix
+.env
