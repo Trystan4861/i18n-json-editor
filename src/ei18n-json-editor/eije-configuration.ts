@@ -399,16 +399,20 @@ export class EIJEConfiguration {
         // Construir la ruta relativa
         const relativePath = parentDir ? `${parentDir}/${i18nDirName}` : i18nDirName;
         
-        // Usar el método unificado con opciones específicas
-        this.findI18nFolders({
-            basePath: rootPath,
-            relativePath: relativePath,
-            searchCommonFolders: false,
-            checkSrcI18n: false,
-            searchWorkspaceFolders: false,
-            checkCurrentDir: true,
-            result: result
-        });
+        // Verificar directamente la ruta en lugar de usar findI18nFolders para evitar recursión
+        const fullPath = _path.join(rootPath, relativePath);
+        
+        // Verificar si el directorio existe
+        if (EIJEFileSystem.existsSync(fullPath)) {
+            try {
+                const stats = EIJEFileSystem.statSync(fullPath);
+                if (stats.isDirectory()) {
+                    this.checkI18nDirectory(rootPath, relativePath, result);
+                }
+            } catch (error) {
+                // Ignorar errores al acceder a directorios específicos
+            }
+        }
     }
     
     /**
@@ -421,16 +425,21 @@ export class EIJEConfiguration {
             // Incluir frontend y backend en las carpetas comunes
             const commonFolders = ['src', 'app', 'public', 'assets', 'locales', 'frontend', 'backend'];
             for (const folder of commonFolders) {
-                // Usar el método unificado para cada carpeta común
-                this.findI18nFolders({
-                    basePath: rootPath,
-                    relativePath: folder + '/i18n',
-                    searchCommonFolders: false,
-                    checkSrcI18n: false,
-                    searchWorkspaceFolders: false,
-                    checkCurrentDir: true,
-                    result: result
-                });
+                // Verificar directamente la ruta en lugar de usar findI18nFolders para evitar recursión
+                const relativePath = folder + '/i18n';
+                const fullPath = _path.join(rootPath, relativePath);
+                
+                // Verificar si el directorio existe
+                if (EIJEFileSystem.existsSync(fullPath)) {
+                    try {
+                        const stats = EIJEFileSystem.statSync(fullPath);
+                        if (stats.isDirectory()) {
+                            this.checkI18nDirectory(rootPath, relativePath, result);
+                        }
+                    } catch (error) {
+                        // Ignorar errores al acceder a directorios específicos
+                    }
+                }
             }
         } catch (error) {
             console.error('Error in searchCommonI18nFolders:', error);
