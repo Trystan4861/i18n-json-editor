@@ -46,7 +46,7 @@ export class EIJEConfiguration {
         }
     }
     
-    private static getConfigPath(workspaceFolder: vscode.WorkspaceFolder): string {
+    public static getConfigPath(workspaceFolder: vscode.WorkspaceFolder): string {
         try {
             const vscodePath = _path.join(workspaceFolder.uri.fsPath, '.vscode');
             
@@ -1543,6 +1543,38 @@ export class EIJEConfiguration {
         }
         
         return Array.from(uniquePaths.values());
+    }
+
+    /**
+     * Guarda la configuración proporcionada en el archivo de configuración
+     * @param config Configuración a guardar
+     */
+    public static async saveConfiguration(config: any): Promise<void> {
+        try {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                throw new Error('No hay carpeta de workspace abierta');
+            }
+            
+            const configPath = this.getConfigPath(workspaceFolder);
+            if (!configPath) {
+                throw new Error('No se pudo obtener la ruta del archivo de configuración');
+            }
+            
+            // Crear el contenido JSON formateado
+            const jsonContent = JSON.stringify(config, null, 2);
+            
+            // Guardar el archivo
+            EIJEFileSystem.writeFileSync(configPath, jsonContent);
+            
+            // Limpiar caché para forzar recarga de la configuración
+            this.clearConfigCache();
+            
+            console.log('Configuración guardada exitosamente en:', configPath);
+        } catch (error) {
+            console.error('Error guardando configuración:', error);
+            throw error;
+        }
     }
 
     // Método simplificado para inicializar configuración
