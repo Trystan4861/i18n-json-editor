@@ -4,6 +4,14 @@ All notable changes to the "ei18n-json-editor" extension will be documented in t
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [v1.0.7]
+
+### Fixed
+- Typo
+
+### Enhanced
+- Added new local configuration editor.
+
 ## [v1.0.6]
 
 ### Changed
