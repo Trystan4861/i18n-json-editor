@@ -386,3 +386,112 @@ textarea.form-control {
     background-color: var(--vscode-input-background);
     margin: 5px 0;
 }
+
+/* Estilos para el formulario de preferencias */
+.preferences-popup .swal2-popup {
+    background: var(--vscode-editor-background) !important;
+    color: var(--vscode-editor-foreground) !important;
+}
+
+.preferences-form .form-group {
+    margin-bottom: 1rem;
+    text-align: left;
+}
+
+.preferences-form .form-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: block;
+    color: var(--vscode-editor-foreground);
+}
+
+.preferences-form .form-control {
+    background-color: var(--vscode-input-background) !important;
+    border: 1px solid var(--vscode-input-border, transparent) !important;
+    color: var(--vscode-input-foreground) !important;
+    border-radius: 2px;
+    padding: 6px 8px;
+    font-size: 13px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.preferences-form .form-control:focus {
+    outline: 1px solid var(--vscode-focusBorder, #007acc) !important;
+    border-color: var(--vscode-focusBorder, #007acc) !important;
+}
+
+.preferences-form .form-text {
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground, #cccccc99);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.preferences-form input[type="checkbox"] {
+    margin-right: 8px;
+    accent-color: var(--vscode-checkbox-background);
+}
+
+.preferences-form input[type="number"] {
+    width: 80px;
+}
+
+.preferences-form .alert {
+    padding: 12px;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+
+.preferences-form .alert-info {
+    background-color: var(--vscode-textCodeBlock-background, rgba(10, 132, 255, 0.1));
+    border-color: var(--vscode-textLink-foreground, #0ea5e9);
+    color: var(--vscode-editor-foreground);
+}
+
+.preferences-form .alert-secondary {
+    background-color: var(--vscode-badge-background, #6c757d);
+    border-color: var(--vscode-badge-background, #6c757d);
+    color: var(--vscode-badge-foreground, #ffffff);
+}
+
+.preferences-form hr {
+    border: none;
+    height: 1px;
+    background-color: var(--vscode-input-border, rgba(204, 204, 204, 0.4));
+    margin: 1.5rem 0;
+}
+
+/* Personalización de SweetAlert2 para el tema VSCode */
+.preferences-popup .swal2-title {
+    color: var(--vscode-editor-foreground) !important;
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+}
+
+.preferences-popup .swal2-confirm {
+    background-color: var(--vscode-button-background) !important;
+    color: var(--vscode-button-foreground) !important;
+    border: none !important;
+    border-radius: 2px !important;
+    padding: 6px 14px !important;
+    font-size: 13px !important;
+}
+
+.preferences-popup .swal2-cancel {
+    background-color: var(--vscode-button-secondaryBackground, #5a5d5e) !important;
+    color: var(--vscode-button-secondaryForeground, #cccccc) !important;
+    border: none !important;
+    border-radius: 2px !important;
+    padding: 6px 14px !important;
+    font-size: 13px !important;
+}
+
+.preferences-popup .swal2-confirm:hover {
+    background-color: var(--vscode-button-hoverBackground) !important;
+}
+
+.preferences-popup .swal2-cancel:hover {
+    background-color: var(--vscode-button-secondaryHoverBackground, #4c4f50) !important;
+}
