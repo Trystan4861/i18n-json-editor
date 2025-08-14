@@ -250,6 +250,16 @@ export class EIJEManager {
                     }
                     return;
                     
+                case 'getPreferences':
+                    // Obtener la configuración actual para mostrar en el formulario de preferencias
+                    await this.getPreferences();
+                    return;
+                    
+                case 'savePreferences':
+                    // Guardar la configuración actualizada
+                    await this.savePreferences(message.config);
+                    return;
+                    
                 case 'closeEditor':
                     // Cerrar el editor
                     this._panel.dispose();
@@ -1379,5 +1389,125 @@ export class EIJEManager {
                 currentFolder: activeFolder || null
             });
         }, 100);
+    }
+    
+    /**
+     * Obtiene la configuración actual de la extensión
+     * y la envía al frontend para mostrar en el formulario de preferencias
+     */
+    private async getPreferences(): Promise<void> {
+        try {
+            // Obtener todas las configuraciones de la extensión
+            const config = {
+                allowEmptyTranslations: EIJEConfiguration.ALLOW_EMPTY_TRANSLATIONS,
+                defaultLanguage: EIJEConfiguration.DEFAULT_LANGUAGE,
+                forceKeyUPPERCASE: EIJEConfiguration.FORCE_KEY_UPPERCASE,
+                jsonSpace: EIJEConfiguration.JSON_SPACE,
+                keySeparator: EIJEConfiguration.KEY_SEPARATOR,
+                lineEnding: EIJEConfiguration.LINE_ENDING,
+                supportedFolders: [...EIJEConfiguration.SUPPORTED_FOLDERS],
+                workspaceFolders: [...EIJEConfiguration.WORKSPACE_FOLDERS],
+                defaultWorkspaceFolder: EIJEConfiguration.DEFAULT_WORKSPACE_FOLDER,
+                translationService: EIJEConfiguration.TRANSLATION_SERVICE,
+                translationServiceApiKey: EIJEConfiguration.TRANSLATION_SERVICE_API_KEY
+            };
+            
+            // Enviar la configuración al frontend
+            this._panel.webview.postMessage({
+                command: 'getPreferencesResult',
+                config: config
+            });
+        } catch (error) {
+            console.error('Error obteniendo preferencias:', error);
+            this._panel.webview.postMessage({
+                command: 'getPreferencesResult',
+                config: {},
+                error: error instanceof Error ? error.message : 'Error desconocido'
+            });
+        }
+    }
+    
+    /**
+     * Guarda la nueva configuración de la extensión
+     * @param config Nueva configuración a guardar
+     */
+    private async savePreferences(config: any): Promise<void> {
+        try {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                throw new Error('No hay carpeta de workspace abierta');
+            }
+            
+            // Obtener la ruta del archivo de configuración
+            const configPath = EIJEConfiguration.getConfigPath(workspaceFolder);
+            
+            // Validar la configuración recibida
+            const validatedConfig = {
+                allowEmptyTranslations: Boolean(config.allowEmptyTranslations),
+                defaultLanguage: String(config.defaultLanguage || 'en').trim(),
+                forceKeyUPPERCASE: Boolean(config.forceKeyUPPERCASE),
+                jsonSpace: Math.max(0, Math.min(8, parseInt(config.jsonSpace) || 2)),
+                keySeparator: String(config.keySeparator || '.').trim(),
+                lineEnding: config.lineEnding === '\r\n' ? '\r\n' : '\n',
+                supportedFolders: Array.isArray(config.supportedFolders) 
+                    ? config.supportedFolders.filter(folder => typeof folder === 'string' && folder.trim())
+                    : ['i18n'],
+                workspaceFolders: config.workspaceFolders || [],
+                defaultWorkspaceFolder: String(config.defaultWorkspaceFolder || '').trim(),
+                translationService: String(config.translationService || 'Coming soon'),
+                translationServiceApiKey: String(config.translationServiceApiKey || 'Coming soon')
+            };
+            
+            // Validaciones adicionales
+            if (!validatedConfig.defaultLanguage) {
+                throw new Error('El idioma predeterminado es obligatorio');
+            }
+            
+            if (!validatedConfig.keySeparator) {
+                throw new Error('El separador de claves es obligatorio');
+            }
+            
+            if (validatedConfig.supportedFolders.length === 0) {
+                throw new Error('Debe especificar al menos una carpeta soportada');
+            }
+            
+            // Guardar la configuración en el archivo JSON
+            await EIJEConfiguration.saveConfiguration(validatedConfig);
+            
+            // Limpiar la caché de configuración para forzar la recarga
+            EIJEConfiguration.clearConfigCache();
+            
+            // Notificar al usuario que la configuración se guardó exitosamente
+            const i18n = I18nService.getInstance();
+            NotificationService.getInstance().showSuccessMessage(
+                'Configuración guardada correctamente',
+                true // Usar Flashy
+            );
+            
+            // Enviar confirmación al frontend
+            this._panel.webview.postMessage({
+                command: 'savePreferencesResult',
+                success: true
+            });
+            
+            // Recargar los datos con la nueva configuración
+            await this.reloadData();
+            
+        } catch (error) {
+            console.error('Error guardando preferencias:', error);
+            
+            // Notificar al usuario del error
+            const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+            NotificationService.getInstance().showErrorMessage(
+                `Error al guardar configuración: ${errorMessage}`
+            );
+            
+            // Enviar error al frontend
+            this._panel.webview.postMessage({
+                command: 'savePreferencesResult',
+                success: false,
+                error: errorMessage
+            });
+        }
     }
 }

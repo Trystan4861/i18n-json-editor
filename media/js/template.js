@@ -237,6 +237,20 @@ var currentWorkspaceFolder = ''; // Variable para rastrear la carpeta de trabajo
       case "showNoWorkspaceFoldersMessage":
         showNoWorkspaceFoldersMessage();
         break;
+        
+      case "getPreferencesResult":
+        // Mostrar el formulario de preferencias con la configuración recibida
+        showPreferencesForm(message.config);
+        break;
+        
+      case "savePreferencesResult":
+        // Manejar el resultado del guardado de preferencias
+        if (message.success) {
+          showFlashyNotification('Configuración guardada correctamente', 'success', 2000);
+        } else {
+          showFlashyNotification(`Error al guardar configuración: ${message.error}`, 'error', 3000);
+        }
+        break;
     }
   });
   setTimeout(() => {
@@ -999,6 +1013,186 @@ function configureExtension() {
   // Por ahora, solo enviamos un mensaje al backend
   vscode.postMessage({
     command: 'configureExtension'
+  });
+}
+
+// Variable para almacenar la configuración actual
+let currentConfig = {};
+
+/**
+ * Función para mostrar el formulario de preferencias
+ * Permite editar las configuraciones locales de la extensión
+ */
+function preferences() {
+  // Solicitar la configuración actual al backend
+  vscode.postMessage({ command: "getPreferences" });
+}
+
+/**
+ * Muestra el formulario de preferencias con la configuración actual
+ * @param {Object} config - Configuración actual de la extensión
+ */
+function showPreferencesForm(config) {
+  currentConfig = config || {};
+  
+  // Generar opciones para workspace folders
+  const workspaceFoldersOptions = (config.workspaceFolders || [])
+    .map(folder => `<option value="${folder.name}" ${folder.name === config.defaultWorkspaceFolder ? 'selected' : ''}>${folder.name}</option>`)
+    .join('');
+  
+  // Generar opciones para line ending
+  const lineEndingOptions = [
+    { value: '\n', label: 'LF (\\n) - Unix/Linux/MacOS', selected: config.lineEnding === '\n' },
+    { value: '\r\n', label: 'CRLF (\\r\\n) - Windows', selected: config.lineEnding === '\r\n' }
+  ].map(opt => `<option value="${opt.value}" ${opt.selected ? 'selected' : ''}>${opt.label}</option>`).join('');
+
+  const formHtml = `
+    <div class="preferences-form" style="text-align: left; max-height: 600px; overflow-y: auto;">
+      <div class="form-group mb-3">
+        <label for="pref-allowEmptyTranslations" class="form-label">
+          <input type="checkbox" id="pref-allowEmptyTranslations" ${config.allowEmptyTranslations ? 'checked' : ''}>
+          <strong>Permitir traducciones vacías</strong>
+        </label>
+        <small class="form-text text-muted d-block mt-1">Permite guardar archivos con traducciones vacías sin mostrar errores</small>
+      </div>
+      
+      <div class="form-group mb-3">
+        <label for="pref-defaultLanguage" class="form-label"><strong>Idioma predeterminado:</strong></label>
+        <input type="text" class="form-control" id="pref-defaultLanguage" value="${config.defaultLanguage || 'en'}" placeholder="en">
+        <small class="form-text text-muted">Código del idioma que se usará como referencia</small>
+      </div>
+      
+      <div class="form-group mb-3">
+        <label for="pref-forceKeyUPPERCASE" class="form-label">
+          <input type="checkbox" id="pref-forceKeyUPPERCASE" ${config.forceKeyUPPERCASE ? 'checked' : ''}>
+          <strong>Forzar claves en MAYÚSCULAS</strong>
+        </label>
+        <small class="form-text text-muted d-block mt-1">Convierte automáticamente todas las claves de traducción a mayúsculas</small>
+      </div>
+      
+      <div class="form-group mb-3">
+        <label for="pref-jsonSpace" class="form-label"><strong>Espacios de indentación JSON:</strong></label>
+        <input type="number" class="form-control" id="pref-jsonSpace" value="${config.jsonSpace || 2}" min="0" max="8">
+        <small class="form-text text-muted">Número de espacios para la indentación del formato JSON (0 = sin formato)</small>
+      </div>
+      
+      <div class="form-group mb-3">
+        <label for="pref-keySeparator" class="form-label"><strong>Separador de claves:</strong></label>
+        <input type="text" class="form-control" id="pref-keySeparator" value="${config.keySeparator || '.'}" placeholder=".">
+        <small class="form-text text-muted">Carácter usado para separar niveles en las claves (ejemplo: user.profile.name)</small>
+      </div>
+      
+      <div class="form-group mb-3">
+        <label for="pref-lineEnding" class="form-label"><strong>Terminación de línea:</strong></label>
+        <select class="form-control" id="pref-lineEnding">
+          ${lineEndingOptions}
+        </select>
+        <small class="form-text text-muted">Tipo de terminación de línea para los archivos JSON</small>
+      </div>
+      
+      <div class="form-group mb-3">
+        <label for="pref-supportedFolders" class="form-label"><strong>Carpetas soportadas:</strong></label>
+        <input type="text" class="form-control" id="pref-supportedFolders" value="${(config.supportedFolders || ['i18n']).join(', ')}" placeholder="i18n">
+        <small class="form-text text-muted">Lista de nombres de carpetas separadas por comas que contienen archivos de traducción</small>
+      </div>
+      
+      ${workspaceFoldersOptions ? `
+      <div class="form-group mb-3">
+        <label for="pref-defaultWorkspaceFolder" class="form-label"><strong>Carpeta de trabajo predeterminada:</strong></label>
+        <select class="form-control" id="pref-defaultWorkspaceFolder">
+          <option value="">Seleccionar carpeta...</option>
+          ${workspaceFoldersOptions}
+        </select>
+        <small class="form-text text-muted">Carpeta de trabajo que se seleccionará automáticamente al abrir la extensión</small>
+      </div>
+      ` : ''}
+      
+      <div class="form-group mb-3">
+        <label class="form-label"><strong>Información del workspace:</strong></label>
+        <div class="alert alert-info" role="alert" style="font-size: 0.85em;">
+          <strong>Carpetas configuradas:</strong> ${(config.workspaceFolders || []).length} carpeta(s)<br>
+          ${(config.workspaceFolders || []).map(folder => `• ${folder.name}: ${folder.path}`).join('<br>')}
+        </div>
+      </div>
+      
+      <hr>
+      
+      <div class="form-group mb-3">
+        <label class="form-label"><strong>Servicios de traducción (Próximamente):</strong></label>
+        <div class="alert alert-secondary" role="alert" style="font-size: 0.85em;">
+          Los servicios de traducción automática estarán disponibles en futuras versiones.
+        </div>
+      </div>
+    </div>
+  `;
+
+  Swal.fire({
+    title: 'Preferencias de la Extensión',
+    html: formHtml,
+    width: '800px',
+    showCancelButton: true,
+    confirmButtonText: 'Guardar Cambios',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: 'var(--vscode-button-background)',
+    cancelButtonColor: '#dc3545',
+    background: 'var(--vscode-editor-background)',
+    color: 'var(--vscode-editor-foreground)',
+    customClass: {
+      popup: 'preferences-popup'
+    },
+    preConfirm: () => {
+      // Validar y recopilar datos del formulario
+      const formData = {
+        allowEmptyTranslations: document.getElementById('pref-allowEmptyTranslations').checked,
+        defaultLanguage: document.getElementById('pref-defaultLanguage').value.trim(),
+        forceKeyUPPERCASE: document.getElementById('pref-forceKeyUPPERCASE').checked,
+        jsonSpace: parseInt(document.getElementById('pref-jsonSpace').value) || 2,
+        keySeparator: document.getElementById('pref-keySeparator').value || '.',
+        lineEnding: document.getElementById('pref-lineEnding').value,
+        supportedFolders: document.getElementById('pref-supportedFolders').value
+          .split(',')
+          .map(folder => folder.trim())
+          .filter(folder => folder.length > 0),
+        defaultWorkspaceFolder: document.getElementById('pref-defaultWorkspaceFolder') 
+          ? document.getElementById('pref-defaultWorkspaceFolder').value 
+          : config.defaultWorkspaceFolder,
+        // Mantener los valores existentes para estos campos
+        workspaceFolders: config.workspaceFolders || [],
+        translationService: config.translationService || "Coming soon",
+        translationServiceApiKey: config.translationServiceApiKey || "Coming soon"
+      };
+
+      // Validaciones básicas
+      if (!formData.defaultLanguage) {
+        Swal.showValidationMessage('El idioma predeterminado es obligatorio');
+        return false;
+      }
+
+      if (formData.jsonSpace < 0 || formData.jsonSpace > 8) {
+        Swal.showValidationMessage('Los espacios de indentación deben estar entre 0 y 8');
+        return false;
+      }
+
+      if (!formData.keySeparator) {
+        Swal.showValidationMessage('El separador de claves es obligatorio');
+        return false;
+      }
+
+      if (formData.supportedFolders.length === 0) {
+        Swal.showValidationMessage('Debe especificar al menos una carpeta soportada');
+        return false;
+      }
+
+      return formData;
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Enviar la configuración actualizada al backend
+      vscode.postMessage({
+        command: "savePreferences",
+        config: result.value
+      });
+    }
   });
 }
 
